@@ -104,9 +104,19 @@ Key points:
 - `runner` names which registered Runner handles that step's `action` — this
   is the plugin seam. For this spec, `"log"` is the only real runner (see
   below); real Runners register their own `action` vocabulary later.
-- JSON Schema validates the overall shape at submission time (via Fastify's
-  native schema support); unknown `runner`/`action` combinations are rejected
-  before a job is created.
+- JSON Schema validates the overall *shape* of the definition at submission
+  time (required fields, correct types, the `oneOf` step-variant structure);
+  a malformed definition gets `400` + errors and no job is created. The
+  schema treats `runner`/`action` as plain strings, so it cannot detect
+  whether a given `runner` name is actually registered — that's a
+  server-level concern (the Runner Registry), invisible to static schema
+  validation. A definition naming an unregistered `runner` is still accepted
+  (`202` + `jobId`); the job then fails at dispatch time, when the Task
+  Dispatcher looks the runner up and the resulting error is caught by the
+  same fail-fast handling as any other step failure — the offending step is
+  marked `failed`, later steps `skipped`, and the run (and its final
+  `GET /runs/:jobId` status) ends as `failed`, not as a submission-time
+  rejection.
 
 ## Task Dispatcher & Execution Engine
 
