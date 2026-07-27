@@ -29,10 +29,12 @@ async function executeSteps(
     const step = steps[index];
     emitter.emit('event', { type: 'step:started', index, step } satisfies RunEvent);
 
-    const runner = registry.get(step.runner);
-    const args = ctx.resolve(step.with ?? {});
+    let args: Record<string, unknown> | undefined;
 
     try {
+      const runner = registry.get(step.runner);
+      args = ctx.resolve(step.with ?? {});
+
       if (step.type === 'interaction') {
         await runner.interact(step.action, args, ctx);
         const result: StepResult = {
@@ -47,9 +49,6 @@ async function executeSteps(
         const actual = await runner.ask(step.action, args, ctx);
         const expected = ctx.resolve(step.expect.equals);
         const passed = actual === expected;
-        if (step.remember) {
-          ctx.remember(step.remember, actual);
-        }
         const result: StepResult = {
           type: 'question',
           runner: step.runner,
@@ -60,6 +59,9 @@ async function executeSteps(
           expected,
         };
         if (passed) {
+          if (step.remember) {
+            ctx.remember(step.remember, actual);
+          }
           emitter.emit('event', { type: 'step:completed', index, result } satisfies RunEvent);
         } else {
           emitter.emit('event', { type: 'step:failed', index, result } satisfies RunEvent);

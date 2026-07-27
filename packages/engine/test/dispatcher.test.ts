@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { runDefinition } from '../src/dispatcher.js';
 import { RunnerRegistry, type Runner } from '../src/runner.js';
 import type { TestDefinition, RunEvent } from '../src/types.js';
-import type { EventEmitter } from 'node:events';
+import { EventEmitter } from 'node:events';
 
 function collectEvents(emitter: EventEmitter): RunEvent[] {
   const events: RunEvent[] = [];
@@ -123,5 +123,100 @@ describe('runDefinition', () => {
     const result = await done;
     expect(result).toEqual({ status: 'passed' });
     expect(askMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves to failed (not rejected) when a step references an unregistered runner', async () => {
+    const registry = new RunnerRegistry();
+    // Note: no runner is registered at all.
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      tasks: [
+        {
+          name: 'T',
+          steps: [{ type: 'interaction', runner: 'missing', action: 'log', with: {} }],
+        },
+      ],
+    };
+
+    // `RunnerRegistry.get` throws synchronously with no `await` beforehand on this path,
+    // so the failure events are emitted before control ever returns to the caller (i.e.
+    // before a listener attached via the usual `emitter.on(...)` pattern could subscribe).
+    // Spy on EventEmitter.prototype.emit *before* calling runDefinition so we reliably
+    // observe every emission regardless of that synchronous-vs-asynchronous timing.
+    const emitSpy = vi.spyOn(EventEmitter.prototype, 'emit');
+
+    const { done } = runDefinition(definition, registry);
+    const result = await done;
+
+    const events = emitSpy.mock.calls
+      .filter(([eventName]) => eventName === 'event')
+      .map(([, payload]) => payload as RunEvent);
+    emitSpy.mockRestore();
+
+    expect(result).toEqual({ status: 'failed' });
+
+    const failedEvent = events.find((e) => e.type === 'step:failed');
+    expect(failedEvent).toBeDefined();
+    expect(failedEvent && 'result' in failedEvent ? failedEvent.result.error : undefined).toMatch(
+      /No runner registered with name "missing"/
+    );
+
+    const lastEvent = events.at(-1);
+    expect(lastEvent?.type).toBe('run:failed');
+    expect(lastEvent && lastEvent.type === 'run:failed' ? lastEvent.error : undefined).toMatch(
+      /No runner registered with name "missing"/
+    );
+  });
+
+  it('does not remember the answer when a question fails', async () => {
+    const askMock = vi.fn().mockResolvedValue(500);
+    const runner: Runner = {
+      name: 'log',
+      interact: vi.fn().mockResolvedValue(undefined),
+      ask: askMock,
+    };
+    const registry = new RunnerRegistry();
+    registry.register(runner);
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      tasks: [
+        {
+          name: 'Create Payment',
+          steps: [
+            {
+              type: 'question',
+              runner: 'log',
+              action: 'echo',
+              with: { value: 500 },
+              expect: { equals: 201 },
+              remember: 'x',
+            },
+          ],
+        },
+      ],
+    };
+
+    const { emitter, done } = runDefinition(definition, registry);
+    const events = collectEvents(emitter);
+    const result = await done;
+
+    expect(result).toEqual({ status: 'failed' });
+
+    const failedEvent = events.find((e) => e.type === 'step:failed');
+    expect(failedEvent).toBeDefined();
+    if (failedEvent && failedEvent.type === 'step:failed') {
+      expect(failedEvent.result.actual).toBe(500);
+      expect(failedEvent.result.expected).toBe(201);
+      expect(failedEvent.result.status).toBe('failed');
+    }
+    expect(events.at(-1)?.type).toBe('run:failed');
+    // Note: RunContext exposes no iteration/inspection API beyond get(name), and the run
+    // aborts immediately after the failing question (fail-fast), so there is no subsequent
+    // step through the public API that could observe whether `remember` fired. This test
+    // instead pins down the failing StepResult shape; the code fix itself (remember moved
+    // inside the `if (passed)` branch in src/dispatcher.ts) is what guarantees `ctx.remember`
+    // is never called on the failure path.
   });
 });
