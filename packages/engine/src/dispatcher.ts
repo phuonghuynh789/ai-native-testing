@@ -14,7 +14,14 @@ export function runDefinition(definition: TestDefinition, registry: RunnerRegist
   const ctx = new RunContext();
   const steps = definition.tasks.flatMap((task) => flattenSteps(task.steps));
 
-  const done = executeSteps(steps, ctx, registry, emitter);
+  // Defer the start of execution to a microtask so that `runDefinition` always
+  // returns `{ emitter, done }` to the caller before any 'event' is emitted.
+  // Without this, `executeSteps` (an async function) runs synchronously up to
+  // its first `await` — meaning the first `step:started` (and, on an
+  // immediate synchronous failure, `step:failed`/`run:failed` too) could fire
+  // before the caller has a chance to attach an `emitter.on('event', ...)`
+  // listener right after this call returns.
+  const done = Promise.resolve().then(() => executeSteps(steps, ctx, registry, emitter));
 
   return { emitter, done };
 }

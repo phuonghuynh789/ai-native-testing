@@ -139,20 +139,13 @@ describe('runDefinition', () => {
       ],
     };
 
-    // `RunnerRegistry.get` throws synchronously with no `await` beforehand on this path,
-    // so the failure events are emitted before control ever returns to the caller (i.e.
-    // before a listener attached via the usual `emitter.on(...)` pattern could subscribe).
-    // Spy on EventEmitter.prototype.emit *before* calling runDefinition so we reliably
-    // observe every emission regardless of that synchronous-vs-asynchronous timing.
-    const emitSpy = vi.spyOn(EventEmitter.prototype, 'emit');
-
-    const { done } = runDefinition(definition, registry);
+    // `RunnerRegistry.get` throws synchronously with no `await` beforehand on this path.
+    // Because `runDefinition` now defers the start of execution to a microtask (see
+    // src/dispatcher.ts), it is safe to attach the listener with the natural
+    // `emitter.on(...)` pattern immediately after the call returns — no spy trick needed.
+    const { emitter, done } = runDefinition(definition, registry);
+    const events = collectEvents(emitter);
     const result = await done;
-
-    const events = emitSpy.mock.calls
-      .filter(([eventName]) => eventName === 'event')
-      .map(([, payload]) => payload as RunEvent);
-    emitSpy.mockRestore();
 
     expect(result).toEqual({ status: 'failed' });
 
@@ -167,6 +160,67 @@ describe('runDefinition', () => {
     expect(lastEvent && lastEvent.type === 'run:failed' ? lastEvent.error : undefined).toMatch(
       /No runner registered with name "missing"/
     );
+  });
+
+  it('captures step:started, step:failed, and run:failed via a listener attached after runDefinition returns, even for an immediate synchronous failure', async () => {
+    const registry = new RunnerRegistry();
+    // Note: no runner is registered at all, so registry.get throws synchronously
+    // on the very first step, with no `await` beforehand.
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      tasks: [
+        {
+          name: 'T',
+          steps: [{ type: 'interaction', runner: 'missing', action: 'log', with: {} }],
+        },
+      ],
+    };
+
+    const { emitter, done } = runDefinition(definition, registry);
+    // Listener attached strictly after runDefinition returns, using the plain
+    // `emitter.on(...)` pattern a real caller (e.g. Task 6's JobStore) would use.
+    const events = collectEvents(emitter);
+    const result = await done;
+
+    expect(result).toEqual({ status: 'failed' });
+    expect(events.map((e) => e.type)).toEqual(['step:started', 'step:failed', 'run:failed']);
+  });
+
+  it('captures step:started for the first step via a listener attached after runDefinition returns', async () => {
+    const askMock = vi.fn().mockResolvedValue(201);
+    const runner: Runner = {
+      name: 'log',
+      interact: vi.fn().mockResolvedValue(undefined),
+      ask: askMock,
+    };
+    const registry = new RunnerRegistry();
+    registry.register(runner);
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      tasks: [
+        {
+          name: 'Create Payment',
+          steps: [
+            { type: 'interaction', runner: 'log', action: 'log', with: { message: 'hi' } },
+          ],
+        },
+      ],
+    };
+
+    const { emitter, done } = runDefinition(definition, registry);
+    // If execution were not deferred to a microtask, the first `step:started`
+    // would fire synchronously during the runDefinition(...) call above, before
+    // this listener is attached, and would be silently missed.
+    const events = collectEvents(emitter);
+    await done;
+
+    expect(events[0]).toEqual({
+      type: 'step:started',
+      index: 0,
+      step: definition.tasks[0].steps[0],
+    });
   });
 
   it('does not remember the answer when a question fails', async () => {
