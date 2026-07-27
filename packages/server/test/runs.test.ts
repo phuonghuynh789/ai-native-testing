@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import Fastify from 'fastify';
+import { RunnerRegistry, type Runner } from '@ai-native-testing/engine';
 import { buildApp } from '../src/app.js';
+import { JobStore } from '../src/job-store.js';
+import { registerRunRoutes } from '../src/routes/runs.js';
 
 const validDefinition = {
   actor: { name: 'Customer', abilities: ['log'] },
@@ -23,6 +27,30 @@ const failingDefinition = {
     },
   ],
 };
+
+// A `log`-named Runner whose `interact`/`ask` resolve only after a short
+// delay, so a submitted job is still `running` by the time the test hits
+// `GET /runs/:jobId/events` — unlike the real `LogRunner`, which resolves
+// synchronously and leaves no window to observe live streaming.
+const slowLogRunner: Runner = {
+  name: 'log',
+  async interact(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  },
+  async ask(_action, args): Promise<unknown> {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    return (args as { value: unknown }).value;
+  },
+};
+
+function buildAppWithSlowRunner() {
+  const app = Fastify();
+  const registry = new RunnerRegistry();
+  registry.register(slowLogRunner);
+  const jobStore = new JobStore();
+  registerRunRoutes(app, jobStore, registry);
+  return app;
+}
 
 async function pollUntilFinished(app: ReturnType<typeof buildApp>, jobId: string) {
   for (let i = 0; i < 50; i++) {
@@ -94,5 +122,25 @@ describe('GET /runs/:jobId/events', () => {
     const app = buildApp();
     const res = await app.inject({ method: 'GET', url: '/runs/does-not-exist/events' });
     expect(res.statusCode).toBe(404);
+  });
+
+  it('streams live events for a job that is still running when the stream is opened', async () => {
+    const app = buildAppWithSlowRunner();
+    const submit = await app.inject({ method: 'POST', url: '/runs', payload: validDefinition });
+    const { jobId } = submit.json();
+
+    // Confirm the job hasn't finished yet, so the assertions below can only
+    // be satisfied by the live `jobStore.subscribe` branch, not by replaying
+    // an already-finished history.
+    const snapshot = await app.inject({ method: 'GET', url: `/runs/${jobId}` });
+    expect(snapshot.json().status).toBe('running');
+
+    const res = await app.inject({ method: 'GET', url: `/runs/${jobId}/events` });
+    expect(res.headers['content-type']).toContain('text/event-stream');
+
+    const stepIndex = res.payload.indexOf('"type":"step:');
+    const terminalIndex = res.payload.search(/"type":"run:(completed|failed)"/);
+    expect(stepIndex).toBeGreaterThanOrEqual(0);
+    expect(terminalIndex).toBeGreaterThan(stepIndex);
   });
 });
