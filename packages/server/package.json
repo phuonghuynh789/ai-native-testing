@@ -5,15 +5,20 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-native-testing/engine": "workspace:*"
+    "@ai-native-testing/engine": "workspace:*",
+    "@ai-native-testing/runner-log": "workspace:*",
+    "fastify": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^2.1.4",
+    "tsx": "^4.19.2"
   }
 }
