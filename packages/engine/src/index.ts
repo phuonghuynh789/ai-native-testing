@@ -14,3 +14,4 @@ export type {
 } from './types.js';
 export { flattenSteps } from './flatten.js';
 export { validateTestDefinition } from './schema.js';
+export { runDefinition, type RunHandle } from './dispatcher.js';
