@@ -1,4 +1,4 @@
-import Ajv, { type ErrorObject } from 'ajv';
+import { Ajv, type ErrorObject } from 'ajv';
 
 const stepSchema = {
   $id: 'step',
