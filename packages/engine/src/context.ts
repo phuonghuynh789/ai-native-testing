@@ -15,9 +15,12 @@ export class RunContext {
 
   private resolveValue(value: unknown): unknown {
     if (typeof value === 'string') {
-      const match = /^\$\{(\w+)\}$/.exec(value);
-      if (match) {
-        return this.variables.get(match[1]);
+      const wholeMatch = /^\$\{(\w+)\}$/.exec(value);
+      if (wholeMatch) {
+        return this.variables.get(wholeMatch[1]);
+      }
+      if (/\$\{\w+\}/.test(value)) {
+        return value.replace(/\$\{(\w+)\}/g, (_full, name: string) => String(this.variables.get(name)));
       }
       return value;
     }
