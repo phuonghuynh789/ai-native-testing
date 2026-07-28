@@ -34,6 +34,18 @@ const stepSchema = {
     },
     {
       type: 'object',
+      required: ['type', 'runner', 'action', 'remember'],
+      additionalProperties: false,
+      properties: {
+        type: { const: 'extract' },
+        runner: { type: 'string' },
+        action: { type: 'string' },
+        with: { type: 'object' },
+        remember: { type: 'string' },
+      },
+    },
+    {
+      type: 'object',
       required: ['type', 'name', 'steps'],
       additionalProperties: false,
       properties: {

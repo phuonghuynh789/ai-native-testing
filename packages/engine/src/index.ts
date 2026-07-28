@@ -5,6 +5,7 @@ export type {
   InteractionStep,
   QuestionStep,
   TaskStep,
+  ExtractStep,
   Step,
   LeafStep,
   TaskDefinition,

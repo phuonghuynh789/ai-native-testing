@@ -25,8 +25,16 @@ export interface TaskStep {
   steps: Step[];
 }
 
-export type Step = InteractionStep | QuestionStep | TaskStep;
-export type LeafStep = InteractionStep | QuestionStep;
+export interface ExtractStep {
+  type: 'extract';
+  runner: string;
+  action: string;
+  with?: Record<string, unknown>;
+  remember: string;
+}
+
+export type Step = InteractionStep | QuestionStep | TaskStep | ExtractStep;
+export type LeafStep = InteractionStep | QuestionStep | ExtractStep;
 
 export interface TaskDefinition {
   name: string;
@@ -40,7 +48,7 @@ export interface TestDefinition {
 }
 
 export interface StepResult {
-  type: 'interaction' | 'question';
+  type: 'interaction' | 'question' | 'extract';
   runner: string;
   action: string;
   status: 'pending' | 'passed' | 'failed' | 'skipped';

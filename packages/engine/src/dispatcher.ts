@@ -57,6 +57,18 @@ async function executeSteps(
           args,
         };
         emitter.emit('event', { type: 'step:completed', index, result } satisfies RunEvent);
+      } else if (step.type === 'extract') {
+        const actual = await runner.ask(step.action, args, ctx);
+        ctx.remember(step.remember, actual);
+        const result: StepResult = {
+          type: 'extract',
+          runner: step.runner,
+          action: step.action,
+          status: 'passed',
+          args,
+          actual,
+        };
+        emitter.emit('event', { type: 'step:completed', index, result } satisfies RunEvent);
       } else {
         const actual = await runner.ask(step.action, args, ctx);
         const expected = ctx.resolve(step.expect.equals);

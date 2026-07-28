@@ -303,4 +303,55 @@ describe('runDefinition', () => {
     expect(result).toEqual({ status: 'passed' });
     expect(askMock).toHaveBeenCalledWith('echo', { value: 'https://api.example.com' }, expect.anything());
   });
+
+  it('runs an extract step: unconditionally remembers the answer, no pass/fail comparison', async () => {
+    const askMock = vi.fn(async (_action: string, args: Record<string, unknown>) => args.value);
+    const runner: Runner = {
+      name: 'log',
+      interact: vi.fn().mockResolvedValue(undefined),
+      ask: askMock,
+    };
+    const registry = new RunnerRegistry();
+    registry.register(runner);
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      tasks: [
+        {
+          name: 'T',
+          steps: [
+            { type: 'extract', runner: 'log', action: 'echo', with: { value: 'remembered-value' }, remember: 'x' },
+            { type: 'question', runner: 'log', action: 'echo', with: { value: '${x}' }, expect: { equals: 'remembered-value' } },
+          ],
+        },
+      ],
+    };
+
+    const { emitter, done } = runDefinition(definition, registry);
+    const events = collectEvents(emitter);
+    const result = await done;
+
+    expect(result).toEqual({ status: 'passed' });
+    const extractEvent = events.find((e) => e.type === 'step:completed' && e.result.type === 'extract');
+    expect(extractEvent).toBeDefined();
+  });
+
+  it("fails the run when an extract step's ask throws", async () => {
+    const runner: Runner = {
+      name: 'log',
+      interact: vi.fn().mockResolvedValue(undefined),
+      ask: vi.fn().mockRejectedValue(new Error('bad path')),
+    };
+    const registry = new RunnerRegistry();
+    registry.register(runner);
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      tasks: [{ name: 'T', steps: [{ type: 'extract', runner: 'log', action: 'echo', with: {}, remember: 'x' }] }],
+    };
+
+    const { done } = runDefinition(definition, registry);
+    const result = await done;
+    expect(result).toEqual({ status: 'failed' });
+  });
 });

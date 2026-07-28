@@ -69,4 +69,25 @@ describe('validateTestDefinition', () => {
     };
     expect(validateTestDefinition(withVariables)).toEqual({ valid: true });
   });
+
+  it('accepts an extract step', () => {
+    const withExtract = {
+      actor: validDefinition.actor,
+      tasks: [
+        {
+          name: 'T',
+          steps: [{ type: 'extract', runner: 'log', action: 'echo', with: { value: 1 }, remember: 'x' }],
+        },
+      ],
+    };
+    expect(validateTestDefinition(withExtract)).toEqual({ valid: true });
+  });
+
+  it('rejects an extract step missing the remember field', () => {
+    const invalid = {
+      actor: validDefinition.actor,
+      tasks: [{ name: 'T', steps: [{ type: 'extract', runner: 'log', action: 'echo', with: {} }] }],
+    };
+    expect(validateTestDefinition(invalid).valid).toBe(false);
+  });
 });
