@@ -52,6 +52,8 @@ export class RestRunner implements Runner {
         return response.headers[String(args.name).toLowerCase()];
       case 'jsonPath':
         return extractJsonPath(response.body, String(args.path));
+      case 'raw':
+        return response;
       default:
         throw new Error(`RestRunner does not support question "${action}"`);
     }

@@ -169,4 +169,25 @@ describe('RestRunner', () => {
     const ctx = new RunContext();
     await expect(runner.interact('request', { method: 'GET', url: server.url }, ctx)).rejects.toThrow();
   });
+
+  it('returns the whole response via the raw action', async () => {
+    server = await startTestServer((req, res) => {
+      res.writeHead(201, { 'Content-Type': 'application/json', 'X-Request-Id': 'req-1' });
+      res.end(JSON.stringify({ data: { paymentId: 'pay_1' } }));
+    });
+
+    const runner = new RestRunner();
+    const ctx = new RunContext();
+    await runner.interact('request', { method: 'GET', url: server.url }, ctx);
+
+    const raw = (await runner.ask('raw', {}, ctx)) as {
+      status: number;
+      headers: Record<string, string>;
+      body: unknown;
+    };
+    expect(raw.status).toBe(201);
+    expect(raw.headers['content-type']).toBe('application/json');
+    expect(raw.headers['x-request-id']).toBe('req-1');
+    expect(raw.body).toEqual({ data: { paymentId: 'pay_1' } });
+  });
 });
