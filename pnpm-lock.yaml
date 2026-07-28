@@ -65,6 +65,9 @@ importers:
       '@ai-native-testing/engine':
         specifier: workspace:*
         version: link:../engine
+      '@ai-native-testing/runner-api':
+        specifier: workspace:*
+        version: link:../runner-api
       '@ai-native-testing/runner-log':
         specifier: workspace:*
         version: link:../runner-log
