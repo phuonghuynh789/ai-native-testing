@@ -826,6 +826,27 @@ git commit -m "feat(web): add deriveResults for the results panel"
 - Consumes: `KeyValueRow` from `../types`.
 - Produces: `KeyValueRows({ label: string; rows: KeyValueRow[]; onChange: (rows: KeyValueRow[]) => void })`. Reused by the Variables editor (Task 10) and by `RequestBuilder`'s Params/Headers tabs (Task 7).
 
+> **Note (discovered while implementing this task):** the first component
+> test file exposed a gap in Task 2's `test/setup.ts` — with more than one
+> test rendering the same markup in one file, elements from a prior test's
+> render were still in the DOM (`getByRole` failed with "multiple elements").
+> `@testing-library/react`'s automatic cleanup only registers when it finds
+> a *global* `afterEach`, which this project doesn't have (Vitest's
+> `globals` mode is off; every test file imports `describe`/`it`/`afterEach`
+> explicitly). Fixed by registering cleanup explicitly in
+> `packages/web/test/setup.ts`:
+> ```ts
+> import { afterEach } from 'vitest';
+> import { cleanup } from '@testing-library/react';
+> import '@testing-library/jest-dom/vitest';
+>
+> afterEach(() => {
+>   cleanup();
+> });
+> ```
+> This is test-infrastructure only — no design/architecture implication —
+> so it was fixed directly rather than flagged as a decision point.
+
 - [ ] **Step 1: Write failing tests**
 
 Create `packages/web/test/components/KeyValueRows.test.tsx`:
