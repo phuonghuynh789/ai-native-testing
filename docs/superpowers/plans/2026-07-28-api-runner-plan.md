@@ -1106,6 +1106,23 @@ git commit -m "feat(runner-api): add RestRunner executing real HTTP requests"
 - Consumes: `RestRunner` from `@ai-native-testing/runner-api` (Task 5); `buildApp()` from `../src/app.js`; existing `POST /runs`, `GET /runs/:jobId` routes (unchanged).
 - Produces: nothing new for later tasks — this is the final integration point for this sub-project.
 
+> **Note (discovered while implementing this task):** running the end-to-end
+> test after registering `RestRunner` still failed — every request threw
+> `Invalid URL`. Root cause: `RunContext.resolve` (`packages/engine/src/context.ts`)
+> only resolved a value when it was *exactly* `${var}`; embedding a variable
+> inside a larger string like `${baseUrl}/login` passed through unresolved.
+> This is a bug in Core, not in this task's own files — fixed as a standalone
+> commit (`fix(engine): support embedded \${var} interpolation in
+> RunContext.resolve`) before continuing Task 6, using the same TDD cycle:
+> failing tests added to `packages/engine/test/context.test.ts` (two for
+> embedded substitution, one confirming the existing whole-string/raw-type
+> behavior is preserved), then the fix itself — replace the single anchored
+> regex check with a whole-match check (unchanged behavior, returns the raw
+> value) followed by a global-replace fallback for embedded occurrences
+> (substitutes each `${var}` with `String(value)`). Confirmed with the user
+> before making this change, since it touches Core outside this spec's
+> reviewed scope.
+
 - [ ] **Step 1: Add the `runner-api` dependency to the server package**
 
 In `packages/server/package.json`, change:

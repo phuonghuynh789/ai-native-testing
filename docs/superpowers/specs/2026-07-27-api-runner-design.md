@@ -1,5 +1,18 @@
 # API Runner (REST, Simple Mode) — Design
 
+> **Addendum (found during implementation):** this spec's example DSL embeds
+> variables inside larger strings (`${baseUrl}/login`,
+> `${baseUrl}/v1/payments/${paymentId}`). `RunContext.resolve` as built by
+> Core only replaced a value when it was *exactly* `${var}` with nothing else
+> in the string — an embedded reference like this passed through unresolved
+> and broke every URL. Fixed as a third small additive engine change
+> (`packages/engine/src/context.ts`): whole-string matches still return the
+> raw value/type unchanged (e.g. a number stays a number); a string with one
+> or more `${var}` occurrences embedded elsewhere is now resolved via a
+> global find/replace, substituting each with its stringified value. Confirmed
+> with the user before fixing; see the implementation plan's Task 6 for the
+> TDD detail.
+
 ## Context
 
 This is the second sub-project of the AI-Native Testing Platform described in
