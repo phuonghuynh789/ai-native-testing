@@ -273,4 +273,34 @@ describe('runDefinition', () => {
     // inside the `if (passed)` branch in src/dispatcher.ts) is what guarantees `ctx.remember`
     // is never called on the failure path.
   });
+
+  it('seeds RunContext from definition.variables before the first step runs', async () => {
+    const askMock = vi.fn().mockResolvedValue('ok');
+    const runner: Runner = {
+      name: 'log',
+      interact: vi.fn().mockResolvedValue(undefined),
+      ask: askMock,
+    };
+    const registry = new RunnerRegistry();
+    registry.register(runner);
+
+    const definition: TestDefinition = {
+      actor: { name: 'Customer', abilities: ['log'] },
+      variables: { baseUrl: 'https://api.example.com' },
+      tasks: [
+        {
+          name: 'T',
+          steps: [
+            { type: 'question', runner: 'log', action: 'echo', with: { value: '${baseUrl}' }, expect: { equals: 'ok' } },
+          ],
+        },
+      ],
+    };
+
+    const { done } = runDefinition(definition, registry);
+    const result = await done;
+
+    expect(result).toEqual({ status: 'passed' });
+    expect(askMock).toHaveBeenCalledWith('echo', { value: 'https://api.example.com' }, expect.anything());
+  });
 });

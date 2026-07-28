@@ -76,6 +76,7 @@ const testDefinitionSchema = {
       minItems: 1,
       items: { $ref: 'taskDefinition' },
     },
+    variables: { type: 'object' },
   },
 } as const;
 

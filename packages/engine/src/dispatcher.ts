@@ -12,6 +12,11 @@ export interface RunHandle {
 export function runDefinition(definition: TestDefinition, registry: RunnerRegistry): RunHandle {
   const emitter = new EventEmitter();
   const ctx = new RunContext();
+  if (definition.variables) {
+    for (const [name, value] of Object.entries(definition.variables)) {
+      ctx.remember(name, value);
+    }
+  }
   const steps = definition.tasks.flatMap((task) => flattenSteps(task.steps));
 
   // Defer the start of execution to a microtask so that `runDefinition` always

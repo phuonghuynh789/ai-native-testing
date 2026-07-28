@@ -61,4 +61,12 @@ describe('validateTestDefinition', () => {
     };
     expect(validateTestDefinition(nested)).toEqual({ valid: true });
   });
+
+  it('accepts a definition with a variables field', () => {
+    const withVariables = {
+      ...validDefinition,
+      variables: { baseUrl: 'https://api.example.com' },
+    };
+    expect(validateTestDefinition(withVariables)).toEqual({ valid: true });
+  });
 });

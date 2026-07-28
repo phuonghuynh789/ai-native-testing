@@ -36,6 +36,7 @@ export interface TaskDefinition {
 export interface TestDefinition {
   actor: Actor;
   tasks: TaskDefinition[];
+  variables?: Record<string, unknown>;
 }
 
 export interface StepResult {
