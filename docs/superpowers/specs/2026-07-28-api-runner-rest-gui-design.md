@@ -1,5 +1,21 @@
 # API Runner: REST GUI — Simple Mode — Design
 
+> **Addendum (found while writing the implementation plan):** the "no
+> backend changes" claim below doesn't survive tracing the Response panel's
+> data flow through the actual code. `RestRunner` has no action returning
+> the whole HTTP response (`status`+`headers`+`body` together), and no
+> action for "all response headers" at all — only one named header at a
+> time. Fixed with one small, additive `RestRunner` action:
+> `case 'raw': return response;` in `packages/runner-api/src/rest-runner.ts`,
+> returning the same `RestResponse` object it already builds internally.
+> `buildTestDefinition` always appends one hidden `extract` step
+> (`{ type: "extract", runner: "rest", action: "raw", remember: "__response" }`)
+> after the `request` interaction — not shown in the Extract editor — and the
+> Response panel reads that step's `actual`. Confirmed with the user before
+> making this change; see the implementation plan's Task 3 for the TDD
+> detail. Everywhere else below that says "no backend changes," read it as
+> "no changes to `packages/engine`; one small additive `RestRunner` action."
+
 ## Context
 
 This is a follow-up sub-project to the already-merged [API Runner (REST,
@@ -77,13 +93,16 @@ Browser (React app, Vite dev server, e.g. :5173)
 Fastify server (packages/server, unchanged) — :3000
    │  POST /runs, GET /runs/:jobId, GET /runs/:jobId/events (SSE)
    ▼
-Task Dispatcher → RestRunner (unchanged, both from the prior sub-project)
+Task Dispatcher → RestRunner (unchanged, except one new `raw` ask action)
 ```
 
-No backend changes. The Vite dev server proxies API requests to the
-existing Fastify server so the browser never needs CORS handling; this is a
-dev-only concern (a production build's serving strategy is out of scope for
-this increment, matching the backend having no deployment story yet either).
+No changes to `packages/engine` or `packages/server`. One small, additive
+`RestRunner` action (see the addendum above): `case 'raw': return response;`,
+returning the whole `{ status, headers, body }` object it already builds
+internally. The Vite dev server proxies API requests to the existing Fastify
+server so the browser never needs CORS handling; this is a dev-only concern
+(a production build's serving strategy is out of scope for this increment,
+matching the backend having no deployment story yet either).
 
 **Live results via SSE, not polling:** the backend's
 `GET /runs/:jobId/events` already replays history and then streams live
@@ -150,23 +169,32 @@ backend's own separation between the two step types.
   "actor": { "name": "<actor name>", "abilities": ["rest"] },
   "variables": { "...": "..." },
   "tasks": [
-    { "name": "<task name>", "steps": [ "<request>", "...<extract rows>", "...<question rows>" ] }
+    { "name": "<task name>", "steps": [
+      "<request>",
+      { "type": "extract", "runner": "rest", "action": "raw", "remember": "__response" },
+      "...<extract rows>", "...<question rows>"
+    ] }
   ]
 }
 ```
 
-**Result panels**, all derived client-side from the SSE step results — no
-backend changes needed:
+The hidden `raw` extract step (see the addendum above) is always inserted by
+`buildTestDefinition` right after the request, before any user-authored
+Extract/Question rows — it never appears in the Extract editor and is
+excluded from the Saved Values panel.
 
-- **Response** — the `request` step's stored response: status, latency,
-  headers, pretty-printed JSON body. `RunEvent` carries no timestamps, so
-  latency is measured purely client-side — the wall-clock delta between the
-  browser receiving the `request` step's `step:started` and
+**Result panels**, all derived client-side from the SSE step results (plus
+the one hidden `raw` extract's result):
+
+- **Response** — the hidden `raw` step's `actual` (`{ status, headers, body
+  }`), plus latency. `RunEvent` carries no timestamps, so latency is
+  measured purely client-side — the wall-clock delta between the browser
+  receiving the `request` step's `step:started` and the hidden `raw` step's
   `step:completed` SSE events.
-- **Saved Values** — for each Extract row (only Extract rows have a
-  `remember` name), its corresponding step result's `actual`, matched by
-  array index (the GUI already knows which step index maps to which name,
-  since it built the list in that order).
+- **Saved Values** — for each *user-authored* Extract row (identified by
+  array index, skipping the hidden `raw` step at index 1), its corresponding
+  step result's `actual`, matched by index (the GUI already knows which step
+  index maps to which name, since it built the list in that order).
 - **Context** — Saved Values plus the seeded `variables` — the full variable
   set as of run end.
 - **Logs** — one line per step: type, action, status, and
