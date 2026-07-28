@@ -50,27 +50,53 @@ Status example.
 - Both a single API test and an end-to-end API flow (multiple Tasks in one
   test definition), using Core's existing `${var}` resolve/`remember`
   mechanism for chaining — no new chaining mechanism.
+- Seeding initial config (base URL, credentials, environment values) before
+  the first step runs (see the new `variables` field below).
 - Auth convenience helpers: Bearer token, API key, Basic auth.
 - Response extraction (HTTP status, header, JSONPath-lite into a JSON body)
   and assertions, via Core's existing Question (`expect.equals`) mechanism
-  plus one small, additive engine change (see below).
+  plus two small, additive engine changes (see below).
 - Backend/engine-level only. No GUI.
 
-**Out of scope, deferred to later sub-projects:**
+See "Out of Scope" at the end of this document for what's deliberately
+excluded.
 
-- gRPC, GraphQL.
-- Advanced Mode: reusable Actors/Abilities/Tasks/Interactions/Questions across
-  separate test definitions, Conditions, Loops, Parallel branches, Retry
-  policies, Polling, Hooks, Data-driven testing, Test Suites, Code generation,
-  Headless/CI-CD execution — all consistent with what Core already deferred.
-- Import (OpenAPI, cURL, Postman collections).
-- OAuth2 flow, mTLS (these need credential/certificate management this
-  walking skeleton doesn't have; Bearer/API key/Basic cover the common case).
-- Any visual builder/GUI.
-- Persistent storage, auth on the platform's own management API (still
-  in-memory and unauthenticated, per Core).
+## Engine Additions
 
-## Engine Addition: the `extract` Step
+This spec makes two small, additive changes to `packages/engine`. Nothing
+else in Core (Context, Runner interface, RunnerRegistry, event model,
+fail-fast semantics) is touched.
+
+### 1. Seeding initial config: `TestDefinition.variables`
+
+`TestDefinition` today is just `{ actor, tasks }` — there is no way to supply
+a value before the first step runs. That's fine for `LogRunner` (nothing to
+configure), but a REST call always needs at least a base URL, so without a
+seeding mechanism every request would have to hardcode its full URL and any
+credentials directly, with no reuse across steps and secrets baked into the
+test definition itself.
+
+This spec adds an optional `variables` field:
+
+```ts
+export interface TestDefinition {
+  actor: Actor;
+  tasks: TaskDefinition[];
+  variables?: Record<string, unknown>;
+}
+```
+
+Before `executeSteps` runs, `runDefinition` writes each entry into the run's
+`RunContext` via the existing `remember(name, value)` — no new resolution
+mechanism, just an earlier seeding point using machinery that already exists.
+`baseUrl`, `user`, `pass`, or any other pre-known value goes here; values
+produced *during* the run (`accessToken`, `paymentId`) continue to arrive via
+`remember`/`extract` as steps execute, in the same Variables map.
+
+This corresponds to the PRD Simple Mode GUI's top-level "Environment"
+selector, which is conceptually distinct from the steps themselves.
+
+### 2. The `extract` Step
 
 Core's only step types are `interaction` (do something, no result) and
 `question` (ask something, compare via `expect.equals`, optionally
@@ -97,19 +123,49 @@ actual)` and emit `step:completed` — there is no pass/fail comparison. It
 only fails (`step:failed` / fail-fast) if the Runner's `ask` call itself
 throws (e.g. a malformed JSONPath, or extracting from a non-JSON body).
 
-This requires updating `packages/engine`:
+Together, the two changes require updating `packages/engine`:
 
-- `types.ts` — add `ExtractStep` to the `Step` union and `LeafStep`; extend
-  `StepResult['type']` to include `'extract'`.
-- `schema.ts` — add the `extract` variant to the step `oneOf`
+- `types.ts` — add `variables?: Record<string, unknown>` to
+  `TestDefinition`; add `ExtractStep` to the `Step` union and `LeafStep`;
+  extend `StepResult['type']` to include `'extract'`.
+- `schema.ts` — add optional `variables: { type: 'object' }` to
+  `testDefinitionSchema`; add the `extract` variant to the step `oneOf`
   (`required: ['type', 'runner', 'action', 'remember']`).
-- `dispatcher.ts` — add the `extract` branch alongside the existing
-  `interaction`/`question` branches in `executeSteps`.
+- `dispatcher.ts` — in `runDefinition`, seed `ctx` from
+  `definition.variables` before `executeSteps` starts; add the `extract`
+  branch alongside the existing `interaction`/`question` branches in
+  `executeSteps`.
 
-`question` and its `expect.equals` comparator are unchanged; `extract` is
-purely additive. This is the only change to `packages/engine` in this
-sub-project — everything else (Context, Runner interface, RunnerRegistry,
-event model, fail-fast semantics) is untouched.
+`question` and its `expect.equals` comparator are unchanged; both additions
+are purely additive on top of Core's existing model.
+
+## Screenplay Elements & Configuration
+
+Concretely, in this sub-project:
+
+| Element | What it is here | Where its data lives |
+|---|---|---|
+| **Actor** | One per test definition — `{ name, abilities }` (unchanged from Core). | The `actor` field of `TestDefinition`. |
+| **Ability** | A bare label in `actor.abilities` (e.g. `"rest"`). Carries no configuration and is not cross-checked against the `runner` field steps use — the dispatcher resolves `step.runner` directly against the `RunnerRegistry` and never reads `actor.abilities`. It documents intent only. | The `actor.abilities` array — no other storage. |
+| **Task** | A named group of steps (e.g. `"Login"`, `"Create Payment"`). | `TestDefinition.tasks[]`. |
+| **Interaction** | `{ runner: "rest", action: "request" }` — sends the HTTP call, no return value observed by the DSL. | Defined inline in `TaskDefinition.steps[]`. |
+| **Question** | `{ runner: "rest", action: "status" \| "header" \| "jsonPath", expect: { equals } }` — asserts, optionally remembers on pass. | Defined inline in `TaskDefinition.steps[]`. |
+| **Extract** *(new, sibling of Question)* | Same actions as Question, no `expect` — always remembers, never asserts. | Defined inline in `TaskDefinition.steps[]`. |
+
+Two distinct kinds of "configuration," stored two different ways:
+
+- **Values known before the run starts** (base URL, seed credentials, any
+  environment-specific value) — `TestDefinition.variables`, seeded into
+  `RunContext` at run start via the new engine change above.
+- **Values produced during the run** (`accessToken` from Login,
+  `paymentId` from Create Payment) — written into the same `RunContext`
+  Variables map via `remember` (Question) or `extract`, as each step
+  executes.
+
+Both live in the exact same `RunContext` Map — `variables` just seeds it
+earlier, before step 1, instead of during execution. Any step's `with` (or a
+Question's `expect`) can reference either kind identically via `${name}`;
+nothing downstream can tell which of the two populated a given name.
 
 ## REST Runner: Action Vocabulary
 
@@ -130,18 +186,21 @@ New package `packages/runner-api`, registered under the name `rest`.
 
 Anyone can bypass this and set `Authorization` directly via `headers` instead.
 
-**No changes to `Actor.abilities`.** It stays `string[]` (e.g. `["rest"]`) —
-base URL, tokens, and other config are ordinary variables referenced via
-`${var}` in each `request` step's `with`, resolved by Core's existing
-`RunContext.resolve`. This keeps the shared engine/schema untouched for
-Actor/Ability and matches the PRD's own REST GUI example, which interpolates
-`{{baseUrl}}` directly into the request.
+(See "Screenplay Elements & Configuration" above for how `Actor`/`Ability`
+and config values map onto this Runner.)
 
 ### Example: end-to-end flow
 
 ```json
 {
   "actor": { "name": "Authenticated Customer", "abilities": ["rest"] },
+  "variables": {
+    "baseUrl": "https://api.example.com",
+    "user": "alice",
+    "pass": "hunter2",
+    "orderId": "order-123",
+    "amount": 49.99
+  },
   "tasks": [
     {
       "name": "Login",
