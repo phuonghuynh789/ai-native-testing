@@ -1339,7 +1339,9 @@ describe('RequestBuilder', () => {
     const onBodyChange = vi.fn();
     render(<RequestBuilder {...baseProps({ onBodyChange })} />);
     await userEvent.click(screen.getByRole('button', { name: 'Body' }));
-    await userEvent.type(screen.getByLabelText('Body (JSON)'), '{');
+    // '{{}' is user-event's escape for a literal '{' — a bare '{' starts a
+    // special-key sequence like '{enter}' in its typing DSL.
+    await userEvent.type(screen.getByLabelText('Body (JSON)'), '{{}');
     expect(onBodyChange).toHaveBeenCalledWith('{');
   });
 
