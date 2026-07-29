@@ -14,18 +14,34 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'logs', label: 'Logs' },
 ];
 
+function logLineClassName(line: string): string {
+  if (line.includes('→ passed')) {
+    return 'log-line log-line--passed';
+  }
+  if (line.includes('→ failed')) {
+    return 'log-line log-line--failed';
+  }
+  return 'log-line log-line--muted';
+}
+
 export function ResultsPanel({ results }: ResultsPanelProps) {
   const [tab, setTab] = useState<Tab>('response');
 
   if (!results) {
-    return <p>No run yet.</p>;
+    return <p className="body-strong">No run yet.</p>;
   }
 
   return (
-    <section>
-      <nav>
+    <section className="card">
+      <nav className="tab-bar">
         {TABS.map(({ id, label }) => (
-          <button key={id} type="button" aria-current={tab === id} onClick={() => setTab(id)}>
+          <button
+            key={id}
+            type="button"
+            className="tab"
+            aria-current={tab === id}
+            onClick={() => setTab(id)}
+          >
             {label}
           </button>
         ))}
@@ -34,21 +50,25 @@ export function ResultsPanel({ results }: ResultsPanelProps) {
         <div>
           {results.response ? (
             <>
-              <p>Status: {results.response.status}</p>
-              <pre>{JSON.stringify(results.response.headers, null, 2)}</pre>
-              <pre>{JSON.stringify(results.response.body, null, 2)}</pre>
+              <p className="body-strong">Status: {results.response.status}</p>
+              <pre className="code-block">{JSON.stringify(results.response.headers, null, 2)}</pre>
+              <pre className="code-block">{JSON.stringify(results.response.body, null, 2)}</pre>
             </>
           ) : (
-            <p>No response yet.</p>
+            <p className="body-strong">No response yet.</p>
           )}
         </div>
       )}
-      {tab === 'savedValues' && <pre>{JSON.stringify(results.savedValues, null, 2)}</pre>}
-      {tab === 'context' && <pre>{JSON.stringify(results.context, null, 2)}</pre>}
+      {tab === 'savedValues' && (
+        <pre className="code-block">{JSON.stringify(results.savedValues, null, 2)}</pre>
+      )}
+      {tab === 'context' && <pre className="code-block">{JSON.stringify(results.context, null, 2)}</pre>}
       {tab === 'logs' && (
-        <ul>
+        <ul className="log-list">
           {results.logs.map((line, index) => (
-            <li key={index}>{line}</li>
+            <li key={index} className={logLineClassName(line)}>
+              {line}
+            </li>
           ))}
         </ul>
       )}
