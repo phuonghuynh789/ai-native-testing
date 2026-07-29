@@ -20,10 +20,10 @@ export function ExtractEditor({ rows, onChange }: ExtractEditorProps) {
   }
 
   return (
-    <fieldset>
-      <legend>Extract</legend>
+    <fieldset className="card">
+      <legend className="heading-sm">Extract</legend>
       {rows.map((row) => (
-        <div key={row.id}>
+        <div key={row.id} className="row">
           <SourceKindSelector
             ariaLabel="Extract source"
             value={row.source}
@@ -31,22 +31,29 @@ export function ExtractEditor({ rows, onChange }: ExtractEditorProps) {
           />
           {row.source !== 'status' && (
             <input
+              className="text-input"
               aria-label="Extract path"
               value={row.path}
               onChange={(e) => updateRow(row.id, { path: e.target.value })}
             />
           )}
           <input
+            className="text-input"
             aria-label="Remember as"
             value={row.rememberAs}
             onChange={(e) => updateRow(row.id, { rememberAs: e.target.value })}
           />
-          <button type="button" aria-label="Remove extract row" onClick={() => removeRow(row.id)}>
+          <button
+            type="button"
+            className="btn-secondary"
+            aria-label="Remove extract row"
+            onClick={() => removeRow(row.id)}
+          >
             Remove
           </button>
         </div>
       ))}
-      <button type="button" onClick={addRow}>
+      <button type="button" className="btn-secondary" onClick={addRow}>
         Add extract row
       </button>
     </fieldset>

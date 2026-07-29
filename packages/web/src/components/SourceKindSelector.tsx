@@ -10,7 +10,12 @@ interface SourceKindSelectorProps {
 
 export function SourceKindSelector({ value, onChange, ariaLabel }: SourceKindSelectorProps) {
   return (
-    <select aria-label={ariaLabel} value={value} onChange={(e) => onChange(e.target.value as SourceKind)}>
+    <select
+      className="text-input"
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(e) => onChange(e.target.value as SourceKind)}
+    >
       {SOURCE_KINDS.map((kind) => (
         <option key={kind} value={kind}>
           {kind}

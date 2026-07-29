@@ -20,10 +20,10 @@ export function QuestionsEditor({ rows, onChange }: QuestionsEditorProps) {
   }
 
   return (
-    <fieldset>
-      <legend>Questions</legend>
+    <fieldset className="card">
+      <legend className="heading-sm">Questions</legend>
       {rows.map((row) => (
-        <div key={row.id}>
+        <div key={row.id} className="row">
           <SourceKindSelector
             ariaLabel="Question source"
             value={row.source}
@@ -31,22 +31,29 @@ export function QuestionsEditor({ rows, onChange }: QuestionsEditorProps) {
           />
           {row.source !== 'status' && (
             <input
+              className="text-input"
               aria-label="Question path"
               value={row.path}
               onChange={(e) => updateRow(row.id, { path: e.target.value })}
             />
           )}
           <input
+            className="text-input"
             aria-label="Expected value"
             value={row.expected}
             onChange={(e) => updateRow(row.id, { expected: e.target.value })}
           />
-          <button type="button" aria-label="Remove question row" onClick={() => removeRow(row.id)}>
+          <button
+            type="button"
+            className="btn-secondary"
+            aria-label="Remove question row"
+            onClick={() => removeRow(row.id)}
+          >
             Remove
           </button>
         </div>
       ))}
-      <button type="button" onClick={addRow}>
+      <button type="button" className="btn-secondary" onClick={addRow}>
         Add question row
       </button>
     </fieldset>
