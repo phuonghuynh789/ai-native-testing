@@ -77,9 +77,13 @@ export function App() {
     stepResults.length > 0 ? deriveResults(form.extracts, variablesRecord, stepResults) : null;
 
   return (
-    <main>
-      <h1>API Runner — REST (Simple Mode)</h1>
-      {error && <p role="alert">{error}</p>}
+    <main className="app-main">
+      <h1 className="heading-xl">API Runner — REST (Simple Mode)</h1>
+      {error && (
+        <p role="alert" className="alert">
+          {error}
+        </p>
+      )}
       <ScreenplayHeader
         actorName={form.actorName}
         onActorNameChange={(actorName) => setForm({ ...form, actorName })}

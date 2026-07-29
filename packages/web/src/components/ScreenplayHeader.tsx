@@ -12,14 +12,22 @@ export function ScreenplayHeader({
   onTaskNameChange,
 }: ScreenplayHeaderProps) {
   return (
-    <section>
-      <label>
+    <section className="row">
+      <label className="label">
         Actor
-        <input value={actorName} onChange={(e) => onActorNameChange(e.target.value)} />
+        <input
+          className="text-input"
+          value={actorName}
+          onChange={(e) => onActorNameChange(e.target.value)}
+        />
       </label>
-      <label>
+      <label className="label">
         Task
-        <input value={taskName} onChange={(e) => onTaskNameChange(e.target.value)} />
+        <input
+          className="text-input"
+          value={taskName}
+          onChange={(e) => onTaskNameChange(e.target.value)}
+        />
       </label>
     </section>
   );
