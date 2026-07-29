@@ -1,11 +1,21 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { RunnerRegistry } from '@ai-native-testing/engine';
 import { LogRunner } from '@ai-native-testing/runner-log';
 import { RestRunner } from '@ai-native-testing/runner-api';
 import { JobStore } from './job-store.js';
 import { registerRunRoutes } from './routes/runs.js';
+import { NameListStore } from './name-list-store.js';
+import { registerNameListRoutes } from './routes/name-lists.js';
 
-export function buildApp(): FastifyInstance {
+const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+
+export interface BuildAppOptions {
+  dataDir?: string;
+}
+
+export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   const app = Fastify();
   const registry = new RunnerRegistry();
   registry.register(new LogRunner());
@@ -13,6 +23,11 @@ export function buildApp(): FastifyInstance {
   const jobStore = new JobStore();
 
   registerRunRoutes(app, jobStore, registry);
+
+  const dataDir = options.dataDir ?? DEFAULT_DATA_DIR;
+  const actorStore = new NameListStore(join(dataDir, 'actors.json'));
+  const taskStore = new NameListStore(join(dataDir, 'tasks.json'));
+  registerNameListRoutes(app, actorStore, taskStore);
 
   return app;
 }
