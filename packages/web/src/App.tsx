@@ -111,34 +111,34 @@ export function App() {
       )}
       <ScreenplayHeader
         actorName={form.actorName}
-        onActorNameChange={(actorName) => setForm({ ...form, actorName })}
+        onActorNameChange={(actorName) => setForm((prev) => ({ ...prev, actorName }))}
         taskName={form.taskName}
-        onTaskNameChange={(taskName) => setForm({ ...form, taskName })}
+        onTaskNameChange={(taskName) => setForm((prev) => ({ ...prev, taskName }))}
         actorOptions={actorOptions}
         taskOptions={taskOptions}
       />
       <KeyValueRows
         label="Variables"
         rows={form.variables}
-        onChange={(variables) => setForm({ ...form, variables })}
+        onChange={(variables) => setForm((prev) => ({ ...prev, variables }))}
       />
       <RequestBuilder
         method={form.method}
-        onMethodChange={(method) => setForm({ ...form, method })}
+        onMethodChange={(method) => setForm((prev) => ({ ...prev, method }))}
         url={form.url}
-        onUrlChange={(url) => setForm({ ...form, url })}
+        onUrlChange={(url) => setForm((prev) => ({ ...prev, url }))}
         params={form.params}
-        onParamsChange={(params) => setForm({ ...form, params })}
+        onParamsChange={(params) => setForm((prev) => ({ ...prev, params }))}
         headers={form.headers}
-        onHeadersChange={(headers) => setForm({ ...form, headers })}
+        onHeadersChange={(headers) => setForm((prev) => ({ ...prev, headers }))}
         auth={form.auth}
-        onAuthChange={(auth) => setForm({ ...form, auth })}
+        onAuthChange={(auth) => setForm((prev) => ({ ...prev, auth }))}
         body={form.body}
-        onBodyChange={(body) => setForm({ ...form, body })}
+        onBodyChange={(body) => setForm((prev) => ({ ...prev, body }))}
         extracts={form.extracts}
-        onExtractsChange={(extracts) => setForm({ ...form, extracts })}
+        onExtractsChange={(extracts) => setForm((prev) => ({ ...prev, extracts }))}
         questions={form.questions}
-        onQuestionsChange={(questions) => setForm({ ...form, questions })}
+        onQuestionsChange={(questions) => setForm((prev) => ({ ...prev, questions }))}
       />
       <RunButton
         form={form}
