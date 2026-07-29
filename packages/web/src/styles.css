@@ -285,3 +285,7 @@ body {
   padding: var(--space-md) var(--space-lg);
   margin: 0;
 }
+
+.alert--success {
+  color: var(--color-terminal-green);
+}
