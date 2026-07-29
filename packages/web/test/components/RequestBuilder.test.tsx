@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RequestBuilder, type RequestBuilderProps } from '../../src/components/RequestBuilder';
 import type { AuthConfig } from '../../src/types';
@@ -94,5 +94,28 @@ describe('RequestBuilder', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Questions' }));
     expect(screen.getByLabelText('Expected value')).toHaveValue('200');
+  });
+
+  it('switches to the Paste cURL tab and applies a successful import', async () => {
+    const onMethodChange = vi.fn();
+    const onUrlChange = vi.fn();
+    const onHeadersChange = vi.fn();
+    const onBodyChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({ onMethodChange, onUrlChange, onHeadersChange, onBodyChange })}
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Paste cURL' }));
+    fireEvent.change(screen.getByLabelText('cURL command'), {
+      target: { value: `curl -X POST https://api.example.com/x -H 'X-Trace: abc' -d '{"a":1}'` },
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Import' }));
+    expect(onMethodChange).toHaveBeenCalledWith('POST');
+    expect(onUrlChange).toHaveBeenCalledWith('https://api.example.com/x');
+    expect(onHeadersChange).toHaveBeenCalledWith([
+      { id: expect.any(String), key: 'X-Trace', value: 'abc' },
+    ]);
+    expect(onBodyChange).toHaveBeenCalledWith('{"a":1}');
   });
 });

@@ -3,6 +3,7 @@ import type { AuthConfig, ExtractRow, KeyValueRow, QuestionRow } from '../types'
 import { KeyValueRows } from './KeyValueRows';
 import { ExtractEditor } from './ExtractEditor';
 import { QuestionsEditor } from './QuestionsEditor';
+import { CurlImport } from './CurlImport';
 
 export interface RequestBuilderProps {
   method: string;
@@ -26,13 +27,14 @@ export interface RequestBuilderProps {
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 const AUTH_TYPES = ['none', 'bearer', 'apiKey', 'basic'] as const;
 
-type RequestTab = 'params' | 'headers' | 'auth' | 'body' | 'extract' | 'questions';
+type RequestTab = 'params' | 'headers' | 'auth' | 'body' | 'curl' | 'extract' | 'questions';
 
 const TABS: { id: RequestTab; label: string }[] = [
   { id: 'params', label: 'Params' },
   { id: 'headers', label: 'Headers' },
   { id: 'auth', label: 'Auth' },
   { id: 'body', label: 'Body' },
+  { id: 'curl', label: 'Paste cURL' },
   { id: 'extract', label: 'Extract' },
   { id: 'questions', label: 'Questions' },
 ];
@@ -194,6 +196,16 @@ export function RequestBuilder(props: RequestBuilderProps) {
             onChange={(e) => onBodyChange(e.target.value)}
           />
         </label>
+      )}
+      {tab === 'curl' && (
+        <CurlImport
+          onImport={(r) => {
+            onMethodChange(r.method);
+            onUrlChange(r.url);
+            onHeadersChange(r.headers);
+            onBodyChange(r.body);
+          }}
+        />
       )}
       {tab === 'extract' && <ExtractEditor rows={extracts} onChange={onExtractsChange} />}
       {tab === 'questions' && <QuestionsEditor rows={questions} onChange={onQuestionsChange} />}
