@@ -19,10 +19,20 @@ class MockEventSource {
   }
 }
 
+function stubNameListFetch(runsResponse: unknown = { ok: false, json: () => Promise.resolve({}) }) {
+  return vi.fn((url: string) => {
+    if (url === '/actors' || url === '/tasks') {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    }
+    return Promise.resolve(runsResponse);
+  });
+}
+
 describe('App', () => {
   beforeEach(() => {
     MockEventSource.instances = [];
     vi.stubGlobal('EventSource', MockEventSource);
+    vi.stubGlobal('fetch', stubNameListFetch());
   });
 
   afterEach(() => {
@@ -43,8 +53,10 @@ describe('App', () => {
   });
 
   it('runs a full flow: fills the form, submits, and shows the response from a live event', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
-    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal(
+      'fetch',
+      stubNameListFetch({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) })
+    );
 
     render(<App />);
 
@@ -74,5 +86,21 @@ describe('App', () => {
     source.emit({ type: 'run:completed' });
 
     expect(await screen.findByText('Status: 201')).toBeInTheDocument();
+  });
+
+  it('saves a new Actor/Task name via POST when Run is clicked', async () => {
+    const fetchMock = stubNameListFetch({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    await userEvent.type(screen.getByLabelText('Actor'), 'Authenticated Customer');
+    await userEvent.type(screen.getByLabelText('Task'), 'Create Payment');
+    await userEvent.type(screen.getByLabelText('URL'), 'https://api.example.com/v1/payments');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/actors', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenCalledWith('/tasks', expect.objectContaining({ method: 'POST' }));
   });
 });

@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/runs': 'http://localhost:3000',
+      '/actors': 'http://localhost:3000',
+      '/tasks': 'http://localhost:3000',
     },
   },
   test: {

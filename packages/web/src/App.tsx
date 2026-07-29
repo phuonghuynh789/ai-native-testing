@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RunEvent, StepResult } from '@ai-native-testing/engine';
 import type { FormState } from './types';
 import { deriveResults, type DerivedResults } from './results';
+import { fetchNames, saveName } from './nameLists';
 import { ScreenplayHeader } from './components/ScreenplayHeader';
 import { KeyValueRows } from './components/KeyValueRows';
 import { RequestBuilder } from './components/RequestBuilder';
@@ -58,6 +59,13 @@ export function App() {
   const [form, setForm] = useState<FormState>(initialForm());
   const [stepResults, setStepResults] = useState<(StepResult | undefined)[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [actorOptions, setActorOptions] = useState<string[]>([]);
+  const [taskOptions, setTaskOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchNames('/actors').then(setActorOptions);
+    fetchNames('/tasks').then(setTaskOptions);
+  }, []);
 
   function handleEvent(event: RunEvent) {
     if (event.type === 'step:completed' || event.type === 'step:failed') {
@@ -66,6 +74,23 @@ export function App() {
         next[event.index] = event.result;
         return next;
       });
+    }
+  }
+
+  function handleRunStart() {
+    setError(null);
+    setStepResults([]);
+
+    const actorName = form.actorName.trim();
+    if (actorName !== '' && !actorOptions.includes(actorName)) {
+      saveName('/actors', actorName);
+      setActorOptions((prev) => [...prev, actorName]);
+    }
+
+    const taskName = form.taskName.trim();
+    if (taskName !== '' && !taskOptions.includes(taskName)) {
+      saveName('/tasks', taskName);
+      setTaskOptions((prev) => [...prev, taskName]);
     }
   }
 
@@ -89,6 +114,8 @@ export function App() {
         onActorNameChange={(actorName) => setForm({ ...form, actorName })}
         taskName={form.taskName}
         onTaskNameChange={(taskName) => setForm({ ...form, taskName })}
+        actorOptions={actorOptions}
+        taskOptions={taskOptions}
       />
       <KeyValueRows
         label="Variables"
@@ -116,10 +143,7 @@ export function App() {
       <RunButton
         form={form}
         disabled={!isFormValid(form)}
-        onRunStart={() => {
-          setError(null);
-          setStepResults([]);
-        }}
+        onRunStart={handleRunStart}
         onEvent={handleEvent}
         onError={setError}
       />
