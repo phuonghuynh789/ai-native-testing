@@ -73,26 +73,38 @@ export function RequestBuilder(props: RequestBuilderProps) {
   const [tab, setTab] = useState<RequestTab>('params');
 
   return (
-    <section>
-      <h2>Request</h2>
-      <label>
-        Method
-        <select value={method} onChange={(e) => onMethodChange(e.target.value)}>
-          {METHODS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        URL
-        <input value={url} onChange={(e) => onUrlChange(e.target.value)} />
-      </label>
+    <section className="card">
+      <h2 className="heading-md">Request</h2>
+      <div className="row">
+        <label className="label">
+          Method
+          <select
+            className="text-input"
+            value={method}
+            onChange={(e) => onMethodChange(e.target.value)}
+          >
+            {METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="label">
+          URL
+          <input className="text-input" value={url} onChange={(e) => onUrlChange(e.target.value)} />
+        </label>
+      </div>
 
-      <nav>
+      <nav className="tab-bar">
         {TABS.map(({ id, label }) => (
-          <button key={id} type="button" aria-current={tab === id} onClick={() => setTab(id)}>
+          <button
+            key={id}
+            type="button"
+            className="tab"
+            aria-current={tab === id}
+            onClick={() => setTab(id)}
+          >
             {label}
           </button>
         ))}
@@ -101,11 +113,12 @@ export function RequestBuilder(props: RequestBuilderProps) {
       {tab === 'params' && <KeyValueRows label="Params" rows={params} onChange={onParamsChange} />}
       {tab === 'headers' && <KeyValueRows label="Headers" rows={headers} onChange={onHeadersChange} />}
       {tab === 'auth' && (
-        <fieldset>
-          <legend>Auth</legend>
-          <label>
+        <fieldset className="card">
+          <legend className="heading-sm">Auth</legend>
+          <label className="label">
             Type
             <select
+              className="text-input"
               value={auth.type}
               onChange={(e) => onAuthChange(blankAuth(e.target.value as (typeof AUTH_TYPES)[number]))}
             >
@@ -117,9 +130,10 @@ export function RequestBuilder(props: RequestBuilderProps) {
             </select>
           </label>
           {auth.type === 'bearer' && (
-            <label>
+            <label className="label">
               Token
               <input
+                className="text-input"
                 value={auth.token}
                 onChange={(e) => onAuthChange({ type: 'bearer', token: e.target.value })}
               />
@@ -127,16 +141,18 @@ export function RequestBuilder(props: RequestBuilderProps) {
           )}
           {auth.type === 'apiKey' && (
             <>
-              <label>
+              <label className="label">
                 Header
                 <input
+                  className="text-input"
                   value={auth.header}
                   onChange={(e) => onAuthChange({ type: 'apiKey', header: e.target.value, value: auth.value })}
                 />
               </label>
-              <label>
+              <label className="label">
                 Value
                 <input
+                  className="text-input"
                   value={auth.value}
                   onChange={(e) => onAuthChange({ type: 'apiKey', header: auth.header, value: e.target.value })}
                 />
@@ -145,18 +161,20 @@ export function RequestBuilder(props: RequestBuilderProps) {
           )}
           {auth.type === 'basic' && (
             <>
-              <label>
+              <label className="label">
                 Username
                 <input
+                  className="text-input"
                   value={auth.username}
                   onChange={(e) =>
                     onAuthChange({ type: 'basic', username: e.target.value, password: auth.password })
                   }
                 />
               </label>
-              <label>
+              <label className="label">
                 Password
                 <input
+                  className="text-input"
                   value={auth.password}
                   onChange={(e) =>
                     onAuthChange({ type: 'basic', username: auth.username, password: e.target.value })
@@ -168,9 +186,13 @@ export function RequestBuilder(props: RequestBuilderProps) {
         </fieldset>
       )}
       {tab === 'body' && (
-        <label>
+        <label className="label">
           Body (JSON)
-          <textarea value={body} onChange={(e) => onBodyChange(e.target.value)} />
+          <textarea
+            className="code-input"
+            value={body}
+            onChange={(e) => onBodyChange(e.target.value)}
+          />
         </label>
       )}
       {tab === 'extract' && <ExtractEditor rows={extracts} onChange={onExtractsChange} />}
