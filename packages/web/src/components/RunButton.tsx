@@ -56,7 +56,7 @@ export function RunButton({ form, disabled, onRunStart, onEvent, onError }: RunB
   }
 
   return (
-    <button type="button" onClick={handleClick} disabled={disabled}>
+    <button type="button" className="btn-primary" onClick={handleClick} disabled={disabled}>
       Run
     </button>
   );
