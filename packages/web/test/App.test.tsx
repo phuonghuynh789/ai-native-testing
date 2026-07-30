@@ -21,7 +21,7 @@ class MockEventSource {
 
 function stubNameListFetch(runsResponse: unknown = { ok: false, json: () => Promise.resolve({}) }) {
   return vi.fn((url: string) => {
-    if (url === '/actors' || url === '/tasks') {
+    if (url === '/actors' || url === '/tasks' || url === '/steps') {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     }
     return Promise.resolve(runsResponse);
@@ -102,5 +102,49 @@ describe('App', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('/actors', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenCalledWith('/tasks', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('saves a step and can load it back into the form', async () => {
+    const savedSteps: Record<string, unknown> = {};
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/actors' || url === '/tasks') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (url === '/steps' && !init) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(Object.keys(savedSteps)) });
+      }
+      if (url === '/steps' && init?.method === 'POST') {
+        const { name, content } = JSON.parse(init.body as string);
+        savedSteps[name] = content;
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ names: Object.keys(savedSteps) }),
+        });
+      }
+      if (url.startsWith('/steps/')) {
+        const name = decodeURIComponent(url.replace('/steps/', ''));
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(savedSteps[name]) });
+      }
+      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(window, 'prompt').mockReturnValue('Create Payment');
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    render(<App />);
+
+    await userEvent.type(screen.getByLabelText('Task'), 'Create Payment');
+    await userEvent.type(screen.getByLabelText('URL'), 'https://api.example.com/v1/payments');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save as Reusable Step' }));
+    expect(window.alert).toHaveBeenCalledWith('Saved "Create Payment".');
+
+    await userEvent.clear(screen.getByLabelText('Task'));
+    expect(screen.getByLabelText('Task')).toHaveValue('');
+
+    await userEvent.selectOptions(screen.getByLabelText('Load Reusable Step'), 'Create Payment');
+
+    await vi.waitFor(() => expect(screen.getByLabelText('Task')).toHaveValue('Create Payment'));
+    expect(screen.getByLabelText('URL')).toHaveValue('https://api.example.com/v1/payments');
   });
 });

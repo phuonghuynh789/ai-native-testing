@@ -3,11 +3,14 @@ import type { RunEvent, StepResult } from '@ai-native-testing/engine';
 import type { FormState } from './types';
 import { deriveResults, type DerivedResults } from './results';
 import { fetchNames, saveName } from './nameLists';
+import { fetchStepNames } from './steps';
 import { ScreenplayHeader } from './components/ScreenplayHeader';
 import { KeyValueRows } from './components/KeyValueRows';
 import { RequestBuilder } from './components/RequestBuilder';
 import { RunButton } from './components/RunButton';
 import { ResultsPanel } from './components/ResultsPanel';
+import { SaveStepButton } from './components/SaveStepButton';
+import { LoadStepSelect } from './components/LoadStepSelect';
 
 function initialForm(): FormState {
   return {
@@ -61,10 +64,12 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [actorOptions, setActorOptions] = useState<string[]>([]);
   const [taskOptions, setTaskOptions] = useState<string[]>([]);
+  const [stepNames, setStepNames] = useState<string[]>([]);
 
   useEffect(() => {
     fetchNames('/actors').then(setActorOptions);
     fetchNames('/tasks').then(setTaskOptions);
+    fetchStepNames().then(setStepNames);
   }, []);
 
   function handleEvent(event: RunEvent) {
@@ -117,6 +122,7 @@ export function App() {
         actorOptions={actorOptions}
         taskOptions={taskOptions}
       />
+      <LoadStepSelect stepNames={stepNames} onLoad={setForm} />
       <KeyValueRows
         label="Variables"
         rows={form.variables}
@@ -146,6 +152,12 @@ export function App() {
         onRunStart={handleRunStart}
         onEvent={handleEvent}
         onError={setError}
+      />
+      <SaveStepButton
+        form={form}
+        disabled={!isFormValid(form)}
+        existingNames={stepNames}
+        onSaved={setStepNames}
       />
       <ResultsPanel results={results} />
     </main>
