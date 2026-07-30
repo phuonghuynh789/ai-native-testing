@@ -9,6 +9,7 @@ export default defineConfig({
       '/runs': 'http://localhost:3000',
       '/actors': 'http://localhost:3000',
       '/tasks': 'http://localhost:3000',
+      '/steps': 'http://localhost:3000',
     },
   },
   test: {
