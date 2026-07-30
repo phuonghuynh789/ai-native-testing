@@ -5,7 +5,7 @@ export type CurlParseResult =
   | { ok: false; error: string };
 
 const SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-const IGNORED_VALUE_FLAGS = new Set(['-F', '--form', '-b', '--cookie', '-A', '--user-agent']);
+const IGNORED_VALUE_FLAGS = new Set(['-F', '--form', '-A', '--user-agent']);
 
 function joinContinuations(input: string): string {
   return input.replace(/\\[ \t]*\r?\n[ \t]*/g, ' ');
@@ -149,6 +149,10 @@ export function parseCurl(input: string): CurlParseResult {
       case '-u':
       case '--user':
         userPass = takeValue();
+        break;
+      case '-b':
+      case '--cookie':
+        headers.push({ id: crypto.randomUUID(), key: 'Cookie', value: takeValue() });
         break;
       case '--url':
         url = takeValue();

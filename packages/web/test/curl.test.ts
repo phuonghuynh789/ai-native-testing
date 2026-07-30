@@ -50,6 +50,15 @@ describe('parseCurl', () => {
     ]);
   });
 
+  it('converts -b/--cookie into a Cookie header instead of dropping it', () => {
+    const result = parseCurl(`curl https://api.example.com/x -b 'session=abc123; other=xyz'`);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.headers.map((h) => ({ key: h.key, value: h.value }))).toEqual([
+      { key: 'Cookie', value: 'session=abc123; other=xyz' },
+    ]);
+  });
+
   it('joins backslash-newline continuations from a multi-line paste', () => {
     const result = parseCurl(
       `curl 'https://api.example.com/x' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"a":1}'`
