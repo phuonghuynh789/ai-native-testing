@@ -48,7 +48,7 @@ function parseExpected(raw: string): unknown {
   }
 }
 
-export function buildTestDefinition(form: FormState): TestDefinition {
+export function buildTaskSteps(form: FormState): Step[] {
   const requestWith: Record<string, unknown> = {
     method: form.method,
     url: form.url,
@@ -69,7 +69,7 @@ export function buildTestDefinition(form: FormState): TestDefinition {
     requestWith.body = JSON.parse(form.body);
   }
 
-  const steps: Step[] = [
+  return [
     { type: 'interaction', runner: 'rest', action: 'request', with: requestWith },
     { type: 'extract', runner: 'rest', action: 'raw', remember: HIDDEN_RESPONSE_VARIABLE },
     ...form.extracts.map((row): Step => {
@@ -87,12 +87,27 @@ export function buildTestDefinition(form: FormState): TestDefinition {
       };
     }),
   ];
+}
 
+export function buildTestDefinition(form: FormState): TestDefinition {
   const variables = rowsToRecord(form.variables);
 
   return {
     actor: { name: form.actorName, abilities: ['rest'] },
     variables: Object.keys(variables).length > 0 ? variables : undefined,
-    tasks: [{ name: form.taskName, steps }],
+    tasks: [{ name: form.taskName, steps: buildTaskSteps(form) }],
+  };
+}
+
+export function buildFlowDefinition(forms: FormState[]): TestDefinition {
+  const mergedVariables: Record<string, string> = {};
+  for (const form of forms) {
+    Object.assign(mergedVariables, rowsToRecord(form.variables));
+  }
+
+  return {
+    actor: { name: forms[0].actorName, abilities: ['rest'] },
+    variables: Object.keys(mergedVariables).length > 0 ? mergedVariables : undefined,
+    tasks: forms.map((form) => ({ name: form.taskName, steps: buildTaskSteps(form) })),
   };
 }

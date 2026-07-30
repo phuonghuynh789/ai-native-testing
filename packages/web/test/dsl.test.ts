@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTestDefinition, HIDDEN_RESPONSE_VARIABLE } from '../src/dsl';
+import { buildTestDefinition, buildFlowDefinition, HIDDEN_RESPONSE_VARIABLE } from '../src/dsl';
 import type { FormState } from '../src/types';
 
 function emptyForm(overrides: Partial<FormState> = {}): FormState {
@@ -123,5 +123,57 @@ describe('buildTestDefinition', () => {
     );
     const step = definition.tasks[0].steps[2] as { expect: { equals: unknown } };
     expect(step.expect.equals).toBe('SUCCESS');
+  });
+});
+
+describe('buildFlowDefinition', () => {
+  it('uses the first form as the actor and builds one task per form in order', () => {
+    const definition = buildFlowDefinition([
+      emptyForm({ actorName: 'Authenticated Customer', taskName: 'Check Balance' }),
+      emptyForm({ actorName: 'Someone Else', taskName: 'Transfer Money' }),
+    ]);
+    expect(definition.actor).toEqual({ name: 'Authenticated Customer', abilities: ['rest'] });
+    expect(definition.tasks.map((t) => t.name)).toEqual(['Check Balance', 'Transfer Money']);
+  });
+
+  it('merges variables from all forms, later forms overriding earlier ones on key conflict', () => {
+    const definition = buildFlowDefinition([
+      emptyForm({ variables: [{ id: '1', key: 'baseUrl', value: 'https://a.example.com' }] }),
+      emptyForm({
+        variables: [
+          { id: '2', key: 'baseUrl', value: 'https://b.example.com' },
+          { id: '3', key: 'orderId', value: 'order-1' },
+        ],
+      }),
+    ]);
+    expect(definition.variables).toEqual({ baseUrl: 'https://b.example.com', orderId: 'order-1' });
+  });
+
+  it('omits variables entirely when no form has any', () => {
+    const definition = buildFlowDefinition([emptyForm(), emptyForm()]);
+    expect(definition.variables).toBeUndefined();
+  });
+
+  it('builds the same per-task step shape as buildTestDefinition for each form', () => {
+    const definition = buildFlowDefinition([
+      emptyForm({
+        taskName: 'Check Balance',
+        extracts: [{ id: '1', source: 'jsonPath', path: '$.data.balance', rememberAs: 'balance' }],
+      }),
+    ]);
+    expect(definition.tasks[0].steps[0].type).toBe('interaction');
+    expect(definition.tasks[0].steps[1]).toEqual({
+      type: 'extract',
+      runner: 'rest',
+      action: 'raw',
+      remember: HIDDEN_RESPONSE_VARIABLE,
+    });
+    expect(definition.tasks[0].steps[2]).toEqual({
+      type: 'extract',
+      runner: 'rest',
+      action: 'jsonPath',
+      with: { path: '$.data.balance' },
+      remember: 'balance',
+    });
   });
 });

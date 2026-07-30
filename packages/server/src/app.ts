@@ -10,6 +10,8 @@ import { NameListStore } from './name-list-store.js';
 import { registerNameListRoutes } from './routes/name-lists.js';
 import { StepStore } from './step-store.js';
 import { registerStepRoutes } from './routes/steps.js';
+import { FlowStore } from './flow-store.js';
+import { registerFlowRoutes } from './routes/flows.js';
 
 const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 
@@ -33,6 +35,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   const stepStore = new StepStore(join(dataDir, 'steps.json'));
   registerStepRoutes(app, stepStore);
+
+  const flowStore = new FlowStore(join(dataDir, 'flows.json'));
+  registerFlowRoutes(app, flowStore);
 
   return app;
 }
