@@ -8,6 +8,8 @@ import { JobStore } from './job-store.js';
 import { registerRunRoutes } from './routes/runs.js';
 import { NameListStore } from './name-list-store.js';
 import { registerNameListRoutes } from './routes/name-lists.js';
+import { StepStore } from './step-store.js';
+import { registerStepRoutes } from './routes/steps.js';
 
 const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 
@@ -28,6 +30,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   const actorStore = new NameListStore(join(dataDir, 'actors.json'));
   const taskStore = new NameListStore(join(dataDir, 'tasks.json'));
   registerNameListRoutes(app, actorStore, taskStore);
+
+  const stepStore = new StepStore(join(dataDir, 'steps.json'));
+  registerStepRoutes(app, stepStore);
 
   return app;
 }
