@@ -4,6 +4,7 @@ import type { FormState } from './types';
 import { deriveResults, type DerivedResults } from './results';
 import { fetchNames, saveName } from './nameLists';
 import { fetchStepNames } from './steps';
+import { fetchFlowNames } from './flows';
 import { ScreenplayHeader } from './components/ScreenplayHeader';
 import { KeyValueRows } from './components/KeyValueRows';
 import { RequestBuilder } from './components/RequestBuilder';
@@ -11,6 +12,8 @@ import { RunButton } from './components/RunButton';
 import { ResultsPanel } from './components/ResultsPanel';
 import { SaveStepButton } from './components/SaveStepButton';
 import { LoadStepSelect } from './components/LoadStepSelect';
+import { AddToFlowButton } from './components/AddToFlowButton';
+import { FlowRunner } from './components/FlowRunner';
 
 function initialForm(): FormState {
   return {
@@ -65,11 +68,13 @@ export function App() {
   const [actorOptions, setActorOptions] = useState<string[]>([]);
   const [taskOptions, setTaskOptions] = useState<string[]>([]);
   const [stepNames, setStepNames] = useState<string[]>([]);
+  const [flowNames, setFlowNames] = useState<string[]>([]);
 
   useEffect(() => {
     fetchNames('/actors').then(setActorOptions);
     fetchNames('/tasks').then(setTaskOptions);
     fetchStepNames().then(setStepNames);
+    fetchFlowNames().then(setFlowNames);
   }, []);
 
   function handleEvent(event: RunEvent) {
@@ -159,7 +164,9 @@ export function App() {
         existingNames={stepNames}
         onSaved={setStepNames}
       />
+      <AddToFlowButton stepNames={stepNames} flowNames={flowNames} onAdded={setFlowNames} />
       <ResultsPanel results={results} />
+      <FlowRunner flowNames={flowNames} />
     </main>
   );
 }

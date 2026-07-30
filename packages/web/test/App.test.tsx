@@ -21,7 +21,7 @@ class MockEventSource {
 
 function stubNameListFetch(runsResponse: unknown = { ok: false, json: () => Promise.resolve({}) }) {
   return vi.fn((url: string) => {
-    if (url === '/actors' || url === '/tasks' || url === '/steps') {
+    if (url === '/actors' || url === '/tasks' || url === '/steps' || url === '/flows') {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     }
     return Promise.resolve(runsResponse);
