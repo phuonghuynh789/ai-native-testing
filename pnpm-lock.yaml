@@ -90,6 +90,9 @@ importers:
       '@ai-native-testing/runner-api':
         specifier: workspace:*
         version: link:../runner-api
+      '@ai-native-testing/runner-grpc':
+        specifier: workspace:*
+        version: link:../runner-grpc
       '@ai-native-testing/runner-log':
         specifier: workspace:*
         version: link:../runner-log

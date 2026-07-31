@@ -14,6 +14,7 @@
     "@ai-native-testing/engine": "workspace:*",
     "@ai-native-testing/runner-log": "workspace:*",
     "@ai-native-testing/runner-api": "workspace:*",
+    "@ai-native-testing/runner-grpc": "workspace:*",
     "fastify": "^5.1.0"
   },
   "devDependencies": {
