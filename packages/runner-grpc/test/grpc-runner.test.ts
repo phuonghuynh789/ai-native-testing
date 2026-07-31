@@ -1,4 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import * as grpc from '@grpc/grpc-js';
 import { RunContext } from '@ai-native-testing/engine';
 import { GrpcRunner } from '../src/grpc-runner.js';
 import { startFakePaymentGrpcServer, type FakeGrpcServer } from '../src/testing.js';
@@ -71,4 +72,101 @@ describe('GrpcRunner', () => {
       'GrpcRunner does not support interaction "unknown"'
     );
   });
+
+  it('captures both initial (leading) metadata and trailing metadata as headers', async () => {
+    server = await startFakePaymentGrpcServer();
+    const runner = new GrpcRunner();
+    const ctx = new RunContext();
+
+    await runner.interact(
+      'call',
+      {
+        proto: server.proto,
+        serverAddress: server.address,
+        service: 'PaymentService',
+        method: 'CreatePayment',
+        message: { amount: '100', customerId: 'CUS001' },
+      },
+      ctx
+    );
+
+    // x-request-id is sent as initial/leading metadata via call.sendMetadata()
+    // in the fake server; x-trailer-only is sent only as trailing metadata.
+    // Both must be readable via the "header" question.
+    expect(await runner.ask('header', { name: 'x-request-id' }, ctx)).toBe('req-abc-123');
+    expect(await runner.ask('header', { name: 'x-trailer-only' }, ctx)).toBe('trailer-value');
+  });
+
+  it('closes the gRPC client after a call succeeds', async () => {
+    server = await startFakePaymentGrpcServer();
+    const closeSpy = vi.spyOn(grpc.Client.prototype, 'close');
+    const runner = new GrpcRunner();
+    const ctx = new RunContext();
+
+    await runner.interact(
+      'call',
+      {
+        proto: server.proto,
+        serverAddress: server.address,
+        service: 'PaymentService',
+        method: 'CreatePayment',
+        message: { amount: '100', customerId: 'CUS001' },
+      },
+      ctx
+    );
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+    closeSpy.mockRestore();
+  });
+
+  it('closes the gRPC client even when the interaction fails', async () => {
+    server = await startFakePaymentGrpcServer();
+    const closeSpy = vi.spyOn(grpc.Client.prototype, 'close');
+    const runner = new GrpcRunner();
+    const ctx = new RunContext();
+
+    await expect(
+      runner.interact(
+        'call',
+        {
+          proto: server.proto,
+          serverAddress: server.address,
+          service: 'PaymentService',
+          method: 'NoSuchMethod',
+          message: {},
+        },
+        ctx
+      )
+    ).rejects.toThrow('Method "NoSuchMethod" not found on service "PaymentService"');
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+    closeSpy.mockRestore();
+  });
+
+  it('applies a deadline to unary calls so a hung server eventually fails the call', async () => {
+    // No server started at this address (or one that never responds) — grpc-js
+    // will keep retrying/connecting. Without a deadline this would hang forever;
+    // with one, callUnary rejects once the deadline is exceeded.
+    const runner = new GrpcRunner({ timeoutMs: 200 });
+    const ctx = new RunContext();
+    const fakeServer = await startFakePaymentGrpcServer();
+    server = fakeServer;
+
+    await expect(
+      runner.interact(
+        'call',
+        {
+          proto: fakeServer.proto,
+          // Unroutable address (TEST-NET-1, RFC 5737) so the call never completes.
+          serverAddress: '192.0.2.1:50051',
+          service: 'PaymentService',
+          method: 'CreatePayment',
+          message: { amount: '100', customerId: 'CUS001' },
+        },
+        ctx
+      )
+    ).resolves.toBeUndefined();
+
+    expect(await runner.ask('status', {}, ctx)).not.toBe(0);
+  }, 10_000);
 });

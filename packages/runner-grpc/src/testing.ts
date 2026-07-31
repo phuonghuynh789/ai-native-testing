@@ -61,7 +61,13 @@ export async function startFakePaymentGrpcServer(): Promise<FakeGrpcServer> {
       call: grpc.ServerUnaryCall<{ amount: string; customerId: string }, unknown>,
       callback: grpc.sendUnaryData<{ paymentId: string; status: string }>
     ) => {
-      callback(null, { paymentId: 'pay-123', status: 'CREATED' });
+      const initialMetadata = new grpc.Metadata();
+      initialMetadata.set('x-request-id', 'req-abc-123');
+      call.sendMetadata(initialMetadata);
+
+      const trailer = new grpc.Metadata();
+      trailer.set('x-trailer-only', 'trailer-value');
+      callback(null, { paymentId: 'pay-123', status: 'CREATED' }, trailer);
     },
     GetPayment: (
       call: grpc.ServerUnaryCall<{ paymentId: string }, unknown>,

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -14,6 +15,25 @@ function blankGrpc(): GrpcFormState {
     requestMessage: '',
     metadata: [],
   };
+}
+
+// RequestBuilder is a controlled component: it derives Service/Method
+// suggestions from `grpc.protoContent` via an effect, so it only re-derives
+// them when that prop actually changes. This wrapper mirrors how App.tsx
+// wires onGrpcChange back into state, which the plain `vi.fn()` in baseProps
+// does not do on its own.
+function ControlledGrpc(props: RequestBuilderProps) {
+  const [grpc, setGrpc] = useState(props.grpc);
+  return (
+    <RequestBuilder
+      {...props}
+      grpc={grpc}
+      onGrpcChange={(next) => {
+        setGrpc(next);
+        props.onGrpcChange(next);
+      }}
+    />
+  );
 }
 
 function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilderProps {
@@ -176,7 +196,7 @@ describe('RequestBuilder', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const onGrpcChange = vi.fn();
-    render(<RequestBuilder {...baseProps({ protocol: 'grpc', onGrpcChange })} />);
+    render(<ControlledGrpc {...baseProps({ protocol: 'grpc', onGrpcChange })} />);
     await userEvent.click(screen.getByRole('button', { name: 'Proto' }));
     const file = new File(['syntax = "proto3";'], 'payment.proto', { type: 'text/plain' });
     await userEvent.upload(screen.getByLabelText('Proto File'), file);
@@ -209,7 +229,7 @@ describe('RequestBuilder', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(
-      <RequestBuilder
+      <ControlledGrpc
         {...baseProps({ protocol: 'grpc', grpc: { ...blankGrpc(), service: 'PaymentService' } })}
       />
     );
@@ -240,5 +260,52 @@ describe('RequestBuilder', () => {
         method: 'CreatePayment',
       })
     );
+  });
+
+  it('re-populates the Service datalist when protoContent arrives via props (e.g. loading a saved step), not just via upload', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({ services: [{ service: 'PaymentService', methods: ['CreatePayment', 'GetPayment'] }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { rerender } = render(<RequestBuilder {...baseProps({ protocol: 'grpc' })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Service' }));
+    expect(document.querySelectorAll('#grpc-service-options option')).toHaveLength(0);
+
+    // Simulate LoadStepSelect restoring a previously-saved gRPC step: protoContent
+    // changes via a prop update, never through the file-upload handler.
+    rerender(
+      <RequestBuilder
+        {...baseProps({
+          protocol: 'grpc',
+          grpc: { ...blankGrpc(), protoContent: 'syntax = "proto3";', protoFilename: 'payment.proto' },
+        })}
+      />
+    );
+
+    await vi.waitFor(() => {
+      const options = document.querySelectorAll('#grpc-service-options option');
+      expect(Array.from(options).map((o) => o.getAttribute('value'))).toEqual(['PaymentService']);
+    });
+
+    // Switching to a different saved step (protoContent changes to something
+    // else that fails to introspect) must clear the stale suggestions rather
+    // than leaving PaymentService's options showing.
+    fetchMock.mockResolvedValueOnce({ ok: false });
+    rerender(
+      <RequestBuilder
+        {...baseProps({
+          protocol: 'grpc',
+          grpc: { ...blankGrpc(), protoContent: 'not a valid proto', protoFilename: 'other.proto' },
+        })}
+      />
+    );
+
+    await vi.waitFor(() => {
+      const options = document.querySelectorAll('#grpc-service-options option');
+      expect(options).toHaveLength(0);
+    });
   });
 });

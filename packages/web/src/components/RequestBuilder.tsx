@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AuthConfig, ExtractRow, GrpcFormState, KeyValueRow, Protocol, QuestionRow } from '../types';
 import { KeyValueRows } from './KeyValueRows';
 import { ExtractEditor } from './ExtractEditor';
@@ -116,17 +116,38 @@ export function RequestBuilder(props: RequestBuilderProps) {
   const [services, setServices] = useState<ServiceDefinition[]>([]);
   const [protoError, setProtoError] = useState<string | null>(null);
 
+  // Re-introspects whenever protoContent changes for any reason: a fresh
+  // upload, loading a previously-saved step (LoadStepSelect), or switching
+  // between two saved gRPC steps. This keeps the Service/Method datalists in
+  // sync with the proto that's actually loaded, instead of only working
+  // right after an upload.
+  useEffect(() => {
+    let cancelled = false;
+    if (!grpc.protoContent) {
+      setServices([]);
+      setProtoError(null);
+      return;
+    }
+    introspectProto(grpc.protoContent).then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (result) {
+        setServices(result);
+        setProtoError(null);
+      } else {
+        setServices([]);
+        setProtoError('Could not parse this .proto file.');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [grpc.protoContent]);
+
   async function handleProtoFile(file: File) {
     const content = await readFileAsText(file);
     onGrpcChange({ ...grpc, protoContent: content, protoFilename: file.name });
-    const result = await introspectProto(content);
-    if (result) {
-      setServices(result);
-      setProtoError(null);
-    } else {
-      setServices([]);
-      setProtoError('Could not parse this .proto file.');
-    }
   }
 
   const methodSuggestions = services.find((s) => s.service === grpc.service)?.methods ?? [];
