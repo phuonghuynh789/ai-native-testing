@@ -48,7 +48,7 @@ function parseExpected(raw: string): unknown {
   }
 }
 
-export function buildTaskSteps(form: FormState): Step[] {
+function buildRestRequestWith(form: FormState): Record<string, unknown> {
   const requestWith: Record<string, unknown> = {
     method: form.method,
     url: form.url,
@@ -68,19 +68,42 @@ export function buildTaskSteps(form: FormState): Step[] {
   if (form.body.trim() !== '') {
     requestWith.body = JSON.parse(form.body);
   }
+  return requestWith;
+}
 
+function buildInteractionStep(form: FormState): Step {
+  if (form.protocol === 'grpc') {
+    return {
+      type: 'interaction',
+      runner: 'grpc',
+      action: 'call',
+      with: {
+        proto: form.grpc.protoContent,
+        serverAddress: form.grpc.serverAddress,
+        service: form.grpc.service,
+        method: form.grpc.method,
+        message: form.grpc.requestMessage.trim() === '' ? {} : JSON.parse(form.grpc.requestMessage),
+        metadata: rowsToRecord(form.grpc.metadata),
+      },
+    };
+  }
+  return { type: 'interaction', runner: 'rest', action: 'request', with: buildRestRequestWith(form) };
+}
+
+export function buildTaskSteps(form: FormState): Step[] {
+  const runner = form.protocol === 'grpc' ? 'grpc' : 'rest';
   return [
-    { type: 'interaction', runner: 'rest', action: 'request', with: requestWith },
-    { type: 'extract', runner: 'rest', action: 'raw', remember: HIDDEN_RESPONSE_VARIABLE },
+    buildInteractionStep(form),
+    { type: 'extract', runner, action: 'raw', remember: HIDDEN_RESPONSE_VARIABLE },
     ...form.extracts.map((row): Step => {
       const { action, with: withFields } = sourceToStepFields(row.source, row.path);
-      return { type: 'extract', runner: 'rest', action, with: withFields, remember: row.rememberAs };
+      return { type: 'extract', runner, action, with: withFields, remember: row.rememberAs };
     }),
     ...form.questions.map((row): Step => {
       const { action, with: withFields } = sourceToStepFields(row.source, row.path);
       return {
         type: 'question',
-        runner: 'rest',
+        runner,
         action,
         with: withFields,
         expect: { equals: parseExpected(row.expected) },
@@ -93,7 +116,7 @@ export function buildTestDefinition(form: FormState): TestDefinition {
   const variables = rowsToRecord(form.variables);
 
   return {
-    actor: { name: form.actorName, abilities: ['rest'] },
+    actor: { name: form.actorName, abilities: [form.protocol] },
     variables: Object.keys(variables).length > 0 ? variables : undefined,
     tasks: [{ name: form.taskName, steps: buildTaskSteps(form) }],
   };
@@ -104,9 +127,10 @@ export function buildFlowDefinition(forms: FormState[]): TestDefinition {
   for (const form of forms) {
     Object.assign(mergedVariables, rowsToRecord(form.variables));
   }
+  const abilities = Array.from(new Set(forms.map((form) => form.protocol)));
 
   return {
-    actor: { name: forms[0].actorName, abilities: ['rest'] },
+    actor: { name: forms[0].actorName, abilities },
     variables: Object.keys(mergedVariables).length > 0 ? mergedVariables : undefined,
     tasks: forms.map((form) => ({ name: form.taskName, steps: buildTaskSteps(form) })),
   };

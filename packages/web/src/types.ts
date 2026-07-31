@@ -26,16 +26,30 @@ export type AuthConfig =
   | { type: 'apiKey'; header: string; value: string }
   | { type: 'basic'; username: string; password: string };
 
+export type Protocol = 'rest' | 'grpc';
+
+export interface GrpcFormState {
+  protoContent: string;
+  protoFilename: string;
+  serverAddress: string;
+  service: string;
+  method: string;
+  requestMessage: string;
+  metadata: KeyValueRow[];
+}
+
 export interface FormState {
   actorName: string;
   taskName: string;
   variables: KeyValueRow[];
+  protocol: Protocol;
   method: string;
   url: string;
   params: KeyValueRow[];
   headers: KeyValueRow[];
   auth: AuthConfig;
   body: string;
+  grpc: GrpcFormState;
   extracts: ExtractRow[];
   questions: QuestionRow[];
 }

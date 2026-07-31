@@ -2,17 +2,32 @@ import { describe, it, expect } from 'vitest';
 import { buildTestDefinition, buildFlowDefinition, HIDDEN_RESPONSE_VARIABLE } from '../src/dsl';
 import type { FormState } from '../src/types';
 
+function emptyGrpc(overrides: Partial<FormState['grpc']> = {}): FormState['grpc'] {
+  return {
+    protoContent: '',
+    protoFilename: '',
+    serverAddress: '',
+    service: '',
+    method: '',
+    requestMessage: '',
+    metadata: [],
+    ...overrides,
+  };
+}
+
 function emptyForm(overrides: Partial<FormState> = {}): FormState {
   return {
     actorName: 'Authenticated Customer',
     taskName: 'Create Payment',
     variables: [],
+    protocol: 'rest',
     method: 'GET',
     url: 'https://api.example.com',
     params: [],
     headers: [],
     auth: { type: 'none' },
     body: '',
+    grpc: emptyGrpc(),
     extracts: [],
     questions: [],
     ...overrides,
@@ -175,5 +190,75 @@ describe('buildFlowDefinition', () => {
       with: { path: '$.data.balance' },
       remember: 'balance',
     });
+  });
+});
+
+describe('buildTaskSteps with protocol: grpc', () => {
+  it('builds a grpc interaction step from the grpc sub-object', () => {
+    const steps = buildTestDefinition(
+      emptyForm({
+        protocol: 'grpc',
+        grpc: emptyGrpc({
+          protoContent: 'syntax = "proto3";',
+          serverAddress: 'localhost:50051',
+          service: 'PaymentService',
+          method: 'CreatePayment',
+          requestMessage: '{"amount":"100"}',
+          metadata: [{ id: '1', key: 'x-request-id', value: 'abc' }],
+        }),
+      })
+    ).tasks[0].steps;
+    expect(steps[0]).toEqual({
+      type: 'interaction',
+      runner: 'grpc',
+      action: 'call',
+      with: {
+        proto: 'syntax = "proto3";',
+        serverAddress: 'localhost:50051',
+        service: 'PaymentService',
+        method: 'CreatePayment',
+        message: { amount: '100' },
+        metadata: { 'x-request-id': 'abc' },
+      },
+    });
+    expect(steps[1]).toEqual({ type: 'extract', runner: 'grpc', action: 'raw', remember: HIDDEN_RESPONSE_VARIABLE });
+  });
+
+  it('defaults an empty requestMessage to an empty object', () => {
+    const steps = buildTestDefinition(emptyForm({ protocol: 'grpc', grpc: emptyGrpc() })).tasks[0].steps;
+    const interactionStep = steps[0] as unknown as { with: { message: unknown } };
+    expect(interactionStep.with.message).toEqual({});
+  });
+
+  it('tags extract and question steps with the grpc runner too', () => {
+    const definition = buildTestDefinition(
+      emptyForm({
+        protocol: 'grpc',
+        grpc: emptyGrpc(),
+        extracts: [{ id: '1', source: 'jsonPath', path: '$.paymentId', rememberAs: 'paymentId' }],
+        questions: [{ id: '1', source: 'status', path: '', expected: '0' }],
+      })
+    );
+    expect(definition.tasks[0].steps[2]).toMatchObject({ type: 'extract', runner: 'grpc' });
+    expect(definition.tasks[0].steps[3]).toMatchObject({ type: 'question', runner: 'grpc' });
+  });
+});
+
+describe('buildFlowDefinition with mixed protocols', () => {
+  it('tags each task with its own form protocol runner', () => {
+    const definition = buildFlowDefinition([
+      emptyForm({ protocol: 'rest', taskName: 'Check Balance' }),
+      emptyForm({ protocol: 'grpc', taskName: 'Transfer Money', grpc: emptyGrpc() }),
+    ]);
+    expect(definition.tasks[0].steps[0]).toMatchObject({ runner: 'rest' });
+    expect(definition.tasks[1].steps[0]).toMatchObject({ runner: 'grpc' });
+  });
+
+  it('sets abilities to the unique set of protocols used across the flow', () => {
+    const definition = buildFlowDefinition([
+      emptyForm({ protocol: 'rest' }),
+      emptyForm({ protocol: 'grpc', grpc: emptyGrpc() }),
+    ]);
+    expect(definition.actor.abilities).toEqual(['rest', 'grpc']);
   });
 });
