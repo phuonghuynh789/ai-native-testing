@@ -1,11 +1,25 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RequestBuilder, type RequestBuilderProps } from '../../src/components/RequestBuilder';
-import type { AuthConfig } from '../../src/types';
+import type { AuthConfig, GrpcFormState } from '../../src/types';
+
+function blankGrpc(): GrpcFormState {
+  return {
+    protoContent: '',
+    protoFilename: '',
+    serverAddress: '',
+    service: '',
+    method: '',
+    requestMessage: '',
+    metadata: [],
+  };
+}
 
 function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilderProps {
   return {
+    protocol: 'rest',
+    onProtocolChange: vi.fn(),
     method: 'GET',
     onMethodChange: vi.fn(),
     url: '',
@@ -18,6 +32,8 @@ function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilder
     onAuthChange: vi.fn(),
     body: '',
     onBodyChange: vi.fn(),
+    grpc: blankGrpc(),
+    onGrpcChange: vi.fn(),
     extracts: [],
     onExtractsChange: vi.fn(),
     questions: [],
@@ -25,6 +41,11 @@ function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilder
     ...overrides,
   };
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('RequestBuilder', () => {
   it('calls onMethodChange when the method select changes', async () => {
@@ -117,5 +138,107 @@ describe('RequestBuilder', () => {
       { id: expect.any(String), key: 'X-Trace', value: 'abc' },
     ]);
     expect(onBodyChange).toHaveBeenCalledWith('{"a":1}');
+  });
+
+  it('calls onProtocolChange when the Protocol select changes', async () => {
+    const onProtocolChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ onProtocolChange })} />);
+    await userEvent.selectOptions(screen.getByLabelText('Protocol'), 'grpc');
+    expect(onProtocolChange).toHaveBeenCalledWith('grpc');
+  });
+
+  it('shows gRPC tabs and hides Paste cURL when protocol is grpc', () => {
+    render(<RequestBuilder {...baseProps({ protocol: 'grpc' })} />);
+    expect(screen.getByRole('button', { name: 'Proto' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Service' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Method' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Message' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Metadata' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Paste grpcurl' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Paste cURL' })).not.toBeInTheDocument();
+  });
+
+  it('shows Server Address instead of Method/URL when protocol is grpc', async () => {
+    const onGrpcChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ protocol: 'grpc', onGrpcChange })} />);
+    expect(screen.queryByLabelText('Method')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('URL')).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Server Address'), 'x');
+    expect(onGrpcChange).toHaveBeenCalledWith(expect.objectContaining({ serverAddress: 'x' }));
+  });
+
+  it('uploading a .proto file introspects it and populates the Service datalist', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({ services: [{ service: 'PaymentService', methods: ['CreatePayment', 'GetPayment'] }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const onGrpcChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ protocol: 'grpc', onGrpcChange })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Proto' }));
+    const file = new File(['syntax = "proto3";'], 'payment.proto', { type: 'text/plain' });
+    await userEvent.upload(screen.getByLabelText('Proto File'), file);
+
+    await vi.waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/grpc/introspect', expect.objectContaining({ method: 'POST' }))
+    );
+    expect(onGrpcChange).toHaveBeenCalledWith(
+      expect.objectContaining({ protoContent: 'syntax = "proto3";', protoFilename: 'payment.proto' })
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Service' }));
+    await vi.waitFor(() => {
+      const options = document.querySelectorAll('#grpc-service-options option');
+      expect(Array.from(options).map((o) => o.getAttribute('value'))).toEqual(['PaymentService']);
+    });
+  });
+
+  it('filters Method suggestions to the currently selected Service', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          services: [
+            { service: 'PaymentService', methods: ['CreatePayment', 'GetPayment'] },
+            { service: 'UserService', methods: ['GetUser'] },
+          ],
+        }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <RequestBuilder
+        {...baseProps({ protocol: 'grpc', grpc: { ...blankGrpc(), service: 'PaymentService' } })}
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Proto' }));
+    const file = new File(['syntax = "proto3";'], 'payment.proto', { type: 'text/plain' });
+    await userEvent.upload(screen.getByLabelText('Proto File'), file);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Method' }));
+    await vi.waitFor(() => {
+      const options = document.querySelectorAll('#grpc-method-options option');
+      expect(Array.from(options).map((o) => o.getAttribute('value'))).toEqual(['CreatePayment', 'GetPayment']);
+    });
+  });
+
+  it('switches to the Paste grpcurl tab and applies a successful import', async () => {
+    const onGrpcChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ protocol: 'grpc', onGrpcChange })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Paste grpcurl' }));
+    fireEvent.change(screen.getByLabelText('grpcurl command'), {
+      target: { value: 'grpcurl localhost:50051 payment.PaymentService/CreatePayment' },
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Import' }));
+    expect(onGrpcChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        serverAddress: 'localhost:50051',
+        service: 'PaymentService',
+        method: 'CreatePayment',
+      })
+    );
   });
 });
