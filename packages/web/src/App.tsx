@@ -53,12 +53,41 @@ function isBodyValid(body: string): boolean {
   }
 }
 
-function isFormValid(form: FormState): boolean {
-  if (form.taskName.trim() === '' || form.url.trim() === '') {
+function isGrpcMessageValid(requestMessage: string): boolean {
+  if (requestMessage.trim() === '') {
+    return true;
+  }
+  try {
+    JSON.parse(requestMessage);
+    return true;
+  } catch {
     return false;
   }
-  if (!isBodyValid(form.body)) {
+}
+
+function isFormValid(form: FormState): boolean {
+  if (form.taskName.trim() === '') {
     return false;
+  }
+  if (form.protocol === 'grpc') {
+    if (
+      form.grpc.serverAddress.trim() === '' ||
+      form.grpc.service.trim() === '' ||
+      form.grpc.method.trim() === '' ||
+      form.grpc.protoContent.trim() === ''
+    ) {
+      return false;
+    }
+    if (!isGrpcMessageValid(form.grpc.requestMessage)) {
+      return false;
+    }
+  } else {
+    if (form.url.trim() === '') {
+      return false;
+    }
+    if (!isBodyValid(form.body)) {
+      return false;
+    }
   }
   for (const row of form.extracts) {
     if (row.source !== 'status' && row.path.trim() === '') return false;
@@ -144,6 +173,8 @@ export function App() {
         onChange={(variables) => setForm((prev) => ({ ...prev, variables }))}
       />
       <RequestBuilder
+        protocol={form.protocol}
+        onProtocolChange={(protocol) => setForm((prev) => ({ ...prev, protocol }))}
         method={form.method}
         onMethodChange={(method) => setForm((prev) => ({ ...prev, method }))}
         url={form.url}
@@ -156,6 +187,8 @@ export function App() {
         onAuthChange={(auth) => setForm((prev) => ({ ...prev, auth }))}
         body={form.body}
         onBodyChange={(body) => setForm((prev) => ({ ...prev, body }))}
+        grpc={form.grpc}
+        onGrpcChange={(grpc) => setForm((prev) => ({ ...prev, grpc }))}
         extracts={form.extracts}
         onExtractsChange={(extracts) => setForm((prev) => ({ ...prev, extracts }))}
         questions={form.questions}

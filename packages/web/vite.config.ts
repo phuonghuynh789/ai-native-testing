@@ -11,6 +11,7 @@ export default defineConfig({
       '/tasks': 'http://localhost:3000',
       '/steps': 'http://localhost:3000',
       '/flows': 'http://localhost:3000',
+      '/grpc': 'http://localhost:3000',
     },
   },
   test: {
