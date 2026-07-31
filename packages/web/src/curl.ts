@@ -1,4 +1,5 @@
 import type { KeyValueRow } from './types';
+import { joinContinuations, tokenize } from './shellTokenize.js';
 
 export type CurlParseResult =
   | { ok: true; method: string; url: string; headers: KeyValueRow[]; body: string }
@@ -6,86 +7,6 @@ export type CurlParseResult =
 
 const SUPPORTED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const IGNORED_VALUE_FLAGS = new Set(['-F', '--form', '-A', '--user-agent']);
-
-function joinContinuations(input: string): string {
-  return input.replace(/\\[ \t]*\r?\n[ \t]*/g, ' ');
-}
-
-function tokenize(input: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let hasToken = false;
-  let inSingle = false;
-  let inDouble = false;
-  let i = 0;
-
-  while (i < input.length) {
-    const ch = input[i];
-
-    if (inSingle) {
-      if (ch === '\\' && input[i + 1] === "'") {
-        current += "'";
-        i += 2;
-        continue;
-      }
-      if (ch === "'") {
-        inSingle = false;
-        i += 1;
-        continue;
-      }
-      current += ch;
-      i += 1;
-      continue;
-    }
-
-    if (inDouble) {
-      if (ch === '\\' && (input[i + 1] === '"' || input[i + 1] === '\\')) {
-        current += input[i + 1];
-        i += 2;
-        continue;
-      }
-      if (ch === '"') {
-        inDouble = false;
-        i += 1;
-        continue;
-      }
-      current += ch;
-      i += 1;
-      continue;
-    }
-
-    if (ch === "'") {
-      inSingle = true;
-      hasToken = true;
-      i += 1;
-      continue;
-    }
-    if (ch === '"') {
-      inDouble = true;
-      hasToken = true;
-      i += 1;
-      continue;
-    }
-    if (/\s/.test(ch)) {
-      if (hasToken) {
-        tokens.push(current);
-        current = '';
-        hasToken = false;
-      }
-      i += 1;
-      continue;
-    }
-
-    current += ch;
-    hasToken = true;
-    i += 1;
-  }
-
-  if (hasToken) {
-    tokens.push(current);
-  }
-  return tokens;
-}
 
 export function parseCurl(input: string): CurlParseResult {
   const trimmed = input.trim();

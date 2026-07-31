@@ -1,5 +1,6 @@
 export { RunContext } from './context.js';
 export { RunnerRegistry, type Runner } from './runner.js';
+export { extractJsonPath } from './json-path.js';
 export type {
   Actor,
   InteractionStep,

@@ -1,6 +1,6 @@
 import type { Runner, RunContext } from '@ai-native-testing/engine';
+import { extractJsonPath } from '@ai-native-testing/engine';
 import { buildAuthHeaders, type AuthConfig } from './auth.js';
-import { extractJsonPath } from './json-path.js';
 
 interface RestResponse {
   status: number;
