@@ -36,6 +36,8 @@ export interface GrpcFormState {
   method: string;
   requestMessage: string;
   metadata: KeyValueRow[];
+  secure: boolean;
+  skipCertVerification: boolean;
 }
 
 export interface FormState {

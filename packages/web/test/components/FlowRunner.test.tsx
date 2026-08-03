@@ -40,6 +40,8 @@ function sampleForm(overrides: Partial<FormState> = {}): FormState {
       method: '',
       requestMessage: '',
       metadata: [],
+      secure: true,
+      skipCertVerification: false,
     },
     extracts: [],
     questions: [],

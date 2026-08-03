@@ -14,6 +14,8 @@ function blankGrpc(): GrpcFormState {
     method: '',
     requestMessage: '',
     metadata: [],
+    secure: true,
+    skipCertVerification: false,
   };
 }
 

@@ -24,6 +24,8 @@ function emptyForm(): FormState {
       method: '',
       requestMessage: '',
       metadata: [],
+      secure: true,
+      skipCertVerification: false,
     },
     extracts: [],
     questions: [],

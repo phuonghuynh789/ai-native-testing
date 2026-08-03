@@ -11,6 +11,8 @@ function emptyGrpc(overrides: Partial<FormState['grpc']> = {}): FormState['grpc'
     method: '',
     requestMessage: '',
     metadata: [],
+    secure: true,
+    skipCertVerification: false,
     ...overrides,
   };
 }
@@ -219,6 +221,8 @@ describe('buildTaskSteps with protocol: grpc', () => {
         method: 'CreatePayment',
         message: { amount: '100' },
         metadata: { 'x-request-id': 'abc' },
+        secure: true,
+        skipCertVerification: false,
       },
     });
     expect(steps[1]).toEqual({ type: 'extract', runner: 'grpc', action: 'raw', remember: HIDDEN_RESPONSE_VARIABLE });
@@ -241,6 +245,18 @@ describe('buildTaskSteps with protocol: grpc', () => {
     );
     expect(definition.tasks[0].steps[2]).toMatchObject({ type: 'extract', runner: 'grpc' });
     expect(definition.tasks[0].steps[3]).toMatchObject({ type: 'question', runner: 'grpc' });
+  });
+
+  it('carries secure and skipCertVerification through to the interaction step', () => {
+    const steps = buildTestDefinition(
+      emptyForm({
+        protocol: 'grpc',
+        grpc: emptyGrpc({ secure: false, skipCertVerification: true }),
+      })
+    ).tasks[0].steps;
+    const interactionStep = steps[0] as unknown as { with: { secure: boolean; skipCertVerification: boolean } };
+    expect(interactionStep.with.secure).toBe(false);
+    expect(interactionStep.with.skipCertVerification).toBe(true);
   });
 });
 

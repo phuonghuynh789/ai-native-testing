@@ -84,6 +84,8 @@ function buildInteractionStep(form: FormState): Step {
         method: form.grpc.method,
         message: form.grpc.requestMessage.trim() === '' ? {} : JSON.parse(form.grpc.requestMessage),
         metadata: rowsToRecord(form.grpc.metadata),
+        secure: form.grpc.secure,
+        skipCertVerification: form.grpc.skipCertVerification,
       },
     };
   }
