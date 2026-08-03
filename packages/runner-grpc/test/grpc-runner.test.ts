@@ -2,7 +2,12 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import * as grpc from '@grpc/grpc-js';
 import { RunContext } from '@ai-native-testing/engine';
 import { GrpcRunner } from '../src/grpc-runner.js';
-import { startFakePaymentGrpcServer, type FakeGrpcServer } from '../src/testing.js';
+import {
+  startFakePaymentGrpcServer,
+  startFakeSecurePaymentGrpcServer,
+  type FakeGrpcServer,
+  type FakeSecureGrpcServer,
+} from '../src/testing.js';
 
 describe('GrpcRunner', () => {
   let server: FakeGrpcServer | undefined;
@@ -169,4 +174,82 @@ describe('GrpcRunner', () => {
 
     expect(await runner.ask('status', {}, ctx)).not.toBe(0);
   }, 10_000);
+
+  it('makes a plaintext call by default when secure is not set (backward compatible)', async () => {
+    server = await startFakePaymentGrpcServer();
+    const runner = new GrpcRunner();
+    const ctx = new RunContext();
+
+    await runner.interact(
+      'call',
+      {
+        proto: server.proto,
+        serverAddress: server.address,
+        service: 'PaymentService',
+        method: 'CreatePayment',
+        message: { amount: '100', customerId: 'CUS001' },
+      },
+      ctx
+    );
+
+    expect(await runner.ask('status', {}, ctx)).toBe(0);
+  });
+
+  it('fails over TLS when the server cert is not trusted and verification is on', async () => {
+    // GrpcRunner has no way to supply a custom trusted root cert in this
+    // slice (out of scope — see design spec), so a "secure: true" call with
+    // verification on can never succeed against the self-signed fake secure
+    // server. This proves createSsl()'s default verification is genuinely
+    // active — the untrusted cert is correctly rejected, not silently
+    // accepted — which is exactly what the next test's skipCertVerification
+    // path is contrasted against.
+    const secureServer: FakeSecureGrpcServer = await startFakeSecurePaymentGrpcServer();
+    server = secureServer;
+    const runner = new GrpcRunner();
+    const ctx = new RunContext();
+
+    await expect(
+      runner.interact(
+        'call',
+        {
+          proto: secureServer.proto,
+          serverAddress: secureServer.address,
+          service: 'PaymentService',
+          method: 'CreatePayment',
+          message: { amount: '100', customerId: 'CUS001' },
+          secure: true,
+        },
+        ctx
+      )
+    ).resolves.toBeUndefined();
+
+    expect(await runner.ask('status', {}, ctx)).not.toBe(0);
+  });
+
+  it('succeeds over TLS with an untrusted cert when skipCertVerification is true', async () => {
+    const secureServer: FakeSecureGrpcServer = await startFakeSecurePaymentGrpcServer();
+    server = secureServer;
+    const runner = new GrpcRunner();
+    const ctx = new RunContext();
+
+    await runner.interact(
+      'call',
+      {
+        proto: secureServer.proto,
+        serverAddress: secureServer.address,
+        service: 'PaymentService',
+        method: 'CreatePayment',
+        message: { amount: '100', customerId: 'CUS001' },
+        secure: true,
+        skipCertVerification: true,
+      },
+      ctx
+    );
+
+    expect(await runner.ask('status', {}, ctx)).toBe(0);
+    expect(await runner.ask('raw', {}, ctx)).toMatchObject({
+      status: 0,
+      body: { paymentId: 'pay-123', status: 'CREATED' },
+    });
+  });
 });

@@ -9,6 +9,18 @@ interface GrpcCallArgs {
   method: string;
   message: unknown;
   metadata?: Record<string, string>;
+  secure?: boolean;
+  skipCertVerification?: boolean;
+}
+
+function selectCredentials(args: GrpcCallArgs): grpc.ChannelCredentials {
+  if (!args.secure) {
+    return grpc.credentials.createInsecure();
+  }
+  if (args.skipCertVerification) {
+    return grpc.credentials.createSsl(null, null, null, { rejectUnauthorized: false });
+  }
+  return grpc.credentials.createSsl();
 }
 
 interface GrpcResponse {
@@ -61,7 +73,7 @@ export class GrpcRunner implements Runner {
 
   private async callUnary(args: GrpcCallArgs): Promise<GrpcResponse> {
     const ServiceCtor = findService(args.proto, args.service);
-    const client = new ServiceCtor(args.serverAddress, grpc.credentials.createInsecure());
+    const client = new ServiceCtor(args.serverAddress, selectCredentials(args));
 
     try {
       const grpcMetadata = new grpc.Metadata();
