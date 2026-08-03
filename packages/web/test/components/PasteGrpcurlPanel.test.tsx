@@ -23,6 +23,8 @@ describe('PasteGrpcurlPanel', () => {
       method: 'CreatePayment',
       message: '',
       metadata: [],
+      secure: true,
+      skipCertVerification: false,
     });
     expect(screen.getByText('Imported.')).toBeInTheDocument();
   });

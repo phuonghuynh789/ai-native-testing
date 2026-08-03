@@ -192,14 +192,33 @@ export function RequestBuilder(props: RequestBuilderProps) {
             </label>
           </>
         ) : (
-          <label className="label">
-            Server Address
-            <input
-              className="text-input"
-              value={grpc.serverAddress}
-              onChange={(e) => onGrpcChange({ ...grpc, serverAddress: e.target.value })}
-            />
-          </label>
+          <>
+            <label className="label">
+              Server Address
+              <input
+                className="text-input"
+                value={grpc.serverAddress}
+                onChange={(e) => onGrpcChange({ ...grpc, serverAddress: e.target.value })}
+              />
+            </label>
+            <label className="label">
+              Secure (TLS)
+              <input
+                type="checkbox"
+                checked={grpc.secure}
+                onChange={(e) => onGrpcChange({ ...grpc, secure: e.target.checked })}
+              />
+            </label>
+            <label className="label">
+              Skip certificate verification
+              <input
+                type="checkbox"
+                checked={grpc.skipCertVerification}
+                disabled={!grpc.secure}
+                onChange={(e) => onGrpcChange({ ...grpc, skipCertVerification: e.target.checked })}
+              />
+            </label>
+          </>
         )}
       </div>
 
@@ -417,6 +436,8 @@ export function RequestBuilder(props: RequestBuilderProps) {
                   method: r.method,
                   requestMessage: r.message,
                   metadata: r.metadata,
+                  secure: r.secure,
+                  skipCertVerification: r.skipCertVerification,
                 })
               }
             />

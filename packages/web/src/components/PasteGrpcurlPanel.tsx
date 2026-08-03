@@ -8,6 +8,8 @@ export interface PasteGrpcurlPanelResult {
   method: string;
   message: string;
   metadata: KeyValueRow[];
+  secure: boolean;
+  skipCertVerification: boolean;
 }
 
 export interface PasteGrpcurlPanelProps {
@@ -27,6 +29,8 @@ export function PasteGrpcurlPanel({ onImport }: PasteGrpcurlPanelProps) {
         method: result.method,
         message: result.message,
         metadata: result.metadata,
+        secure: result.secure,
+        skipCertVerification: result.skipCertVerification,
       });
       setFeedback({ type: 'success', text: 'Imported.' });
     } else {

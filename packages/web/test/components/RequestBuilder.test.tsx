@@ -260,6 +260,8 @@ describe('RequestBuilder', () => {
         serverAddress: 'localhost:50051',
         service: 'PaymentService',
         method: 'CreatePayment',
+        secure: true,
+        skipCertVerification: false,
       })
     );
   });
@@ -309,5 +311,58 @@ describe('RequestBuilder', () => {
       const options = document.querySelectorAll('#grpc-service-options option');
       expect(options).toHaveLength(0);
     });
+  });
+
+  it('renders the Secure and Skip certificate verification checkboxes with their current values', () => {
+    render(
+      <RequestBuilder
+        {...baseProps({
+          protocol: 'grpc',
+          grpc: { ...blankGrpc(), secure: true, skipCertVerification: false },
+        })}
+      />
+    );
+    expect(screen.getByLabelText('Secure (TLS)')).toBeChecked();
+    expect(screen.getByLabelText('Skip certificate verification')).not.toBeChecked();
+    expect(screen.getByLabelText('Skip certificate verification')).toBeEnabled();
+  });
+
+  it('disables Skip certificate verification when Secure is off', () => {
+    render(
+      <RequestBuilder
+        {...baseProps({ protocol: 'grpc', grpc: { ...blankGrpc(), secure: false } })}
+      />
+    );
+    expect(screen.getByLabelText('Skip certificate verification')).toBeDisabled();
+  });
+
+  it('calls onGrpcChange when the Secure checkbox is toggled', async () => {
+    const onGrpcChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({
+          protocol: 'grpc',
+          onGrpcChange,
+          grpc: { ...blankGrpc(), secure: true },
+        })}
+      />
+    );
+    await userEvent.click(screen.getByLabelText('Secure (TLS)'));
+    expect(onGrpcChange).toHaveBeenCalledWith(expect.objectContaining({ secure: false }));
+  });
+
+  it('calls onGrpcChange when Skip certificate verification is toggled', async () => {
+    const onGrpcChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({
+          protocol: 'grpc',
+          onGrpcChange,
+          grpc: { ...blankGrpc(), secure: true, skipCertVerification: false },
+        })}
+      />
+    );
+    await userEvent.click(screen.getByLabelText('Skip certificate verification'));
+    expect(onGrpcChange).toHaveBeenCalledWith(expect.objectContaining({ skipCertVerification: true }));
   });
 });
