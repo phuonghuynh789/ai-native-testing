@@ -69,4 +69,38 @@ describe('parseGrpcurl', () => {
       error: 'Could not parse service/method from "PaymentService.CreatePayment"',
     });
   });
+
+  it('defaults to secure with verification when neither -plaintext nor -insecure is present', () => {
+    const result = parseGrpcurl('grpcurl localhost:50051 payment.PaymentService/CreatePayment');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.secure).toBe(true);
+    expect(result.skipCertVerification).toBe(false);
+  });
+
+  it('sets secure to false when -plaintext is present', () => {
+    const result = parseGrpcurl('grpcurl -plaintext localhost:50051 payment.PaymentService/CreatePayment');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.secure).toBe(false);
+    expect(result.skipCertVerification).toBe(false);
+  });
+
+  it('sets secure true and skipCertVerification true when -insecure is present', () => {
+    const result = parseGrpcurl('grpcurl -insecure localhost:50051 payment.PaymentService/CreatePayment');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.secure).toBe(true);
+    expect(result.skipCertVerification).toBe(true);
+  });
+
+  it('lets -plaintext win when both -plaintext and -insecure are present', () => {
+    const result = parseGrpcurl(
+      'grpcurl -plaintext -insecure localhost:50051 payment.PaymentService/CreatePayment'
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.secure).toBe(false);
+    expect(result.skipCertVerification).toBe(false);
+  });
 });

@@ -9,6 +9,8 @@ export type GrpcurlParseResult =
       method: string;
       message: string;
       metadata: KeyValueRow[];
+      secure: boolean;
+      skipCertVerification: boolean;
     }
   | { ok: false; error: string };
 
@@ -21,6 +23,8 @@ export function parseGrpcurl(input: string): GrpcurlParseResult {
   const tokens = tokenize(joinContinuations(trimmed)).slice(1);
 
   let message: string | null = null;
+  let plaintext = false;
+  let insecure = false;
   const metadata: KeyValueRow[] = [];
   const positional: string[] = [];
 
@@ -69,6 +73,11 @@ export function parseGrpcurl(input: string): GrpcurlParseResult {
         break;
       case '-plaintext':
       case '--plaintext':
+        plaintext = true;
+        break;
+      case '-insecure':
+      case '--insecure':
+        insecure = true;
         break;
       default:
         if (!token.startsWith('-')) {
@@ -93,5 +102,7 @@ export function parseGrpcurl(input: string): GrpcurlParseResult {
   const lastDot = servicePath.lastIndexOf('.');
   const service = lastDot === -1 ? servicePath : servicePath.slice(lastDot + 1);
 
-  return { ok: true, serverAddress, service, method, message: message ?? '', metadata };
+  const secure = !plaintext;
+  const skipCertVerification = secure && insecure;
+  return { ok: true, serverAddress, service, method, message: message ?? '', metadata, secure, skipCertVerification };
 }
