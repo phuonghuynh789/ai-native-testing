@@ -1,19 +1,14 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import type { RunEvent, StepResult } from '@ai-native-testing/engine';
 import type { FormState } from './types';
 import { deriveResults, type DerivedResults } from './results';
 import { fetchNames, saveName } from './nameLists';
 import { fetchStepNames } from './steps';
 import { fetchFlowNames } from './flows';
-import { ScreenplayHeader } from './components/ScreenplayHeader';
-import { KeyValueRows } from './components/KeyValueRows';
-import { RequestBuilder } from './components/RequestBuilder';
-import { RunButton } from './components/RunButton';
-import { ResultsPanel } from './components/ResultsPanel';
-import { SaveStepButton } from './components/SaveStepButton';
-import { LoadStepSelect } from './components/LoadStepSelect';
-import { AddToFlowButton } from './components/AddToFlowButton';
-import { FlowRunner } from './components/FlowRunner';
+import { Sidebar } from './components/Sidebar';
+import { SimpleModePage } from './components/SimpleModePage';
+import { EndToEndTestPage } from './components/EndToEndTestPage';
 
 function initialForm(): FormState {
   return {
@@ -152,66 +147,37 @@ export function App() {
   const results: DerivedResults | null =
     stepResults.length > 0 ? deriveResults(form.extracts, variablesRecord, stepResults) : null;
 
+  const disabled = !isFormValid(form);
+
   return (
-    <main className="app-main">
-      <h1 className="heading-xl">API Runner — REST (Simple Mode)</h1>
-      {error && (
-        <p role="alert" className="alert">
-          {error}
-        </p>
-      )}
-      <ScreenplayHeader
-        actorName={form.actorName}
-        onActorNameChange={(actorName) => setForm((prev) => ({ ...prev, actorName }))}
-        taskName={form.taskName}
-        onTaskNameChange={(taskName) => setForm((prev) => ({ ...prev, taskName }))}
-        actorOptions={actorOptions}
-        taskOptions={taskOptions}
-      />
-      <LoadStepSelect stepNames={stepNames} onLoad={setForm} />
-      <KeyValueRows
-        label="Variables"
-        rows={form.variables}
-        onChange={(variables) => setForm((prev) => ({ ...prev, variables }))}
-      />
-      <RequestBuilder
-        protocol={form.protocol}
-        onProtocolChange={(protocol) => setForm((prev) => ({ ...prev, protocol }))}
-        method={form.method}
-        onMethodChange={(method) => setForm((prev) => ({ ...prev, method }))}
-        url={form.url}
-        onUrlChange={(url) => setForm((prev) => ({ ...prev, url }))}
-        params={form.params}
-        onParamsChange={(params) => setForm((prev) => ({ ...prev, params }))}
-        headers={form.headers}
-        onHeadersChange={(headers) => setForm((prev) => ({ ...prev, headers }))}
-        auth={form.auth}
-        onAuthChange={(auth) => setForm((prev) => ({ ...prev, auth }))}
-        body={form.body}
-        onBodyChange={(body) => setForm((prev) => ({ ...prev, body }))}
-        grpc={form.grpc}
-        onGrpcChange={(grpc) => setForm((prev) => ({ ...prev, grpc }))}
-        extracts={form.extracts}
-        onExtractsChange={(extracts) => setForm((prev) => ({ ...prev, extracts }))}
-        questions={form.questions}
-        onQuestionsChange={(questions) => setForm((prev) => ({ ...prev, questions }))}
-      />
-      <RunButton
-        form={form}
-        disabled={!isFormValid(form)}
-        onRunStart={handleRunStart}
-        onEvent={handleEvent}
-        onError={setError}
-      />
-      <SaveStepButton
-        form={form}
-        disabled={!isFormValid(form)}
-        existingNames={stepNames}
-        onSaved={setStepNames}
-      />
-      <AddToFlowButton stepNames={stepNames} flowNames={flowNames} onAdded={setFlowNames} />
-      <ResultsPanel results={results} />
-      <FlowRunner flowNames={flowNames} />
-    </main>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <div className="app-shell">
+        <Sidebar />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <SimpleModePage
+                error={error}
+                form={form}
+                onFormChange={setForm}
+                actorOptions={actorOptions}
+                taskOptions={taskOptions}
+                stepNames={stepNames}
+                onStepNamesChange={setStepNames}
+                flowNames={flowNames}
+                onFlowNamesChange={setFlowNames}
+                results={results}
+                disabled={disabled}
+                onRunStart={handleRunStart}
+                onEvent={handleEvent}
+                onError={setError}
+              />
+            }
+          />
+          <Route path="/e2e-test" element={<EndToEndTestPage flowNames={flowNames} />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }

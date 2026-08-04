@@ -30,6 +30,10 @@ function stubNameListFetch(runsResponse: unknown = { ok: false, json: () => Prom
 
 describe('App', () => {
   beforeEach(() => {
+    // App renders a real BrowserRouter, which reads/writes window.history —
+    // a global that RTL's cleanup() does not reset between tests. Without
+    // this, a navigation in one test leaks into the next test's initial URL.
+    window.history.pushState({}, '', '/');
     MockEventSource.instances = [];
     vi.stubGlobal('EventSource', MockEventSource);
     vi.stubGlobal('fetch', stubNameListFetch());
@@ -42,9 +46,7 @@ describe('App', () => {
 
   it('renders the page heading', () => {
     render(<App />);
-    expect(
-      screen.getByRole('heading', { name: 'API Runner — REST (Simple Mode)' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Simple Mode' })).toBeInTheDocument();
   });
 
   it('disables Run until Task name and URL are filled in', () => {
@@ -146,5 +148,25 @@ describe('App', () => {
 
     await vi.waitFor(() => expect(screen.getByLabelText('Task')).toHaveValue('Create Payment'));
     expect(screen.getByLabelText('URL')).toHaveValue('https://api.example.com/v1/payments');
+  });
+
+  it('switches between Simple Mode and End-to-end test via the sidebar', async () => {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Simple Mode' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('link', { name: 'End-to-end test' }));
+    expect(screen.getByRole('heading', { name: 'End-to-end test' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Simple Mode' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Task')).not.toBeInTheDocument();
+  });
+
+  it('preserves in-progress Simple Mode form state after navigating away and back', async () => {
+    render(<App />);
+    await userEvent.type(screen.getByLabelText('Task'), 'Create Payment');
+
+    await userEvent.click(screen.getByRole('link', { name: 'End-to-end test' }));
+    await userEvent.click(screen.getByRole('link', { name: 'Simple Mode' }));
+
+    expect(screen.getByLabelText('Task')).toHaveValue('Create Payment');
   });
 });
