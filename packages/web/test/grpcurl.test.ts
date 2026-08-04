@@ -62,11 +62,29 @@ describe('parseGrpcurl', () => {
     });
   });
 
-  it('errors when the symbol has no slash', () => {
+  it('falls back to splitting on the last dot when the symbol has no slash', () => {
     const result = parseGrpcurl('grpcurl localhost:50051 PaymentService.CreatePayment');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.service).toBe('PaymentService');
+    expect(result.method).toBe('CreatePayment');
+  });
+
+  it('strips a longer package prefix from a fully-dotted symbol (no slash)', () => {
+    const result = parseGrpcurl(
+      'grpcurl localhost:50051 acquiring_core.upay.v1.UserPayment.CreateOrder'
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.service).toBe('UserPayment');
+    expect(result.method).toBe('CreateOrder');
+  });
+
+  it('errors when the symbol has neither a slash nor a dot', () => {
+    const result = parseGrpcurl('grpcurl localhost:50051 PaymentServiceCreatePayment');
     expect(result).toEqual({
       ok: false,
-      error: 'Could not parse service/method from "PaymentService.CreatePayment"',
+      error: 'Could not parse service/method from "PaymentServiceCreatePayment"',
     });
   });
 

@@ -94,11 +94,25 @@ export function parseGrpcurl(input: string): GrpcurlParseResult {
   const serverAddress = positional[positional.length - 2];
   const symbol = positional[positional.length - 1];
   const slash = symbol.indexOf('/');
-  if (slash === -1) {
-    return { ok: false, error: `Could not parse service/method from "${symbol}"` };
+
+  let servicePath: string;
+  let method: string;
+  if (slash !== -1) {
+    servicePath = symbol.slice(0, slash);
+    method = symbol.slice(slash + 1);
+  } else {
+    // Not standard grpcurl syntax (which always uses Service/Method), but a
+    // fully-dotted fully-qualified method path is common when a command is
+    // copied from proto reflection output or internal tooling rather than
+    // typed by hand. Fall back to the last dot as the service/method
+    // boundary; a symbol with no separator at all is still unparseable.
+    const lastDot = symbol.lastIndexOf('.');
+    if (lastDot === -1) {
+      return { ok: false, error: `Could not parse service/method from "${symbol}"` };
+    }
+    servicePath = symbol.slice(0, lastDot);
+    method = symbol.slice(lastDot + 1);
   }
-  const servicePath = symbol.slice(0, slash);
-  const method = symbol.slice(slash + 1);
   const lastDot = servicePath.lastIndexOf('.');
   const service = lastDot === -1 ? servicePath : servicePath.slice(lastDot + 1);
 
