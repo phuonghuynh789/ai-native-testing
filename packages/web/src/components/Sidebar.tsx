@@ -17,6 +17,12 @@ export function Sidebar() {
       >
         End-to-end test
       </NavLink>
+      <NavLink
+        to="/api-automation"
+        className={({ isActive }) => (isActive ? 'sidebar-link sidebar-link--active' : 'sidebar-link')}
+      >
+        API Automation
+      </NavLink>
     </nav>
   );
 }
