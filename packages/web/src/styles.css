@@ -399,3 +399,39 @@ body {
 .alert--success {
   color: var(--color-terminal-green);
 }
+
+/* API Automation browser */
+.step-browser-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.step-browser-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  cursor: pointer;
+  text-align: left;
+}
+
+.step-browser-meta {
+  color: var(--color-mute);
+}
+
+.step-browser-flows {
+  margin-left: auto;
+  color: var(--color-mute);
+  font-size: 12px;
+}
