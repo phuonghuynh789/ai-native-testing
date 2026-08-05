@@ -318,6 +318,72 @@ body {
   color: var(--color-mute);
 }
 
+/* Flow step order editor */
+.flow-builder {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: flex-start;
+}
+
+.flow-builder > .card {
+  flex: 1;
+}
+
+.flow-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.flow-step-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 14px;
+  cursor: grab;
+  background: var(--color-canvas);
+}
+
+.flow-step-row--ordered {
+  border-color: var(--color-ink);
+}
+
+.flow-step-index {
+  background: var(--color-ink);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-full);
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.flow-step-remove {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--color-mute);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.flow-step-row--dropzone {
+  border: 1px dashed var(--color-hairline-strong);
+  color: var(--color-mute);
+  justify-content: center;
+  cursor: default;
+}
+
 /* Alert banner */
 .alert {
   font-family: var(--font-body);
