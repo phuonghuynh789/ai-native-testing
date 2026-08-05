@@ -175,7 +175,16 @@ export function App() {
               />
             }
           />
-          <Route path="/e2e-test" element={<EndToEndTestPage flowNames={flowNames} />} />
+          <Route
+            path="/e2e-test"
+            element={
+              <EndToEndTestPage
+                flowNames={flowNames}
+                onFlowNamesChange={setFlowNames}
+                stepNames={stepNames}
+              />
+            }
+          />
         </Routes>
       </div>
     </BrowserRouter>
