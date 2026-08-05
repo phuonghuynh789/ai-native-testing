@@ -1,8 +1,12 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { RunEvent, StepResult } from '@ai-native-testing/engine';
 import type { FormState } from '../types';
 import { fetchStep } from '../steps';
 import { fetchFlow } from '../flows';
+import { buildTestDefinition, buildTaskSteps } from '../dsl';
+import { deriveResults } from '../results';
+import { FlowResultsPanel, type TaskResult } from './FlowResultsPanel';
 
 export interface ApiAutomationPageProps {
   stepNames: string[];
@@ -20,12 +24,19 @@ function matches(value: string, filter: string): boolean {
   return value.toLowerCase().includes(filter.toLowerCase());
 }
 
+function toVariablesRecord(form: FormState): Record<string, string> {
+  return Object.fromEntries(
+    form.variables.filter((row) => row.key.trim() !== '').map((row) => [row.key, row.value])
+  );
+}
+
 export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAutomationPageProps) {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<GrpcStepEntry[]>([]);
   const [serviceFilter, setServiceFilter] = useState('');
   const [methodFilter, setMethodFilter] = useState('');
   const [flowFilter, setFlowFilter] = useState('');
+  const [taskResults, setTaskResults] = useState<TaskResult[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,9 +87,99 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
       (flowFilter === '' || entry.flows.some((flowName) => matches(flowName, flowFilter)))
   );
 
+  const isRunning = taskResults !== null && taskResults.some((result) => result.status === 'pending');
+
   function handleRowClick(entry: GrpcStepEntry) {
     onFormChange(entry.form);
     navigate('/');
+  }
+
+  function updateTaskResult(index: number, result: TaskResult) {
+    setTaskResults((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const next = [...prev];
+      next[index] = result;
+      return next;
+    });
+  }
+
+  function runEntry(entry: GrpcStepEntry, index: number) {
+    const variablesRecord = toVariablesRecord(entry.form);
+    const totalSteps = buildTaskSteps(entry.form).length;
+    const stepResults: (StepResult | undefined)[] = [];
+
+    function recompute() {
+      const completedCount = stepResults.filter((result) => result !== undefined).length;
+      let status: TaskResult['status'] = 'pending';
+      if (completedCount === totalSteps) {
+        status = stepResults.every((result) => result?.status === 'passed') ? 'passed' : 'failed';
+      } else if (stepResults.some((result) => result?.status === 'failed')) {
+        status = 'failed';
+      }
+      updateTaskResult(index, {
+        name: entry.name,
+        status,
+        results: deriveResults(entry.form.extracts, variablesRecord, stepResults),
+      });
+    }
+
+    async function start() {
+      let jobId: string;
+      try {
+        const response = await fetch('/runs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildTestDefinition(entry.form)),
+        });
+        if (!response.ok) {
+          updateTaskResult(index, {
+            name: entry.name,
+            status: 'failed',
+            results: deriveResults(entry.form.extracts, variablesRecord, []),
+          });
+          return;
+        }
+        const body = (await response.json()) as { jobId: string };
+        jobId = body.jobId;
+      } catch {
+        updateTaskResult(index, {
+          name: entry.name,
+          status: 'failed',
+          results: deriveResults(entry.form.extracts, variablesRecord, []),
+        });
+        return;
+      }
+
+      const source = new EventSource(`/runs/${jobId}/events`);
+      source.onmessage = (message) => {
+        const event = JSON.parse(message.data) as RunEvent;
+        if (event.type === 'step:completed' || event.type === 'step:failed') {
+          stepResults[event.index] = event.result;
+          recompute();
+        }
+        if (event.type === 'run:completed' || event.type === 'run:failed') {
+          source.close();
+        }
+      };
+      source.onerror = () => {
+        source.close();
+      };
+    }
+
+    start();
+  }
+
+  function handleRun() {
+    setTaskResults(
+      filteredEntries.map((entry) => ({
+        name: entry.name,
+        status: 'pending',
+        results: deriveResults(entry.form.extracts, toVariablesRecord(entry.form), []),
+      }))
+    );
+    filteredEntries.forEach((entry, index) => runEntry(entry, index));
   }
 
   return (
@@ -91,7 +192,10 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
             className="text-input"
             list="api-automation-service-options"
             value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value)}
+            onChange={(e) => {
+              setServiceFilter(e.target.value);
+              setTaskResults(null);
+            }}
           />
           <datalist id="api-automation-service-options">
             {serviceOptions.map((service) => (
@@ -105,7 +209,10 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
             className="text-input"
             list="api-automation-method-options"
             value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
+            onChange={(e) => {
+              setMethodFilter(e.target.value);
+              setTaskResults(null);
+            }}
           />
           <datalist id="api-automation-method-options">
             {methodOptions.map((method) => (
@@ -119,7 +226,10 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
             className="text-input"
             list="api-automation-flow-options"
             value={flowFilter}
-            onChange={(e) => setFlowFilter(e.target.value)}
+            onChange={(e) => {
+              setFlowFilter(e.target.value);
+              setTaskResults(null);
+            }}
           />
           <datalist id="api-automation-flow-options">
             {flowNames.map((flowName) => (
@@ -127,6 +237,16 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
             ))}
           </datalist>
         </label>
+      </div>
+      <div className="row">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={filteredEntries.length === 0 || isRunning}
+          onClick={handleRun}
+        >
+          Run
+        </button>
       </div>
       <ul className="step-browser-list">
         {filteredEntries.map((entry) => (
@@ -141,6 +261,7 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
           </li>
         ))}
       </ul>
+      <FlowResultsPanel taskResults={taskResults} />
     </main>
   );
 }
