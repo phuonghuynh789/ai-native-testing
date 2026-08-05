@@ -83,3 +83,45 @@ describe('GET /flows/:name', () => {
     expect(res.statusCode).toBe(404);
   });
 });
+
+describe('PUT /flows/:name', () => {
+  it("replaces the flow's step list and returns the updated flow names", async () => {
+    const app = await buildTestApp();
+    await app.inject({
+      method: 'POST',
+      url: '/flows',
+      payload: { flowName: 'Transfer money by wallet', stepName: 'Check Balance' },
+    });
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/flows/Transfer%20money%20by%20wallet',
+      payload: { stepNames: ['Transfer Money', 'Check Balance'] },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ names: ['Transfer money by wallet'] });
+
+    const getRes = await app.inject({ method: 'GET', url: '/flows/Transfer%20money%20by%20wallet' });
+    expect(getRes.json()).toEqual(['Transfer Money', 'Check Balance']);
+  });
+
+  it('creates a new flow if it does not exist yet', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/flows/Brand%20New%20Flow',
+      payload: { stepNames: ['Login'] },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ names: ['Brand New Flow'] });
+  });
+
+  it('rejects a non-array stepNames with 400', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/flows/Some%20Flow',
+      payload: { stepNames: 'not-an-array' },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+});

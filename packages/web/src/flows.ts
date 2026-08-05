@@ -38,3 +38,20 @@ export async function addStepToFlow(flowName: string, stepName: string): Promise
     return undefined;
   }
 }
+
+export async function setFlow(name: string, stepNames: string[]): Promise<string[] | undefined> {
+  try {
+    const response = await fetch(`/flows/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stepNames }),
+    });
+    if (!response.ok) {
+      return undefined;
+    }
+    const body = (await response.json()) as { names: string[] };
+    return body.names;
+  } catch {
+    return undefined;
+  }
+}

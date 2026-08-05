@@ -24,4 +24,14 @@ export function registerFlowRoutes(app: FastifyInstance, flowStore: FlowStore): 
     const names = await flowStore.addStep(flowName, stepName);
     return reply.code(201).send({ names });
   });
+
+  app.put('/flows/:name', async (request, reply) => {
+    const { name } = request.params as { name: string };
+    const { stepNames } = (request.body ?? {}) as { stepNames?: unknown };
+    if (!Array.isArray(stepNames)) {
+      return reply.code(400).send({ error: 'stepNames is required' });
+    }
+    const names = await flowStore.setSteps(name, stepNames as string[]);
+    return reply.code(200).send({ names });
+  });
 }

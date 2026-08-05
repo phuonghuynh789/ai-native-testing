@@ -63,4 +63,21 @@ describe('FlowStore', () => {
     await store.addStep('Login Flow', 'Login');
     expect(await store.list()).toEqual(['Login Flow']);
   });
+
+  it("replaces an existing flow's steps via setSteps", async () => {
+    const store = new FlowStore(join(dir, 'flows.json'));
+    await store.addStep('Transfer money by wallet', 'Check Balance');
+    await store.addStep('Transfer money by wallet', 'Transfer Money');
+
+    const names = await store.setSteps('Transfer money by wallet', ['Transfer Money', 'Check Balance']);
+    expect(names).toEqual(['Transfer money by wallet']);
+    expect(await store.get('Transfer money by wallet')).toEqual(['Transfer Money', 'Check Balance']);
+  });
+
+  it('creates a new flow via setSteps if it does not exist yet', async () => {
+    const store = new FlowStore(join(dir, 'flows.json'));
+    const names = await store.setSteps('Brand New Flow', ['Login', 'Check Balance']);
+    expect(names).toEqual(['Brand New Flow']);
+    expect(await store.get('Brand New Flow')).toEqual(['Login', 'Check Balance']);
+  });
 });

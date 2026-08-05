@@ -22,6 +22,13 @@ export class FlowStore {
     return Object.keys(map);
   }
 
+  async setSteps(flowName: string, stepNames: string[]): Promise<string[]> {
+    const map = await this.readMap();
+    map[flowName] = stepNames;
+    await this.write(map);
+    return Object.keys(map);
+  }
+
   private async readMap(): Promise<Record<string, string[]>> {
     try {
       const contents = await readFile(this.filePath, 'utf8');

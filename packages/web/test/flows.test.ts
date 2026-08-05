@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fetchFlowNames, fetchFlow, addStepToFlow } from '../src/flows';
+import { fetchFlowNames, fetchFlow, addStepToFlow, setFlow } from '../src/flows';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -73,5 +73,33 @@ describe('addStepToFlow', () => {
   it('returns undefined when the request throws', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     expect(await addStepToFlow('Transfer money by wallet', 'Check Balance')).toBeUndefined();
+  });
+});
+
+describe('setFlow', () => {
+  it('PUTs the flow name and step names, returning the updated flow names list', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ names: ['Transfer money by wallet'] }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await setFlow('Transfer money by wallet', ['Check Balance', 'Transfer Money']);
+
+    expect(fetchMock).toHaveBeenCalledWith('/flows/Transfer%20money%20by%20wallet', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stepNames: ['Check Balance', 'Transfer Money'] }),
+    });
+    expect(result).toEqual(['Transfer money by wallet']);
+  });
+
+  it('returns undefined when the response is not ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    expect(await setFlow('Transfer money by wallet', ['Check Balance'])).toBeUndefined();
+  });
+
+  it('returns undefined when the request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    expect(await setFlow('Transfer money by wallet', ['Check Balance'])).toBeUndefined();
   });
 });
