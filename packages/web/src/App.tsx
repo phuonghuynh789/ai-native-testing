@@ -9,6 +9,7 @@ import { fetchFlowNames } from './flows';
 import { Sidebar } from './components/Sidebar';
 import { SimpleModePage } from './components/SimpleModePage';
 import { EndToEndTestPage } from './components/EndToEndTestPage';
+import { ApiAutomationPage } from './components/ApiAutomationPage';
 
 function initialForm(): FormState {
   return {
@@ -182,6 +183,16 @@ export function App() {
                 flowNames={flowNames}
                 onFlowNamesChange={setFlowNames}
                 stepNames={stepNames}
+              />
+            }
+          />
+          <Route
+            path="/api-automation"
+            element={
+              <ApiAutomationPage
+                stepNames={stepNames}
+                flowNames={flowNames}
+                onFormChange={setForm}
               />
             }
           />

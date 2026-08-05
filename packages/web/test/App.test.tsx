@@ -169,4 +169,68 @@ describe('App', () => {
 
     expect(screen.getByLabelText('Task')).toHaveValue('Create Payment');
   });
+
+  it('navigates to API Automation, filters to a step, and loads it into Simple Mode', async () => {
+    const savedSteps: Record<string, unknown> = {
+      'grpc step A': {
+        actorName: '',
+        taskName: 'Grpc Task A',
+        variables: [],
+        protocol: 'grpc',
+        method: 'GET',
+        url: '',
+        params: [],
+        headers: [],
+        auth: { type: 'none' },
+        body: '',
+        grpc: {
+          protoContent: 'syntax = "proto3";',
+          protoFilename: 'service.proto',
+          serverAddress: 'localhost:50051',
+          service: 'PaymentService',
+          method: 'CreatePayment',
+          requestMessage: '{}',
+          metadata: [],
+          secure: true,
+          skipCertVerification: false,
+        },
+        extracts: [],
+        questions: [],
+      },
+    };
+    const savedFlows: Record<string, string[]> = { 'Flow One': ['grpc step A'] };
+
+    const fetchMock = vi.fn((url: string) => {
+      if (url === '/actors' || url === '/tasks') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (url === '/steps') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(Object.keys(savedSteps)) });
+      }
+      if (url === '/flows') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(Object.keys(savedFlows)) });
+      }
+      if (url.startsWith('/steps/')) {
+        const name = decodeURIComponent(url.replace('/steps/', ''));
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(savedSteps[name]) });
+      }
+      if (url.startsWith('/flows/')) {
+        const name = decodeURIComponent(url.replace('/flows/', ''));
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(savedFlows[name] ?? []) });
+      }
+      return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    await userEvent.click(screen.getByRole('link', { name: 'API Automation' }));
+    expect(screen.getByRole('heading', { name: 'API Automation' })).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('Service'), 'Payment');
+    await userEvent.click(await screen.findByRole('button', { name: /grpc step A/ }));
+
+    expect(screen.getByRole('heading', { name: 'Simple Mode' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Task')).toHaveValue('Grpc Task A');
+  });
 });
