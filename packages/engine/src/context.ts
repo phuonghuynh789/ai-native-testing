@@ -1,3 +1,5 @@
+import { extractJsonPath } from './json-path.js';
+
 export class RunContext {
   private variables = new Map<string, unknown>();
 
@@ -13,14 +15,28 @@ export class RunContext {
     return this.resolveValue(value) as T;
   }
 
+  private resolvePathExpression(expr: string): unknown {
+    const splitIndex = expr.search(/[.\[]/);
+    if (splitIndex === -1) {
+      return this.variables.get(expr);
+    }
+    const varName = expr.slice(0, splitIndex);
+    const rest = expr.slice(splitIndex);
+    const varValue = this.variables.get(varName);
+    return extractJsonPath(varValue, `$${rest}`);
+  }
+
   private resolveValue(value: unknown): unknown {
     if (typeof value === 'string') {
-      const wholeMatch = /^\$\{(\w+)\}$/.exec(value);
+      const wholeMatch = /^\$\{([\w.\[\]]+)\}$/.exec(value);
       if (wholeMatch) {
-        return this.variables.get(wholeMatch[1]);
+        return this.resolvePathExpression(wholeMatch[1]);
       }
-      if (/\$\{\w+\}/.test(value)) {
-        return value.replace(/\$\{(\w+)\}/g, (_full, name: string) => String(this.variables.get(name)));
+      if (/\$\{[\w.\[\]]+\}/.test(value)) {
+        return value.replace(
+          /\$\{([\w.\[\]]+)\}/g,
+          (_full, expr: string) => String(this.resolvePathExpression(expr))
+        );
       }
       return value;
     }

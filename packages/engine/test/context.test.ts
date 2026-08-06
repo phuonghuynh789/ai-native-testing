@@ -62,4 +62,28 @@ describe('RunContext', () => {
     ctx.remember('amount', 49.99);
     expect(ctx.resolve('${amount}')).toBe(49.99);
   });
+
+  it('resolves a ${var.path} reference into a nested property', () => {
+    const ctx = new RunContext();
+    ctx.remember('response', { body: { foo: 'bar' } });
+    expect(ctx.resolve('${response.body.foo}')).toBe('bar');
+  });
+
+  it('resolves a ${var.path[0].more} reference with array indexing', () => {
+    const ctx = new RunContext();
+    ctx.remember('response', { body: { items: [{ id: 'a' }, { id: 'b' }] } });
+    expect(ctx.resolve('${response.body.items[1].id}')).toBe('b');
+  });
+
+  it('resolves a ${var.path} reference embedded within a larger string', () => {
+    const ctx = new RunContext();
+    ctx.remember('response', { body: { token: 'abc123' } });
+    expect(ctx.resolve('Bearer ${response.body.token}')).toBe('Bearer abc123');
+  });
+
+  it('throws when a ${var.path} reference does not resolve to a value', () => {
+    const ctx = new RunContext();
+    ctx.remember('response', { body: {} });
+    expect(() => ctx.resolve('${response.body.missing}')).toThrow(/did not resolve to a value/);
+  });
 });
