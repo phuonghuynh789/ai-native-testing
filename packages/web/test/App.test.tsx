@@ -197,6 +197,7 @@ describe('App', () => {
         extracts: [],
         questions: [],
         kafkaCheck: { enabled: false, topic: 'transLogV1' },
+        afterResponse: [],
       },
     };
     const savedFlows: Record<string, string[]> = { 'Flow One': ['grpc step A'] };

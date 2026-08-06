@@ -33,6 +33,7 @@ function emptyForm(overrides: Partial<FormState> = {}): FormState {
     extracts: [],
     questions: [],
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    afterResponse: [],
     ...overrides,
   };
 }
@@ -277,5 +278,49 @@ describe('buildFlowDefinition with mixed protocols', () => {
       emptyForm({ protocol: 'grpc', grpc: emptyGrpc() }),
     ]);
     expect(definition.actor.abilities).toEqual(['rest', 'grpc']);
+  });
+});
+
+describe('$now dynamic value', () => {
+  it('resolves a variable row whose value is exactly $now to the current Unix timestamp', () => {
+    const before = Date.now();
+    const definition = buildTestDefinition(
+      emptyForm({ variables: [{ id: '1', key: 'currentUnixTime', value: '$now' }] })
+    );
+    const after = Date.now();
+    const resolved = Number(definition.variables?.currentUnixTime);
+    expect(resolved).toBeGreaterThanOrEqual(before);
+    expect(resolved).toBeLessThanOrEqual(after);
+  });
+
+  it('leaves a non-$now value untouched', () => {
+    const definition = buildTestDefinition(emptyForm({ variables: [{ id: '1', key: 'foo', value: 'bar' }] }));
+    expect(definition.variables).toEqual({ foo: 'bar' });
+  });
+});
+
+describe('afterResponse rows', () => {
+  it('appends a log/echo extract step per non-blank row, after user extracts and before questions', () => {
+    const definition = buildTestDefinition(
+      emptyForm({
+        extracts: [{ id: '1', source: 'jsonPath', path: '$.data.paymentId', rememberAs: 'paymentId' }],
+        afterResponse: [{ id: '2', key: 'authToken', value: 'Bearer ${response.body.token}' }],
+        questions: [{ id: '3', source: 'status', path: '', expected: '200' }],
+      })
+    );
+    const steps = definition.tasks[0].steps;
+    expect(steps[3]).toEqual({
+      type: 'extract',
+      runner: 'log',
+      action: 'echo',
+      with: { value: 'Bearer ${response.body.token}' },
+      remember: 'authToken',
+    });
+    expect(steps[4].type).toBe('question');
+  });
+
+  it('ignores afterResponse rows with an empty key', () => {
+    const definition = buildTestDefinition(emptyForm({ afterResponse: [{ id: '1', key: '', value: 'ignored' }] }));
+    expect(definition.tasks[0].steps).toHaveLength(2);
   });
 });

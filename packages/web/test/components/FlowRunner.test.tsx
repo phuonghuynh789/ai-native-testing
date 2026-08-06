@@ -46,6 +46,7 @@ function sampleForm(overrides: Partial<FormState> = {}): FormState {
     extracts: [],
     questions: [],
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    afterResponse: [],
     ...overrides,
   };
 }

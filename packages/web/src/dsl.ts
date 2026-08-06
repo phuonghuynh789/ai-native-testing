@@ -1,13 +1,17 @@
 import type { Step, TestDefinition } from '@ai-native-testing/engine';
 import type { AuthConfig, FormState, KeyValueRow, SourceKind } from './types';
 
-export const HIDDEN_RESPONSE_VARIABLE = '__response';
+export const HIDDEN_RESPONSE_VARIABLE = 'response';
+
+function resolveDynamicValue(value: string): string {
+  return value === '$now' ? String(Date.now()) : value;
+}
 
 function rowsToRecord(rows: KeyValueRow[]): Record<string, string> {
   const result: Record<string, string> = {};
   for (const row of rows) {
     if (row.key.trim() !== '') {
-      result[row.key] = row.value;
+      result[row.key] = resolveDynamicValue(row.value);
     }
   }
   return result;
@@ -101,6 +105,15 @@ export function buildTaskSteps(form: FormState): Step[] {
       const { action, with: withFields } = sourceToStepFields(row.source, row.path);
       return { type: 'extract', runner, action, with: withFields, remember: row.rememberAs };
     }),
+    ...form.afterResponse
+      .filter((row) => row.key.trim() !== '')
+      .map((row): Step => ({
+        type: 'extract',
+        runner: 'log',
+        action: 'echo',
+        with: { value: row.value },
+        remember: row.key,
+      })),
     ...form.questions.map((row): Step => {
       const { action, with: withFields } = sourceToStepFields(row.source, row.path);
       return {

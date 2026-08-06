@@ -64,4 +64,5 @@ export interface FormState {
   extracts: ExtractRow[];
   questions: QuestionRow[];
   kafkaCheck: KafkaCheckFormState;
+  afterResponse: KeyValueRow[];
 }

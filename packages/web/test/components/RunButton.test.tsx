@@ -30,6 +30,7 @@ function emptyForm(): FormState {
     extracts: [],
     questions: [],
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    afterResponse: [],
   };
 }
 
