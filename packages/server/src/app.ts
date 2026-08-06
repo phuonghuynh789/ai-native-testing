@@ -14,8 +14,10 @@ import { registerStepRoutes } from './routes/steps.js';
 import { FlowStore } from './flow-store.js';
 import { registerFlowRoutes } from './routes/flows.js';
 import { registerGrpcRoutes } from './routes/grpc.js';
+import { KafkaCheckStore } from './kafka-check-store.js';
+import { registerKafkaCheckRoutes } from './routes/kafka-checks.js';
 
-const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+export const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 
 export interface BuildAppOptions {
   dataDir?: string;
@@ -42,6 +44,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   const flowStore = new FlowStore(join(dataDir, 'flows.json'));
   registerFlowRoutes(app, flowStore);
+
+  const kafkaCheckStore = new KafkaCheckStore(join(dataDir, 'kafka-checks.json'));
+  registerKafkaCheckRoutes(app, kafkaCheckStore);
 
   return app;
 }
