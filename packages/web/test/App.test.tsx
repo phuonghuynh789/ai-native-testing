@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from '../src/App';
 
@@ -21,7 +21,7 @@ class MockEventSource {
 
 function stubNameListFetch(runsResponse: unknown = { ok: false, json: () => Promise.resolve({}) }) {
   return vi.fn((url: string) => {
-    if (url === '/actors' || url === '/tasks' || url === '/steps' || url === '/flows') {
+    if (url === '/actors' || url === '/tasks' || url === '/steps' || url === '/flows' || url === '/kafka-checks') {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     }
     return Promise.resolve(runsResponse);
@@ -233,5 +233,38 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: 'Simple Mode' })).toBeInTheDocument();
     expect(screen.getByLabelText('Task')).toHaveValue('Grpc Task A');
+  });
+
+  it('switches to Check Kafka via the sidebar', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('link', { name: 'Check Kafka' }));
+    expect(screen.getByRole('heading', { name: 'Check Kafka' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Simple Mode' })).not.toBeInTheDocument();
+  });
+
+  it('registers a Kafka check when Check Kafka is enabled and Run is clicked', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url === '/actors' || url === '/tasks' || url === '/steps' || url === '/flows' || url === '/kafka-checks') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    await userEvent.type(screen.getByLabelText('Task'), 'Create Payment');
+    await userEvent.type(screen.getByLabelText('URL'), 'https://api.example.com/v1/payments');
+    await userEvent.click(screen.getByRole('button', { name: 'Body' }));
+    fireEvent.change(screen.getByLabelText('Body (JSON)'), { target: { value: '{"appTransID":"tx-999"}' } });
+    await userEvent.click(screen.getByLabelText('Check Kafka'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/kafka-checks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: 'tx-999', name: 'Create Payment', topic: 'transLogV1' }),
+    });
   });
 });

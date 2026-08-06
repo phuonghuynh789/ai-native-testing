@@ -23,6 +23,12 @@ export function Sidebar() {
       >
         API Automation
       </NavLink>
+      <NavLink
+        to="/kafka-checks"
+        className={({ isActive }) => (isActive ? 'sidebar-link sidebar-link--active' : 'sidebar-link')}
+      >
+        Check Kafka
+      </NavLink>
     </nav>
   );
 }

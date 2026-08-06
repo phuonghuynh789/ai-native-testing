@@ -10,6 +10,7 @@ import { Sidebar } from './components/Sidebar';
 import { SimpleModePage } from './components/SimpleModePage';
 import { EndToEndTestPage } from './components/EndToEndTestPage';
 import { ApiAutomationPage } from './components/ApiAutomationPage';
+import { KafkaChecksPage } from './components/KafkaChecksPage';
 
 function initialForm(): FormState {
   return {
@@ -197,6 +198,7 @@ export function App() {
               />
             }
           />
+          <Route path="/kafka-checks" element={<KafkaChecksPage />} />
         </Routes>
       </div>
     </BrowserRouter>
