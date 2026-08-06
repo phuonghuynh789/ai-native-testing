@@ -293,7 +293,12 @@ export function RequestBuilder(props: RequestBuilderProps) {
           </nav>
 
           {restTab === 'beforeInvoke' && (
-            <KeyValueRows label="Before invoke" rows={variables} onChange={onVariablesChange} />
+            <div className="card">
+              <KeyValueRows label="Before invoke" rows={variables} onChange={onVariablesChange} />
+              <p className="field-hint">
+                {'Reference elsewhere via ${key}. Value can be a literal, or the special value $now for the current timestamp.'}
+              </p>
+            </div>
           )}
           {restTab === 'params' && <KeyValueRows label="Params" rows={params} onChange={onParamsChange} />}
           {restTab === 'headers' && <KeyValueRows label="Headers" rows={headers} onChange={onHeadersChange} />}
@@ -422,7 +427,12 @@ export function RequestBuilder(props: RequestBuilderProps) {
           </nav>
 
           {grpcTab === 'beforeInvoke' && (
-            <KeyValueRows label="Before invoke" rows={variables} onChange={onVariablesChange} />
+            <div className="card">
+              <KeyValueRows label="Before invoke" rows={variables} onChange={onVariablesChange} />
+              <p className="field-hint">
+                {'Reference elsewhere via ${key}. Value can be a literal, or the special value $now for the current timestamp.'}
+              </p>
+            </div>
           )}
           {grpcTab === 'proto' && (
             <fieldset className="card">

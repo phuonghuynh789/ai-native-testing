@@ -428,6 +428,13 @@ describe('RequestBuilder', () => {
     expect(screen.getByRole('button', { name: 'Before invoke' })).toBeInTheDocument();
   });
 
+  it('shows a hint about ${key} reference syntax and $now on the Before invoke tab', async () => {
+    render(<RequestBuilder {...baseProps()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Before invoke' }));
+    expect(screen.getByText(/\$\{key\}/)).toBeInTheDocument();
+    expect(screen.getByText(/\$now/)).toBeInTheDocument();
+  });
+
   it('renders the After response tab bound to the afterResponse prop and calls onAfterResponseChange', async () => {
     const onAfterResponseChange = vi.fn();
     render(
