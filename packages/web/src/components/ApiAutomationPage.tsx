@@ -121,7 +121,7 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
       updateTaskResult(index, {
         name: entry.name,
         status,
-        results: deriveResults(entry.form.extracts, variablesRecord, stepResults),
+        results: deriveResults(entry.form.extracts, entry.form.afterResponse, variablesRecord, stepResults),
       });
     }
 
@@ -137,7 +137,7 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
           updateTaskResult(index, {
             name: entry.name,
             status: 'failed',
-            results: deriveResults(entry.form.extracts, variablesRecord, []),
+            results: deriveResults(entry.form.extracts, entry.form.afterResponse, variablesRecord, []),
           });
           return;
         }
@@ -147,7 +147,7 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
         updateTaskResult(index, {
           name: entry.name,
           status: 'failed',
-          results: deriveResults(entry.form.extracts, variablesRecord, []),
+          results: deriveResults(entry.form.extracts, entry.form.afterResponse, variablesRecord, []),
         });
         return;
       }
@@ -176,7 +176,7 @@ export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAut
       filteredEntries.map((entry) => ({
         name: entry.name,
         status: 'pending',
-        results: deriveResults(entry.form.extracts, toVariablesRecord(entry.form), []),
+        results: deriveResults(entry.form.extracts, entry.form.afterResponse, toVariablesRecord(entry.form), []),
       }))
     );
     filteredEntries.forEach((entry, index) => runEntry(entry, index));

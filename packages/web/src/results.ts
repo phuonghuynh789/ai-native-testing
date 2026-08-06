@@ -1,5 +1,5 @@
 import type { StepResult } from '@ai-native-testing/engine';
-import type { ExtractRow } from './types';
+import type { ExtractRow, KeyValueRow } from './types';
 
 export interface RawResponse {
   status: number;
@@ -19,6 +19,7 @@ const FIRST_EXTRACT_STEP_INDEX = 2;
 
 export function deriveResults(
   extracts: ExtractRow[],
+  afterResponse: KeyValueRow[],
   variables: Record<string, string>,
   stepResults: (StepResult | undefined)[]
 ): DerivedResults {
@@ -30,6 +31,14 @@ export function deriveResults(
     const result = stepResults[FIRST_EXTRACT_STEP_INDEX + index];
     if (result?.status === 'passed') {
       savedValues[row.rememberAs] = result.actual;
+    }
+  });
+
+  const nonBlankAfterResponse = afterResponse.filter((row) => row.key.trim() !== '');
+  nonBlankAfterResponse.forEach((row, index) => {
+    const result = stepResults[FIRST_EXTRACT_STEP_INDEX + extracts.length + index];
+    if (result?.status === 'passed') {
+      savedValues[row.key] = result.actual;
     }
   });
 

@@ -17,7 +17,8 @@ export interface FlowRunnerProps {
 const NEW_FLOW_OPTION = '__new_flow__';
 
 function taskStepCount(form: FormState): number {
-  return 2 + form.extracts.length + form.questions.length;
+  const afterResponseCount = form.afterResponse.filter((row) => row.key.trim() !== '').length;
+  return 2 + form.extracts.length + afterResponseCount + form.questions.length;
 }
 
 export function FlowRunner({ flowNames, onFlowNamesChange, stepNames }: FlowRunnerProps) {
@@ -110,7 +111,7 @@ export function FlowRunner({ flowNames, onFlowNamesChange, stepNames }: FlowRunn
         const variablesRecord = Object.fromEntries(
           form.variables.filter((row) => row.key.trim() !== '').map((row) => [row.key, row.value])
         );
-        const derived: DerivedResults = deriveResults(form.extracts, variablesRecord, slice);
+        const derived: DerivedResults = deriveResults(form.extracts, form.afterResponse, variablesRecord, slice);
         const completedCount = slice.filter((r) => r !== undefined).length;
         let status: TaskResult['status'] = 'pending';
         if (completedCount === slice.length && slice.length > 0) {

@@ -149,7 +149,7 @@ export function App() {
   );
 
   const results: DerivedResults | null =
-    stepResults.length > 0 ? deriveResults(form.extracts, variablesRecord, stepResults) : null;
+    stepResults.length > 0 ? deriveResults(form.extracts, form.afterResponse, variablesRecord, stepResults) : null;
 
   const disabled = !isFormValid(form);
 
