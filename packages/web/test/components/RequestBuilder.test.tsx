@@ -60,6 +60,8 @@ function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilder
     onExtractsChange: vi.fn(),
     questions: [],
     onQuestionsChange: vi.fn(),
+    kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    onKafkaCheckChange: vi.fn(),
     ...overrides,
   };
 }
@@ -364,5 +366,38 @@ describe('RequestBuilder', () => {
     );
     await userEvent.click(screen.getByLabelText('Skip certificate verification'));
     expect(onGrpcChange).toHaveBeenCalledWith(expect.objectContaining({ skipCertVerification: true }));
+  });
+
+  it('renders Check Kafka unchecked by default, with no Kafka Topic select', () => {
+    render(<RequestBuilder {...baseProps()} />);
+    expect(screen.getByLabelText('Check Kafka')).not.toBeChecked();
+    expect(screen.queryByLabelText('Kafka Topic')).not.toBeInTheDocument();
+  });
+
+  it('shows the Kafka Topic select, defaulted correctly, when Check Kafka is checked', () => {
+    render(
+      <RequestBuilder
+        {...baseProps({ kafkaCheck: { enabled: true, topic: 'refundLog' } })}
+      />
+    );
+    expect(screen.getByLabelText('Kafka Topic')).toHaveValue('refundLog');
+  });
+
+  it('calls onKafkaCheckChange when the Check Kafka checkbox is toggled', async () => {
+    const onKafkaCheckChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ onKafkaCheckChange })} />);
+    await userEvent.click(screen.getByLabelText('Check Kafka'));
+    expect(onKafkaCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'transLogV1' });
+  });
+
+  it('calls onKafkaCheckChange when the Kafka Topic select changes', async () => {
+    const onKafkaCheckChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({ kafkaCheck: { enabled: true, topic: 'transLogV1' }, onKafkaCheckChange })}
+      />
+    );
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    expect(onKafkaCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'paymentAuth' });
   });
 });

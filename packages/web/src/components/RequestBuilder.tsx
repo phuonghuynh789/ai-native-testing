@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { AuthConfig, ExtractRow, GrpcFormState, KeyValueRow, Protocol, QuestionRow } from '../types';
+import {
+  KAFKA_TOPICS,
+  type AuthConfig,
+  type ExtractRow,
+  type GrpcFormState,
+  type KafkaCheckFormState,
+  type KeyValueRow,
+  type Protocol,
+  type QuestionRow,
+} from '../types';
 import { KeyValueRows } from './KeyValueRows';
 import { ExtractEditor } from './ExtractEditor';
 import { QuestionsEditor } from './QuestionsEditor';
@@ -28,6 +37,8 @@ export interface RequestBuilderProps {
   onExtractsChange: (rows: ExtractRow[]) => void;
   questions: QuestionRow[];
   onQuestionsChange: (rows: QuestionRow[]) => void;
+  kafkaCheck: KafkaCheckFormState;
+  onKafkaCheckChange: (kafkaCheck: KafkaCheckFormState) => void;
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
@@ -109,6 +120,8 @@ export function RequestBuilder(props: RequestBuilderProps) {
     onExtractsChange,
     questions,
     onQuestionsChange,
+    kafkaCheck,
+    onKafkaCheckChange,
   } = props;
 
   const [restTab, setRestTab] = useState<RestTab>('params');
@@ -219,6 +232,35 @@ export function RequestBuilder(props: RequestBuilderProps) {
               />
             </label>
           </>
+        )}
+      </div>
+
+      <div className="row">
+        <label className="label">
+          Check Kafka
+          <input
+            type="checkbox"
+            checked={kafkaCheck.enabled}
+            onChange={(e) => onKafkaCheckChange({ ...kafkaCheck, enabled: e.target.checked })}
+          />
+        </label>
+        {kafkaCheck.enabled && (
+          <label className="label">
+            Kafka Topic
+            <select
+              className="text-input"
+              value={kafkaCheck.topic}
+              onChange={(e) =>
+                onKafkaCheckChange({ ...kafkaCheck, topic: e.target.value as KafkaCheckFormState['topic'] })
+              }
+            >
+              {KAFKA_TOPICS.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
       </div>
 

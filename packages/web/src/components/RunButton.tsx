@@ -1,5 +1,6 @@
 import type { RunEvent } from '@ai-native-testing/engine';
 import { buildTestDefinition } from '../dsl';
+import { correlatorFieldFor, extractCorrelatorValue, registerKafkaCheck } from '../kafkaChecks';
 import type { FormState } from '../types';
 
 interface RunButtonProps {
@@ -13,6 +14,23 @@ interface RunButtonProps {
 export function RunButton({ form, disabled, onRunStart, onEvent, onError }: RunButtonProps) {
   async function handleClick() {
     onRunStart();
+
+    if (form.kafkaCheck.enabled) {
+      const correlatorValue = extractCorrelatorValue(form, form.kafkaCheck.topic);
+      if (correlatorValue === undefined) {
+        onError(
+          `Check Kafka: could not find "${correlatorFieldFor(form.kafkaCheck.topic)}" in the request body.`
+        );
+      } else {
+        registerKafkaCheck({
+          message_id: correlatorValue,
+          name: form.taskName,
+          topic: form.kafkaCheck.topic,
+        }).catch(() => {
+          onError('Check Kafka: could not register the tracking check.');
+        });
+      }
+    }
 
     let definition;
     try {

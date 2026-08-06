@@ -117,4 +117,54 @@ describe('RunButton', () => {
     render(<RunButton form={emptyForm()} disabled onRunStart={() => {}} onEvent={() => {}} onError={() => {}} />);
     expect(screen.getByRole('button', { name: 'Run' })).toBeDisabled();
   });
+
+  it('registers a Kafka check alongside the run when Check Kafka is enabled', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url === '/kafka-checks') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const form = {
+      ...emptyForm(),
+      body: '{"appTransID":"tx-123"}',
+      kafkaCheck: { enabled: true, topic: 'transLogV1' as const },
+    };
+    render(<RunButton form={form} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={() => {}} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/kafka-checks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: 'tx-123', name: 'Task', topic: 'transLogV1' }),
+    });
+  });
+
+  it('calls onError and skips registration when the correlator field is missing from the body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) }));
+    const onError = vi.fn();
+    const form = {
+      ...emptyForm(),
+      body: '{"other":1}',
+      kafkaCheck: { enabled: true, topic: 'transLogV1' as const },
+    };
+    render(<RunButton form={form} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={onError} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(onError).toHaveBeenCalledWith(expect.stringContaining('appTransID'));
+  });
+
+  it('does not register a Kafka check when Check Kafka is disabled', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<RunButton form={emptyForm()} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={() => {}} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(fetchMock).not.toHaveBeenCalledWith('/kafka-checks', expect.anything());
+  });
 });

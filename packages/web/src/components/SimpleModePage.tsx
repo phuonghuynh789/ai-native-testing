@@ -87,6 +87,8 @@ export function SimpleModePage({
         onExtractsChange={(extracts) => onFormChange((prev) => ({ ...prev, extracts }))}
         questions={form.questions}
         onQuestionsChange={(questions) => onFormChange((prev) => ({ ...prev, questions }))}
+        kafkaCheck={form.kafkaCheck}
+        onKafkaCheckChange={(kafkaCheck) => onFormChange((prev) => ({ ...prev, kafkaCheck }))}
       />
       <RunButton form={form} disabled={disabled} onRunStart={onRunStart} onEvent={onEvent} onError={onError} />
       <SaveStepButton form={form} disabled={disabled} existingNames={stepNames} onSaved={onStepNamesChange} />
