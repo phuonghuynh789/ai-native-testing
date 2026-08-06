@@ -4,7 +4,7 @@ import type { RunEvent, StepResult } from '@ai-native-testing/engine';
 import type { FormState } from '../types';
 import { fetchStep } from '../steps';
 import { fetchFlow } from '../flows';
-import { buildTestDefinition, buildTaskSteps } from '../dsl';
+import { buildTestDefinition, buildTaskSteps, rowsToRecord } from '../dsl';
 import { deriveResults } from '../results';
 import { FlowResultsPanel, type TaskResult } from './FlowResultsPanel';
 
@@ -25,9 +25,7 @@ function matches(value: string, filter: string): boolean {
 }
 
 function toVariablesRecord(form: FormState): Record<string, string> {
-  return Object.fromEntries(
-    form.variables.filter((row) => row.key.trim() !== '').map((row) => [row.key, row.value])
-  );
+  return rowsToRecord(form.variables);
 }
 
 export function ApiAutomationPage({ stepNames, flowNames, onFormChange }: ApiAutomationPageProps) {

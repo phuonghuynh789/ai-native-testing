@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import type { RunEvent, StepResult } from '@ai-native-testing/engine';
 import type { FormState } from './types';
 import { deriveResults, type DerivedResults } from './results';
+import { rowsToRecord } from './dsl';
 import { fetchNames, saveName } from './nameLists';
 import { fetchStepNames } from './steps';
 import { fetchFlowNames } from './flows';
@@ -144,9 +145,7 @@ export function App() {
     }
   }
 
-  const variablesRecord = Object.fromEntries(
-    form.variables.filter((row) => row.key.trim() !== '').map((row) => [row.key, row.value])
-  );
+  const variablesRecord = rowsToRecord(form.variables);
 
   const results: DerivedResults | null =
     stepResults.length > 0 ? deriveResults(form.extracts, form.afterResponse, variablesRecord, stepResults) : null;

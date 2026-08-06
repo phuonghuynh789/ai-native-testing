@@ -7,7 +7,7 @@ function resolveDynamicValue(value: string): string {
   return value === '$now' ? String(Date.now()) : value;
 }
 
-function rowsToRecord(rows: KeyValueRow[]): Record<string, string> {
+export function rowsToRecord(rows: KeyValueRow[]): Record<string, string> {
   const result: Record<string, string> = {};
   for (const row of rows) {
     if (row.key.trim() !== '') {

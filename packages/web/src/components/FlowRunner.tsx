@@ -4,7 +4,7 @@ import type { FormState } from '../types';
 import { deriveResults, type DerivedResults } from '../results';
 import { fetchFlow, setFlow } from '../flows';
 import { fetchStep } from '../steps';
-import { buildFlowDefinition } from '../dsl';
+import { buildFlowDefinition, rowsToRecord } from '../dsl';
 import { FlowResultsPanel, type TaskResult } from './FlowResultsPanel';
 import { FlowStepOrderEditor } from './FlowStepOrderEditor';
 
@@ -108,9 +108,7 @@ export function FlowRunner({ flowNames, onFlowNamesChange, stepNames }: FlowRunn
       const results: TaskResult[] = forms.map((form, taskIndex) => {
         const start = boundaries[taskIndex];
         const slice = stepResults.slice(start, start + taskStepCount(form));
-        const variablesRecord = Object.fromEntries(
-          form.variables.filter((row) => row.key.trim() !== '').map((row) => [row.key, row.value])
-        );
+        const variablesRecord = rowsToRecord(form.variables);
         const derived: DerivedResults = deriveResults(form.extracts, form.afterResponse, variablesRecord, slice);
         const completedCount = slice.filter((r) => r !== undefined).length;
         let status: TaskResult['status'] = 'pending';
