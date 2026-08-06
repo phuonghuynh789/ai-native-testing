@@ -12,6 +12,7 @@ export default defineConfig({
       '/steps': 'http://localhost:3000',
       '/flows': 'http://localhost:3000',
       '/grpc': 'http://localhost:3000',
+      '/kafka-checks': 'http://localhost:3000',
     },
   },
   test: {
