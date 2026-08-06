@@ -38,16 +38,16 @@ export function KeyValueRows({ label, rows, onChange }: KeyValueRowsProps) {
           />
           <button
             type="button"
-            className="btn-secondary"
+            className="kv-remove"
             aria-label={`Remove ${label} row`}
             onClick={() => removeRow(row.id)}
           >
-            Remove
+            ✕
           </button>
         </div>
       ))}
-      <button type="button" className="btn-secondary" onClick={addRow}>
-        Add {label} row
+      <button type="button" className="btn-secondary" aria-label={`Add ${label} row`} onClick={addRow}>
+        + Add {label} row
       </button>
     </fieldset>
   );

@@ -47,4 +47,12 @@ describe('KeyValueRows', () => {
     fireEvent.change(screen.getByLabelText('Variables key'), { target: { value: 'baseUrl' } });
     expect(onChange).toHaveBeenCalledWith([{ id: '1', key: 'baseUrl', value: '' }]);
   });
+
+  it('shows a ✕ remove icon and a + Add row button, both with unchanged accessible names', () => {
+    render(
+      <KeyValueRows label="Variables" rows={[{ id: '1', key: 'a', value: 'b' }]} onChange={() => {}} />
+    );
+    expect(screen.getByRole('button', { name: 'Remove Variables row' })).toHaveTextContent('✕');
+    expect(screen.getByRole('button', { name: 'Add Variables row' })).toHaveTextContent('+ Add Variables row');
+  });
 });

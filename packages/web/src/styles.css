@@ -435,3 +435,19 @@ body {
   color: var(--color-mute);
   font-size: 12px;
 }
+
+/* Key/value row remove icon (Params, Headers, Variables, Metadata, Before invoke, After response) */
+.kv-remove {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--color-mute);
+  cursor: pointer;
+  font-size: 16px;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+}
+
+.kv-remove:hover {
+  background: var(--color-surface-soft);
+}
