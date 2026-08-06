@@ -1,5 +1,13 @@
 import type { FormState } from './types';
 
+function normalizeFormState(form: FormState): FormState {
+  return {
+    ...form,
+    kafkaCheck: form.kafkaCheck ?? { enabled: false, topic: 'transLogV1' },
+    afterResponse: form.afterResponse ?? [],
+  };
+}
+
 export async function fetchStepNames(): Promise<string[]> {
   try {
     const response = await fetch('/steps');
@@ -18,7 +26,7 @@ export async function fetchStep(name: string): Promise<FormState | undefined> {
     if (!response.ok) {
       return undefined;
     }
-    return (await response.json()) as FormState;
+    return normalizeFormState((await response.json()) as FormState);
   } catch {
     return undefined;
   }

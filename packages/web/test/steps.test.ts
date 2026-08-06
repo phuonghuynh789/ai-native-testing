@@ -73,6 +73,19 @@ describe('fetchStep', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     expect(await fetchStep('Create Payment')).toBeUndefined();
   });
+
+  it('backfills kafkaCheck and afterResponse when a saved step predates those fields', async () => {
+    const { kafkaCheck, afterResponse, ...legacyForm } = sampleForm();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(legacyForm) })
+    );
+
+    const result = await fetchStep('Create Payment');
+
+    expect(result?.kafkaCheck).toEqual({ enabled: false, topic: 'transLogV1' });
+    expect(result?.afterResponse).toEqual([]);
+  });
 });
 
 describe('saveStep', () => {
