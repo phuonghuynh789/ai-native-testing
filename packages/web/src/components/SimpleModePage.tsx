@@ -87,6 +87,10 @@ export function SimpleModePage({
         onExtractsChange={(extracts) => onFormChange((prev) => ({ ...prev, extracts }))}
         questions={form.questions}
         onQuestionsChange={(questions) => onFormChange((prev) => ({ ...prev, questions }))}
+        variables={form.variables}
+        onVariablesChange={(variables) => onFormChange((prev) => ({ ...prev, variables }))}
+        afterResponse={form.afterResponse}
+        onAfterResponseChange={(afterResponse) => onFormChange((prev) => ({ ...prev, afterResponse }))}
         kafkaCheck={form.kafkaCheck}
         onKafkaCheckChange={(kafkaCheck) => onFormChange((prev) => ({ ...prev, kafkaCheck }))}
       />

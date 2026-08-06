@@ -268,4 +268,68 @@ describe('App', () => {
       body: JSON.stringify({ message_id: 'tx-999', name: 'Create Payment', topic: 'transLogV1' }),
     });
   });
+
+  it('carries a Before invoke variable into the run and shows an After response value in the Results Context tab', async () => {
+    const fetchMock = stubNameListFetch({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    await userEvent.type(screen.getByLabelText('Task'), 'Create Payment');
+    fireEvent.change(screen.getByLabelText('URL'), {
+      target: { value: 'https://api.example.com/v1/payments/${orderId}' },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Before invoke' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add Before invoke row' }));
+    fireEvent.change(screen.getByLabelText('Before invoke key'), { target: { value: 'orderId' } });
+    fireEvent.change(screen.getByLabelText('Before invoke value'), { target: { value: 'order-1' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'After response' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add After response row' }));
+    fireEvent.change(screen.getByLabelText('After response key'), { target: { value: 'authToken' } });
+    fireEvent.change(screen.getByLabelText('After response value'), { target: { value: 'Bearer abc' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    const runsCall = fetchMock.mock.calls.find(([url]) => url === '/runs') as [string, RequestInit] | undefined;
+    const body = JSON.parse(runsCall?.[1].body as string);
+    expect(body.variables).toEqual({ orderId: 'order-1' });
+    expect(body.tasks[0].steps[0].with.url).toBe('https://api.example.com/v1/payments/${orderId}');
+    expect(body.tasks[0].steps[2]).toEqual({
+      type: 'extract',
+      runner: 'log',
+      action: 'echo',
+      with: { value: 'Bearer abc' },
+      remember: 'authToken',
+    });
+
+    const source = MockEventSource.instances[0];
+    source.emit({
+      type: 'step:completed',
+      index: 0,
+      result: { type: 'interaction', runner: 'rest', action: 'request', status: 'passed', args: {} },
+    });
+    source.emit({
+      type: 'step:completed',
+      index: 1,
+      result: {
+        type: 'extract',
+        runner: 'rest',
+        action: 'raw',
+        status: 'passed',
+        actual: { status: 200, headers: {}, body: {} },
+      },
+    });
+    source.emit({
+      type: 'step:completed',
+      index: 2,
+      result: { type: 'extract', runner: 'log', action: 'echo', status: 'passed', actual: 'Bearer abc' },
+    });
+    source.emit({ type: 'run:completed' });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Context' }));
+    expect(await screen.findByText(/authToken/)).toBeInTheDocument();
+    expect(screen.getByText(/Bearer abc/)).toBeInTheDocument();
+  });
 });
