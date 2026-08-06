@@ -37,6 +37,10 @@ export interface RequestBuilderProps {
   onExtractsChange: (rows: ExtractRow[]) => void;
   questions: QuestionRow[];
   onQuestionsChange: (rows: QuestionRow[]) => void;
+  variables: KeyValueRow[];
+  onVariablesChange: (rows: KeyValueRow[]) => void;
+  afterResponse: KeyValueRow[];
+  onAfterResponseChange: (rows: KeyValueRow[]) => void;
   kafkaCheck: KafkaCheckFormState;
   onKafkaCheckChange: (kafkaCheck: KafkaCheckFormState) => void;
 }
@@ -48,26 +52,30 @@ const PROTOCOLS: { id: Protocol; label: string }[] = [
   { id: 'grpc', label: 'gRPC' },
 ];
 
-type RestTab = 'params' | 'headers' | 'auth' | 'body' | 'curl' | 'extract' | 'questions';
-type GrpcTab = 'proto' | 'service' | 'method' | 'message' | 'metadata' | 'grpcurl' | 'extract' | 'questions';
+type RestTab = 'beforeInvoke' | 'params' | 'headers' | 'auth' | 'body' | 'curl' | 'afterResponse' | 'extract' | 'questions';
+type GrpcTab = 'beforeInvoke' | 'proto' | 'service' | 'method' | 'message' | 'metadata' | 'grpcurl' | 'afterResponse' | 'extract' | 'questions';
 
 const REST_TABS: { id: RestTab; label: string }[] = [
+  { id: 'beforeInvoke', label: 'Before invoke' },
   { id: 'params', label: 'Params' },
   { id: 'headers', label: 'Headers' },
   { id: 'auth', label: 'Auth' },
   { id: 'body', label: 'Body' },
   { id: 'curl', label: 'Paste cURL' },
+  { id: 'afterResponse', label: 'After response' },
   { id: 'extract', label: 'Extract' },
   { id: 'questions', label: 'Questions' },
 ];
 
 const GRPC_TABS: { id: GrpcTab; label: string }[] = [
+  { id: 'beforeInvoke', label: 'Before invoke' },
   { id: 'proto', label: 'Proto' },
   { id: 'service', label: 'Service' },
   { id: 'method', label: 'Method' },
   { id: 'message', label: 'Message' },
   { id: 'metadata', label: 'Metadata' },
   { id: 'grpcurl', label: 'Paste grpcurl' },
+  { id: 'afterResponse', label: 'After response' },
   { id: 'extract', label: 'Extract' },
   { id: 'questions', label: 'Questions' },
 ];
@@ -120,6 +128,10 @@ export function RequestBuilder(props: RequestBuilderProps) {
     onExtractsChange,
     questions,
     onQuestionsChange,
+    variables,
+    onVariablesChange,
+    afterResponse,
+    onAfterResponseChange,
     kafkaCheck,
     onKafkaCheckChange,
   } = props;
@@ -280,6 +292,9 @@ export function RequestBuilder(props: RequestBuilderProps) {
             ))}
           </nav>
 
+          {restTab === 'beforeInvoke' && (
+            <KeyValueRows label="Before invoke" rows={variables} onChange={onVariablesChange} />
+          )}
           {restTab === 'params' && <KeyValueRows label="Params" rows={params} onChange={onParamsChange} />}
           {restTab === 'headers' && <KeyValueRows label="Headers" rows={headers} onChange={onHeadersChange} />}
           {restTab === 'auth' && (
@@ -379,6 +394,14 @@ export function RequestBuilder(props: RequestBuilderProps) {
               }}
             />
           )}
+          {restTab === 'afterResponse' && (
+            <div className="card">
+              <KeyValueRows label="After response" rows={afterResponse} onChange={onAfterResponseChange} />
+              <p className="field-hint">
+                {'Value can be a literal, or reference the response: ${response.body.foo}, ${response.body.items[0].id}, ${response.headers.x-request-id}, ${response.status}'}
+              </p>
+            </div>
+          )}
           {restTab === 'extract' && <ExtractEditor rows={extracts} onChange={onExtractsChange} />}
           {restTab === 'questions' && <QuestionsEditor rows={questions} onChange={onQuestionsChange} />}
         </>
@@ -398,6 +421,9 @@ export function RequestBuilder(props: RequestBuilderProps) {
             ))}
           </nav>
 
+          {grpcTab === 'beforeInvoke' && (
+            <KeyValueRows label="Before invoke" rows={variables} onChange={onVariablesChange} />
+          )}
           {grpcTab === 'proto' && (
             <fieldset className="card">
               <legend className="heading-sm">Proto File</legend>
@@ -483,6 +509,14 @@ export function RequestBuilder(props: RequestBuilderProps) {
                 })
               }
             />
+          )}
+          {grpcTab === 'afterResponse' && (
+            <div className="card">
+              <KeyValueRows label="After response" rows={afterResponse} onChange={onAfterResponseChange} />
+              <p className="field-hint">
+                {'Value can be a literal, or reference the response: ${response.body.foo}, ${response.body.items[0].id}, ${response.headers.x-request-id}, ${response.status}'}
+              </p>
+            </div>
           )}
           {grpcTab === 'extract' && <ExtractEditor rows={extracts} onChange={onExtractsChange} />}
           {grpcTab === 'questions' && <QuestionsEditor rows={questions} onChange={onQuestionsChange} />}

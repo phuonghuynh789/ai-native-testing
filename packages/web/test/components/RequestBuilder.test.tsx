@@ -62,6 +62,10 @@ function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilder
     onQuestionsChange: vi.fn(),
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
     onKafkaCheckChange: vi.fn(),
+    variables: [],
+    onVariablesChange: vi.fn(),
+    afterResponse: [],
+    onAfterResponseChange: vi.fn(),
     ...overrides,
   };
 }
@@ -399,5 +403,58 @@ describe('RequestBuilder', () => {
     );
     await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
     expect(onKafkaCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'paymentAuth' });
+  });
+
+  it('renders the Before invoke tab bound to the variables prop', async () => {
+    render(
+      <RequestBuilder
+        {...baseProps({ variables: [{ id: '1', key: 'baseUrl', value: 'https://x.example.com' }] })}
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Before invoke' }));
+    expect(screen.getByDisplayValue('baseUrl')).toBeInTheDocument();
+  });
+
+  it('calls onVariablesChange from the Before invoke tab', async () => {
+    const onVariablesChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ onVariablesChange })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Before invoke' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add Before invoke row' }));
+    expect(onVariablesChange).toHaveBeenCalledWith([{ id: expect.any(String), key: '', value: '' }]);
+  });
+
+  it('renders the Before invoke tab for gRPC too', () => {
+    render(<RequestBuilder {...baseProps({ protocol: 'grpc' })} />);
+    expect(screen.getByRole('button', { name: 'Before invoke' })).toBeInTheDocument();
+  });
+
+  it('renders the After response tab bound to the afterResponse prop and calls onAfterResponseChange', async () => {
+    const onAfterResponseChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({
+          afterResponse: [{ id: '1', key: 'authToken', value: '${response.body.token}' }],
+          onAfterResponseChange,
+        })}
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'After response' }));
+    expect(screen.getByDisplayValue('authToken')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Add After response row' }));
+    expect(onAfterResponseChange).toHaveBeenCalledWith([
+      { id: '1', key: 'authToken', value: '${response.body.token}' },
+      { id: expect.any(String), key: '', value: '' },
+    ]);
+  });
+
+  it('shows a hint about ${response...} syntax on the After response tab', async () => {
+    render(<RequestBuilder {...baseProps()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'After response' }));
+    expect(screen.getByText(/response\.body\.foo/)).toBeInTheDocument();
+  });
+
+  it('renders the After response tab for gRPC too', async () => {
+    render(<RequestBuilder {...baseProps({ protocol: 'grpc' })} />);
+    expect(screen.getByRole('button', { name: 'After response' })).toBeInTheDocument();
   });
 });
