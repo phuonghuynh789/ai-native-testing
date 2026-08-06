@@ -3,3 +3,4 @@ node_modules/
 dist/
 .superpowers/
 packages/server/data/
+packages/server/config/kafka.yaml

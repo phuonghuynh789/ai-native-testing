@@ -15,10 +15,13 @@
     "@ai-native-testing/runner-log": "workspace:*",
     "@ai-native-testing/runner-api": "workspace:*",
     "@ai-native-testing/runner-grpc": "workspace:*",
-    "fastify": "^5.1.0"
+    "fastify": "^5.1.0",
+    "js-yaml": "^4.1.0",
+    "kafkajs": "^2.2.4"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@types/js-yaml": "^4.0.9",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4",
     "tsx": "^4.19.2"

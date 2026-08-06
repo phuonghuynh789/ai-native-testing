@@ -1,0 +1,13 @@
+groupID: automation_local
+transLogV1:
+  brokers: localhost:9092
+  topic: ZPReportTransLogQC
+refundLog:
+  brokers: localhost:9092
+  topic: ZPReportTransLog
+paymentAuth:
+  brokers: localhost:9092
+  topic: payment_authentication_auth_session_status_qc
+disburseLog:
+  brokers: localhost:9092
+  topic: td-transfer-disbursement-order-status-qc
