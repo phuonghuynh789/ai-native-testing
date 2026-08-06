@@ -54,6 +54,7 @@ function makeGrpcForm(service: string, method: string, taskName: string): FormSt
     },
     extracts: [],
     questions: [],
+    kafkaCheck: { enabled: false, topic: 'transLogV1' },
   };
 }
 
@@ -82,6 +83,7 @@ function makeRestForm(taskName: string): FormState {
     },
     extracts: [],
     questions: [],
+    kafkaCheck: { enabled: false, topic: 'transLogV1' },
   };
 }
 

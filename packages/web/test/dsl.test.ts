@@ -32,6 +32,7 @@ function emptyForm(overrides: Partial<FormState> = {}): FormState {
     grpc: emptyGrpc(),
     extracts: [],
     questions: [],
+    kafkaCheck: { enabled: false, topic: 'transLogV1' },
     ...overrides,
   };
 }

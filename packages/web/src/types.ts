@@ -28,6 +28,15 @@ export type AuthConfig =
 
 export type Protocol = 'rest' | 'grpc';
 
+export type KafkaTopic = 'transLogV1' | 'refundLog' | 'paymentAuth';
+
+export const KAFKA_TOPICS: KafkaTopic[] = ['transLogV1', 'refundLog', 'paymentAuth'];
+
+export interface KafkaCheckFormState {
+  enabled: boolean;
+  topic: KafkaTopic;
+}
+
 export interface GrpcFormState {
   protoContent: string;
   protoFilename: string;
@@ -54,4 +63,5 @@ export interface FormState {
   grpc: GrpcFormState;
   extracts: ExtractRow[];
   questions: QuestionRow[];
+  kafkaCheck: KafkaCheckFormState;
 }

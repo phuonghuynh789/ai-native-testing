@@ -36,6 +36,7 @@ function initialForm(): FormState {
     },
     extracts: [],
     questions: [],
+    kafkaCheck: { enabled: false, topic: 'transLogV1' },
   };
 }
 
