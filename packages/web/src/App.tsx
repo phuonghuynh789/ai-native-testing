@@ -12,6 +12,7 @@ import { SimpleModePage } from './components/SimpleModePage';
 import { EndToEndTestPage } from './components/EndToEndTestPage';
 import { ApiAutomationPage } from './components/ApiAutomationPage';
 import { KafkaChecksPage } from './components/KafkaChecksPage';
+import { ManageStepsPage } from './components/ManageStepsPage';
 
 function initialForm(): FormState {
   return {
@@ -175,6 +176,17 @@ export function App() {
                 onRunStart={handleRunStart}
                 onEvent={handleEvent}
                 onError={setError}
+              />
+            }
+          />
+          <Route
+            path="/manage-steps"
+            element={
+              <ManageStepsPage
+                stepNames={stepNames}
+                onStepNamesChange={setStepNames}
+                flowNames={flowNames}
+                onFlowNamesChange={setFlowNames}
               />
             }
           />

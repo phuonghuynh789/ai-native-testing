@@ -12,6 +12,12 @@ export function Sidebar() {
         Simple Mode
       </NavLink>
       <NavLink
+        to="/manage-steps"
+        className={({ isActive }) => (isActive ? 'sidebar-link sidebar-link--active' : 'sidebar-link')}
+      >
+        Manage Load Reusable Step
+      </NavLink>
+      <NavLink
         to="/e2e-test"
         className={({ isActive }) => (isActive ? 'sidebar-link sidebar-link--active' : 'sidebar-link')}
       >

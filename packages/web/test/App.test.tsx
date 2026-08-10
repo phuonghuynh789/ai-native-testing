@@ -21,6 +21,9 @@ class MockEventSource {
 
 function stubNameListFetch(runsResponse: unknown = { ok: false, json: () => Promise.resolve({}) }) {
   return vi.fn((url: string) => {
+    if (url.startsWith('/steps/search') || url.startsWith('/flows/search')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [], total: 0 }) });
+    }
     if (url === '/actors' || url === '/tasks' || url === '/steps' || url === '/flows' || url === '/kafka-checks') {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     }
@@ -241,6 +244,12 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('link', { name: 'Check Kafka' }));
     expect(screen.getByRole('heading', { name: 'Check Kafka' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Simple Mode' })).not.toBeInTheDocument();
+  });
+
+  it('switches to Manage Load Reusable Step via the sidebar', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('link', { name: 'Manage Load Reusable Step' }));
+    expect(screen.getByRole('heading', { name: 'Manage Load Reusable Step' })).toBeInTheDocument();
   });
 
   it('registers a Kafka check when Check Kafka is enabled and Run is clicked', async () => {
