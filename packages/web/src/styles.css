@@ -457,3 +457,25 @@ body {
   color: var(--color-mute);
   margin: 0;
 }
+
+/* Manage Reusable Steps & Flows tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
