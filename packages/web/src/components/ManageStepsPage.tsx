@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { searchSteps, deleteStep, type StepSummary } from '../steps';
-import { fetchFlowNames, fetchFlow } from '../flows';
+import { fetchFlowNames, fetchFlow, deleteFlow, searchFlows, type FlowSummary } from '../flows';
 
 export interface ManageStepsPageProps {
   stepNames: string[];
@@ -13,7 +13,7 @@ const PAGE_SIZE = 20;
 
 type Tab = 'steps' | 'flows';
 
-export function ManageStepsPage({ onStepNamesChange }: ManageStepsPageProps) {
+export function ManageStepsPage({ onStepNamesChange, onFlowNamesChange }: ManageStepsPageProps) {
   const [tab, setTab] = useState<Tab>('steps');
 
   const [stepSearchInput, setStepSearchInput] = useState('');
@@ -74,6 +74,52 @@ export function ManageStepsPage({ onStepNamesChange }: ManageStepsPageProps) {
   }
 
   const stepTotalPages = Math.max(1, Math.ceil(stepTotal / PAGE_SIZE));
+
+  const [flowSearchInput, setFlowSearchInput] = useState('');
+  const [flowSearchTerm, setFlowSearchTerm] = useState('');
+  const [flowPage, setFlowPage] = useState(1);
+  const [flowItems, setFlowItems] = useState<FlowSummary[]>([]);
+  const [flowTotal, setFlowTotal] = useState(0);
+  const [flowsError, setFlowsError] = useState<string | null>(null);
+
+  async function loadFlows(term: string, page: number) {
+    const result = await searchFlows(term, page, PAGE_SIZE);
+    setFlowItems(result.items);
+    setFlowTotal(result.total);
+  }
+
+  useEffect(() => {
+    loadFlows(flowSearchTerm, flowPage);
+  }, [flowSearchTerm, flowPage]);
+
+  function handleFlowSearch() {
+    setFlowPage(1);
+    setFlowSearchTerm(flowSearchInput);
+  }
+
+  async function handleDeleteFlow(name: string) {
+    const confirmed = window.confirm(`Delete '${name}'?`);
+    if (!confirmed) {
+      return;
+    }
+    const names = await deleteFlow(name);
+    if (names === undefined) {
+      setFlowsError(`Could not delete '${name}'. It may have already been removed.`);
+      await loadFlows(flowSearchTerm, flowPage);
+      return;
+    }
+    setFlowsError(null);
+    onFlowNamesChange(names);
+
+    const isLastRowOnPage = flowItems.length === 1 && flowPage > 1;
+    if (isLastRowOnPage) {
+      setFlowPage(flowPage - 1);
+    } else {
+      await loadFlows(flowSearchTerm, flowPage);
+    }
+  }
+
+  const flowTotalPages = Math.max(1, Math.ceil(flowTotal / PAGE_SIZE));
 
   return (
     <main className="app-main">
@@ -169,7 +215,71 @@ export function ManageStepsPage({ onStepNamesChange }: ManageStepsPageProps) {
         </section>
       )}
 
-      {tab === 'flows' && <div />}
+      {tab === 'flows' && (
+        <section className="card">
+          {flowsError && (
+            <p role="alert" className="alert">
+              {flowsError}
+            </p>
+          )}
+          <label className="label">
+            E2E flow
+            <input className="text-input" value={flowSearchInput} onChange={(e) => setFlowSearchInput(e.target.value)} />
+          </label>
+          <button type="button" className="btn-secondary" onClick={handleFlowSearch}>
+            Search
+          </button>
+
+          {flowItems.length === 0 ? (
+            <p className="field-hint">No flows found.</p>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Flow Name</th>
+                  <th>Steps</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {flowItems.map((item) => (
+                  <tr key={item.name}>
+                    <td>{item.name}</td>
+                    <td>{item.steps.join(', ')}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="kv-remove"
+                        aria-label={`Delete ${item.name}`}
+                        onClick={() => handleDeleteFlow(item.name)}
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <div className="pagination">
+            <button type="button" className="btn-secondary" disabled={flowPage <= 1} onClick={() => setFlowPage(flowPage - 1)}>
+              Prev
+            </button>
+            <span>
+              Page {flowPage} of {flowTotalPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={flowPage >= flowTotalPages}
+              onClick={() => setFlowPage(flowPage + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

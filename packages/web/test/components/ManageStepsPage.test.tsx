@@ -181,3 +181,83 @@ describe('ManageStepsPage — Steps tab', () => {
     expect(onStepNamesChange).not.toHaveBeenCalled();
   });
 });
+
+describe('ManageStepsPage — Flows tab', () => {
+  it('loads and renders page 1 of flows when the Flows tab is opened', async () => {
+    vi.stubGlobal(
+      'fetch',
+      stubFetch({
+        '/steps/search?search=&page=1&pageSize=20': { items: [], total: 0 },
+        '/flows/search?search=&page=1&pageSize=20': {
+          items: [{ name: 'Checkout Flow', steps: ['Login', 'Create Payment'] }],
+          total: 1,
+        },
+      })
+    );
+
+    render(<ManageStepsPage {...baseProps()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Flows' }));
+
+    expect(await screen.findByText('Checkout Flow')).toBeInTheDocument();
+    expect(screen.getByText('Login, Create Payment')).toBeInTheDocument();
+  });
+
+  it('shows an empty state when there are no flow matches', async () => {
+    vi.stubGlobal(
+      'fetch',
+      stubFetch({
+        '/steps/search?search=&page=1&pageSize=20': { items: [], total: 0 },
+        '/flows/search?search=&page=1&pageSize=20': { items: [], total: 0 },
+      })
+    );
+
+    render(<ManageStepsPage {...baseProps()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Flows' }));
+
+    expect(await screen.findByText('No flows found.')).toBeInTheDocument();
+  });
+
+  it('searches flows by the entered term when Search is clicked', async () => {
+    const fetchMock = stubFetch({
+      '/steps/search?search=&page=1&pageSize=20': { items: [], total: 0 },
+      '/flows/search?search=&page=1&pageSize=20': { items: [], total: 0 },
+      '/flows/search?search=checkout&page=1&pageSize=20': {
+        items: [{ name: 'Checkout Flow', steps: ['Login'] }],
+        total: 1,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<ManageStepsPage {...baseProps()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Flows' }));
+    await waitFor(() => expect(screen.getByText('No flows found.')).toBeInTheDocument());
+
+    await userEvent.type(screen.getByLabelText('E2E flow'), 'checkout');
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(await screen.findByText('Checkout Flow')).toBeInTheDocument();
+  });
+
+  it('deletes a flow with a plain confirm and updates flowNames', async () => {
+    const onFlowNamesChange = vi.fn();
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    const fetchMock = stubFetch({
+      '/steps/search?search=&page=1&pageSize=20': { items: [], total: 0 },
+      '/flows/search?search=&page=1&pageSize=20': {
+        items: [{ name: 'Checkout Flow', steps: ['Login'] }],
+        total: 1,
+      },
+      'DELETE /flows/Checkout%20Flow': { names: [] },
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<ManageStepsPage {...baseProps({ onFlowNamesChange })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Flows' }));
+    await screen.findByText('Checkout Flow');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete Checkout Flow' }));
+
+    expect(window.confirm).toHaveBeenCalledWith("Delete 'Checkout Flow'?");
+    await waitFor(() => expect(onFlowNamesChange).toHaveBeenCalledWith([]));
+  });
+});
