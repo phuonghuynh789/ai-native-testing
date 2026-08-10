@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fetchFlowNames, fetchFlow, addStepToFlow, setFlow } from '../src/flows';
+import { fetchFlowNames, fetchFlow, addStepToFlow, setFlow, searchFlows, deleteFlow } from '../src/flows';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -101,5 +101,53 @@ describe('setFlow', () => {
   it('returns undefined when the request throws', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     expect(await setFlow('Transfer money by wallet', ['Check Balance'])).toBeUndefined();
+  });
+});
+
+describe('searchFlows', () => {
+  it('sends search/page/pageSize as query params and returns the parsed result', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [], total: 0 }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await searchFlows('checkout', 1, 20);
+
+    expect(fetchMock).toHaveBeenCalledWith('/flows/search?search=checkout&page=1&pageSize=20');
+    expect(result).toEqual({ items: [], total: 0 });
+  });
+
+  it('returns an empty result when the response is not ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    expect(await searchFlows('', 1, 20)).toEqual({ items: [], total: 0 });
+  });
+
+  it('returns an empty result when the request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    expect(await searchFlows('', 1, 20)).toEqual({ items: [], total: 0 });
+  });
+});
+
+describe('deleteFlow', () => {
+  it('sends a DELETE request and returns the updated names list', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ names: ['Onboarding'] }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await deleteFlow('Checkout Flow');
+
+    expect(fetchMock).toHaveBeenCalledWith('/flows/Checkout%20Flow', { method: 'DELETE' });
+    expect(result).toEqual(['Onboarding']);
+  });
+
+  it('returns undefined when the response is not ok (e.g. 404)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    expect(await deleteFlow('Missing')).toBeUndefined();
+  });
+
+  it('returns undefined when the request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    expect(await deleteFlow('Checkout Flow')).toBeUndefined();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fetchStepNames, fetchStep, saveStep } from '../src/steps';
+import { fetchStepNames, fetchStep, saveStep, searchSteps, deleteStep } from '../src/steps';
 import type { FormState } from '../src/types';
 
 afterEach(() => {
@@ -114,5 +114,53 @@ describe('saveStep', () => {
   it('returns undefined when the request throws', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     expect(await saveStep('Create Payment', sampleForm())).toBeUndefined();
+  });
+});
+
+describe('searchSteps', () => {
+  it('sends search/page/pageSize as query params and returns the parsed result', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [], total: 0 }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await searchSteps('payment', 2, 20);
+
+    expect(fetchMock).toHaveBeenCalledWith('/steps/search?search=payment&page=2&pageSize=20');
+    expect(result).toEqual({ items: [], total: 0 });
+  });
+
+  it('returns an empty result when the response is not ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    expect(await searchSteps('', 1, 20)).toEqual({ items: [], total: 0 });
+  });
+
+  it('returns an empty result when the request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    expect(await searchSteps('', 1, 20)).toEqual({ items: [], total: 0 });
+  });
+});
+
+describe('deleteStep', () => {
+  it('sends a DELETE request and returns the updated names list', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ names: ['Login'] }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await deleteStep('Create Payment');
+
+    expect(fetchMock).toHaveBeenCalledWith('/steps/Create%20Payment', { method: 'DELETE' });
+    expect(result).toEqual(['Login']);
+  });
+
+  it('returns undefined when the response is not ok (e.g. 404)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    expect(await deleteStep('Missing')).toBeUndefined();
+  });
+
+  it('returns undefined when the request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    expect(await deleteStep('Create Payment')).toBeUndefined();
   });
 });
