@@ -81,3 +81,59 @@ describe('FlowStore', () => {
     expect(await store.get('Brand New Flow')).toEqual(['Login', 'Check Balance']);
   });
 });
+
+describe('FlowStore.delete', () => {
+  it('deletes an existing flow and returns the updated names list', async () => {
+    const store = new FlowStore(join(dir, 'flows.json'));
+    await store.setSteps('Checkout', ['Login', 'Create Payment']);
+    await store.setSteps('Refund', ['Login', 'Refund Payment']);
+    const names = await store.delete('Checkout');
+    expect(names).toEqual(['Refund']);
+    expect(await store.get('Checkout')).toBeUndefined();
+  });
+
+  it('returns undefined when deleting an unknown name', async () => {
+    const store = new FlowStore(join(dir, 'flows.json'));
+    expect(await store.delete('Missing')).toBeUndefined();
+  });
+
+  it('persists the deletion across separate store instances pointed at the same file', async () => {
+    const filePath = join(dir, 'flows.json');
+    const first = new FlowStore(filePath);
+    await first.setSteps('Checkout', ['Login']);
+    await first.delete('Checkout');
+
+    const second = new FlowStore(filePath);
+    expect(await second.list()).toEqual([]);
+  });
+});
+
+describe('FlowStore.search', () => {
+  it('matches flow names case-insensitively by substring and includes their steps', async () => {
+    const store = new FlowStore(join(dir, 'flows.json'));
+    await store.setSteps('Checkout Flow', ['Login', 'Create Payment']);
+    await store.setSteps('Refund Flow', ['Login', 'Refund Payment']);
+    await store.setSteps('Onboarding', ['Create Account']);
+
+    const result = await store.search('flow', 1, 20);
+    expect(result.total).toBe(2);
+    expect(result.items.sort((a, b) => a.name.localeCompare(b.name))).toEqual([
+      { name: 'Checkout Flow', steps: ['Login', 'Create Payment'] },
+      { name: 'Refund Flow', steps: ['Login', 'Refund Payment'] },
+    ]);
+  });
+
+  it('paginates results and reports the total match count', async () => {
+    const store = new FlowStore(join(dir, 'flows.json'));
+    for (let i = 1; i <= 25; i++) {
+      await store.setSteps(`Flow ${String(i).padStart(2, '0')}`, []);
+    }
+    const page1 = await store.search('', 1, 20);
+    expect(page1.items).toHaveLength(20);
+    expect(page1.total).toBe(25);
+
+    const page2 = await store.search('', 2, 20);
+    expect(page2.items).toHaveLength(5);
+    expect(page2.total).toBe(25);
+  });
+});
