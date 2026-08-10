@@ -4,6 +4,11 @@ import type { FlowStore } from '../flow-store.js';
 export function registerFlowRoutes(app: FastifyInstance, flowStore: FlowStore): void {
   app.get('/flows', async () => flowStore.list());
 
+  app.get('/flows/search', async (request) => {
+    const { search, page, pageSize } = request.query as { search?: string; page?: string; pageSize?: string };
+    return flowStore.search(search ?? '', Number(page) || 1, Number(pageSize) || 20);
+  });
+
   app.get('/flows/:name', async (request, reply) => {
     const { name } = request.params as { name: string };
     const steps = await flowStore.get(name);
@@ -33,5 +38,14 @@ export function registerFlowRoutes(app: FastifyInstance, flowStore: FlowStore): 
     }
     const names = await flowStore.setSteps(name, stepNames as string[]);
     return reply.code(200).send({ names });
+  });
+
+  app.delete('/flows/:name', async (request, reply) => {
+    const { name } = request.params as { name: string };
+    const names = await flowStore.delete(name);
+    if (names === undefined) {
+      return reply.code(404).send({ error: 'not found' });
+    }
+    return { names };
   });
 }

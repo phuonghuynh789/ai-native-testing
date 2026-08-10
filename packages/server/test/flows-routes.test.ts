@@ -125,3 +125,53 @@ describe('PUT /flows/:name', () => {
     expect(res.statusCode).toBe(400);
   });
 });
+
+describe('GET /flows/search', () => {
+  it('returns paginated, filtered results', async () => {
+    const app = await buildTestApp();
+    await app.inject({
+      method: 'PUT',
+      url: '/flows/Checkout%20Flow',
+      payload: { stepNames: ['Login', 'Create Payment'] },
+    });
+    await app.inject({ method: 'PUT', url: '/flows/Onboarding', payload: { stepNames: ['Create Account'] } });
+
+    const res = await app.inject({ method: 'GET', url: '/flows/search?search=flow&page=1&pageSize=20' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({
+      items: [{ name: 'Checkout Flow', steps: ['Login', 'Create Payment'] }],
+      total: 1,
+    });
+  });
+
+  it('defaults to page 1 / pageSize 20 and an empty search when params are omitted', async () => {
+    const app = await buildTestApp();
+    await app.inject({ method: 'PUT', url: '/flows/Onboarding', payload: { stepNames: ['Create Account'] } });
+    const res = await app.inject({ method: 'GET', url: '/flows/search' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ items: [{ name: 'Onboarding', steps: ['Create Account'] }], total: 1 });
+  });
+
+  it('is not shadowed by the /flows/:name route', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({ method: 'GET', url: '/flows/search' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ items: [], total: 0 });
+  });
+});
+
+describe('DELETE /flows/:name', () => {
+  it('deletes an existing flow and returns the updated names list', async () => {
+    const app = await buildTestApp();
+    await app.inject({ method: 'PUT', url: '/flows/Checkout', payload: { stepNames: ['Login'] } });
+    const res = await app.inject({ method: 'DELETE', url: '/flows/Checkout' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ names: [] });
+  });
+
+  it('returns 404 for an unknown name', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({ method: 'DELETE', url: '/flows/Missing' });
+    expect(res.statusCode).toBe(404);
+  });
+});
