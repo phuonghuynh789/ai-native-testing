@@ -133,3 +133,93 @@ describe('KafkaChecksPage — manual check form', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not register the Kafka check. Please try again.');
   });
 });
+
+describe('KafkaChecksPage — inline result panel', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('shows a pending panel immediately after registering, before the tracked row appears in the polled list', async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/kafka-checks' && init?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<KafkaChecksPage />);
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+
+    expect(await screen.findByText('Pending…')).toBeInTheDocument();
+  });
+
+  it('shows PASSED once the tracked row resolves as passed in the polled list', async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/kafka-checks' && init?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([makeRow({ message_id: 'tx-123', status: 'passed' })]),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<KafkaChecksPage />);
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+
+    expect(await screen.findByText('PASSED')).toBeInTheDocument();
+  });
+
+  it('shows FAILED with the missing fields once the tracked row resolves as failed', async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/kafka-checks' && init?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([makeRow({ message_id: 'tx-123', status: 'failed', missingFields: ['mcc'] })]),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<KafkaChecksPage />);
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+
+    expect(await screen.findByText('FAILED')).toBeInTheDocument();
+    expect(await screen.findByText('Missing fields: mcc')).toBeInTheDocument();
+  });
+
+  it('clears the panel and shows the error instead when a later registration fails', async () => {
+    let postCount = 0;
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/kafka-checks' && init?.method === 'POST') {
+        postCount += 1;
+        return Promise.resolve({ ok: postCount === 1, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<KafkaChecksPage />);
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+    expect(await screen.findByText('Pending…')).toBeInTheDocument();
+
+    await userEvent.clear(screen.getByLabelText('Transaction ID'));
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-456');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not register the Kafka check. Please try again.');
+    expect(screen.queryByText('Pending…')).not.toBeInTheDocument();
+  });
+});

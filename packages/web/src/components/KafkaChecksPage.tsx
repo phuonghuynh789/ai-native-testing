@@ -11,6 +11,7 @@ export function KafkaChecksPage() {
   const [transidInput, setTransidInput] = useState('');
   const [topicInput, setTopicInput] = useState<KafkaTopic | ''>('');
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [trackedMessageId, setTrackedMessageId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchKafkaChecks().then(setRows);
@@ -27,10 +28,14 @@ export function KafkaChecksPage() {
     try {
       await registerKafkaCheck({ message_id: transidInput, name: transidInput, topic: topicInput });
       setRegisterError(null);
+      setTrackedMessageId(transidInput);
     } catch {
       setRegisterError('Could not register the Kafka check. Please try again.');
+      setTrackedMessageId(null);
     }
   }
+
+  const trackedRow = rows.find((r) => r.message_id === trackedMessageId);
 
   return (
     <main className="app-main">
@@ -72,6 +77,22 @@ export function KafkaChecksPage() {
           Check Kafka
         </button>
       </section>
+
+      {trackedMessageId && (
+        <section className="card">
+          <h2 className="heading-md">Result</h2>
+          {!trackedRow || trackedRow.status === 'pending' || trackedRow.status === 'received' ? (
+            <p className="body-strong">Pending…</p>
+          ) : trackedRow.status === 'passed' ? (
+            <p className="body-strong">PASSED</p>
+          ) : (
+            <>
+              <p className="body-strong">FAILED</p>
+              <p>Missing fields: {trackedRow.missingFields.join(', ')}</p>
+            </>
+          )}
+        </section>
+      )}
 
       {rows.length === 0 && <p className="body-strong">No Kafka checks yet.</p>}
       <ul className="step-browser-list">
