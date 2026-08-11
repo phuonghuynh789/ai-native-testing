@@ -61,3 +61,75 @@ describe('KafkaChecksPage', () => {
     expect(await screen.findByText('No Kafka checks yet.')).toBeInTheDocument();
   });
 });
+
+describe('KafkaChecksPage — manual check form', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('renders the transid textbox, Kafka Topic select, and Check Kafka button', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
+    render(<KafkaChecksPage />);
+    expect(screen.getByLabelText('Transaction ID')).toBeInTheDocument();
+    expect(screen.getByLabelText('Kafka Topic')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check Kafka' })).toBeInTheDocument();
+  });
+
+  it('lists all three known topics as options', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
+    render(<KafkaChecksPage />);
+    const optionTexts = screen.getAllByRole('option').map((o) => o.textContent);
+    expect(optionTexts).toEqual(expect.arrayContaining(['transLogV1', 'refundLog', 'paymentAuth']));
+  });
+
+  it('disables Check Kafka until both transid and topic are filled', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
+    render(<KafkaChecksPage />);
+    expect(screen.getByRole('button', { name: 'Check Kafka' })).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    expect(screen.getByRole('button', { name: 'Check Kafka' })).toBeDisabled();
+
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'transLogV1');
+    expect(screen.getByRole('button', { name: 'Check Kafka' })).toBeEnabled();
+  });
+
+  it('registers a check using the transid as both message_id and name', async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/kafka-checks' && init?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<KafkaChecksPage />);
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/kafka-checks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: 'tx-123', name: 'tx-123', topic: 'paymentAuth' }),
+    });
+  });
+
+  it('shows an inline error when registration fails', async () => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url === '/kafka-checks' && init?.method === 'POST') {
+        return Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<KafkaChecksPage />);
+    await userEvent.type(screen.getByLabelText('Transaction ID'), 'tx-123');
+    await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
+    await userEvent.click(screen.getByRole('button', { name: 'Check Kafka' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not register the Kafka check. Please try again.');
+  });
+});

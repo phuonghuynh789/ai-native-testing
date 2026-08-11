@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { fetchKafkaChecks, type KafkaCheckRow } from '../kafkaChecks';
+import { fetchKafkaChecks, registerKafkaCheck, type KafkaCheckRow } from '../kafkaChecks';
+import { KAFKA_TOPICS, type KafkaTopic } from '../types';
 
 const POLL_INTERVAL_MS = 3000;
 
 export function KafkaChecksPage() {
   const [rows, setRows] = useState<KafkaCheckRow[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  const [transidInput, setTransidInput] = useState('');
+  const [topicInput, setTopicInput] = useState<KafkaTopic | ''>('');
+  const [registerError, setRegisterError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchKafkaChecks().then(setRows);
@@ -15,9 +20,59 @@ export function KafkaChecksPage() {
     return () => clearInterval(id);
   }, []);
 
+  async function handleCheckKafka() {
+    if (transidInput.trim() === '' || topicInput === '') {
+      return;
+    }
+    try {
+      await registerKafkaCheck({ message_id: transidInput, name: transidInput, topic: topicInput });
+      setRegisterError(null);
+    } catch {
+      setRegisterError('Could not register the Kafka check. Please try again.');
+    }
+  }
+
   return (
     <main className="app-main">
       <h1 className="heading-xl">Check Kafka</h1>
+
+      <section className="card">
+        {registerError && (
+          <p role="alert" className="alert">
+            {registerError}
+          </p>
+        )}
+        <label className="label">
+          Transaction ID
+          <input className="text-input" value={transidInput} onChange={(e) => setTransidInput(e.target.value)} />
+        </label>
+        <label className="label">
+          Kafka Topic
+          <select
+            className="text-input"
+            value={topicInput}
+            onChange={(e) => setTopicInput(e.target.value as KafkaTopic | '')}
+          >
+            <option value="" disabled>
+              — Select a topic —
+            </option>
+            {KAFKA_TOPICS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={transidInput.trim() === '' || topicInput === ''}
+          onClick={handleCheckKafka}
+        >
+          Check Kafka
+        </button>
+      </section>
+
       {rows.length === 0 && <p className="body-strong">No Kafka checks yet.</p>}
       <ul className="step-browser-list">
         {rows.map((row) => (
