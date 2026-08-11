@@ -1,9 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KafkaCheckStore, type KafkaCheckRow } from '../src/kafka-check-store.js';
-import { handleIncomingMessage, sweepTimedOutChecks } from '../src/kafka-consumer.js';
+import { handleIncomingMessage, sweepTimedOutChecks, startKafkaConsumers } from '../src/kafka-consumer.js';
+import type { KafkaConfig } from '../src/kafka-config.js';
+
+vi.mock('kafkajs', () => ({
+  Kafka: vi.fn().mockImplementation(() => ({
+    consumer: () => ({
+      connect: vi.fn().mockRejectedValue(new Error('connection timeout')),
+      subscribe: vi.fn(),
+      run: vi.fn(),
+    }),
+  })),
+}));
 
 let dir: string;
 let store: KafkaCheckStore;
@@ -113,5 +124,37 @@ describe('sweepTimedOutChecks', () => {
     );
     await sweepTimedOutChecks(store);
     expect((await store.get('tx-1'))?.status).toBe('passed');
+  });
+});
+
+describe('startKafkaConsumers', () => {
+  function unreachableConfig(): KafkaConfig {
+    return {
+      groupID: 'test',
+      topics: {
+        transLogV1: { brokers: ['unreachable:9092'], topic: 'a' },
+        refundLog: { brokers: ['unreachable:9092'], topic: 'b' },
+        paymentAuth: { brokers: ['unreachable:9092'], topic: 'c' },
+      },
+    };
+  }
+
+  it('resolves even when every topic fails to connect, instead of rejecting', async () => {
+    await expect(startKafkaConsumers(unreachableConfig(), store)).resolves.toBeUndefined();
+  });
+
+  it('still schedules the timeout sweep when every topic fails to connect', async () => {
+    vi.useFakeTimers();
+    try {
+      const listSpy = vi.spyOn(store, 'list');
+
+      await startKafkaConsumers(unreachableConfig(), store);
+      expect(listSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(listSpy).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
