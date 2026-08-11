@@ -1,7 +1,7 @@
 import { Kafka } from 'kafkajs';
 import type { KafkaConfig } from './kafka-config.js';
 import { KAFKA_TOPIC_KEYS, type KafkaTopicKey } from './kafka-check-definitions.js';
-import { extractCorrelatorValue, checkRequiredFields, isTimedOut } from './kafka-check-logic.js';
+import { extractCorrelatorValues, checkRequiredFields, isTimedOut } from './kafka-check-logic.js';
 import type { KafkaCheckStore } from './kafka-check-store.js';
 
 const TIMEOUT_MS = 60_000;
@@ -19,23 +19,22 @@ export async function handleIncomingMessage(
     return;
   }
 
-  const correlatorValue = extractCorrelatorValue(parsed, topic);
-  if (correlatorValue === undefined) {
+  const candidateValues = extractCorrelatorValues(parsed, topic);
+  for (const correlatorValue of candidateValues) {
+    const row = await store.get(correlatorValue);
+    if (!row || row.topic !== topic || row.status !== 'pending') {
+      continue;
+    }
+
+    await store.update(correlatorValue, { status: 'received' });
+    const missingFields = checkRequiredFields(parsed, topic);
+    await store.update(correlatorValue, {
+      status: missingFields.length === 0 ? 'passed' : 'failed',
+      missingFields,
+      matchedMessage: parsed,
+    });
     return;
   }
-
-  const row = await store.get(correlatorValue);
-  if (!row || row.topic !== topic || row.status !== 'pending') {
-    return;
-  }
-
-  await store.update(correlatorValue, { status: 'received' });
-  const missingFields = checkRequiredFields(parsed, topic);
-  await store.update(correlatorValue, {
-    status: missingFields.length === 0 ? 'passed' : 'failed',
-    missingFields,
-    matchedMessage: parsed,
-  });
 }
 
 export async function sweepTimedOutChecks(store: KafkaCheckStore): Promise<void> {

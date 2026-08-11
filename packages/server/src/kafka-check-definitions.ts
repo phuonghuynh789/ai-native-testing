@@ -3,14 +3,14 @@ export type KafkaTopicKey = 'transLogV1' | 'refundLog' | 'paymentAuth';
 export const KAFKA_TOPIC_KEYS: KafkaTopicKey[] = ['transLogV1', 'refundLog', 'paymentAuth'];
 
 export interface KafkaTopicDefinition {
-  correlatorField: string;
+  correlatorFields: string[];
   hasDataWrapper: boolean;
   requiredFields: string[];
 }
 
 export const KAFKA_TOPIC_DEFINITIONS: Record<KafkaTopicKey, KafkaTopicDefinition> = {
   transLogV1: {
-    correlatorField: 'appTransID',
+    correlatorFields: ['appTransID', 'transID'],
     hasDataWrapper: true,
     requiredFields: [
       'transID', 'appID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
@@ -20,7 +20,7 @@ export const KAFKA_TOPIC_DEFINITIONS: Record<KafkaTopicKey, KafkaTopicDefinition
     ],
   },
   refundLog: {
-    correlatorField: 'appTransID',
+    correlatorFields: ['appTransID', 'transID'],
     hasDataWrapper: true,
     requiredFields: [
       'transID', 'appID', 'appTransID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
@@ -33,7 +33,7 @@ export const KAFKA_TOPIC_DEFINITIONS: Record<KafkaTopicKey, KafkaTopicDefinition
     ],
   },
   paymentAuth: {
-    correlatorField: 'order_no',
+    correlatorFields: ['order_no'],
     hasDataWrapper: false,
     requiredFields: [
       'payment_no', 'order_no', 'auth_session_id', 'auth_data', 'trans_id', 'fund_type', 'detail_reason',

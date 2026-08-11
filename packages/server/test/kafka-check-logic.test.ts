@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractCorrelatorValue, checkRequiredFields, isTimedOut } from '../src/kafka-check-logic.js';
+import { extractCorrelatorValues, checkRequiredFields, isTimedOut } from '../src/kafka-check-logic.js';
 
 const TRANS_LOG_MESSAGE = {
   logType: 1,
@@ -18,29 +18,37 @@ const PAYMENT_AUTH_MESSAGE = {
   status: 'PROCESSING',
 };
 
-describe('extractCorrelatorValue', () => {
-  it('reads the correlator field out of the data wrapper for transLogV1', () => {
-    expect(extractCorrelatorValue(TRANS_LOG_MESSAGE, 'transLogV1')).toBe('tx-abc');
+describe('extractCorrelatorValues', () => {
+  it('reads both candidate correlator fields out of the data wrapper for transLogV1, in field order', () => {
+    expect(extractCorrelatorValues(TRANS_LOG_MESSAGE, 'transLogV1')).toEqual(['tx-abc', '1']);
   });
 
-  it('reads the correlator field at the top level for paymentAuth', () => {
-    expect(extractCorrelatorValue(PAYMENT_AUTH_MESSAGE, 'paymentAuth')).toBe('order-1');
+  it('reads the sole correlator field at the top level for paymentAuth', () => {
+    expect(extractCorrelatorValues(PAYMENT_AUTH_MESSAGE, 'paymentAuth')).toEqual(['order-1']);
   });
 
-  it('returns undefined when the correlator field is missing', () => {
-    expect(extractCorrelatorValue({ data: {} }, 'transLogV1')).toBeUndefined();
+  it('returns only the fields actually present when one candidate is missing', () => {
+    expect(extractCorrelatorValues({ data: { transID: 1 } }, 'transLogV1')).toEqual(['1']);
+    expect(extractCorrelatorValues({ data: { appTransID: 'tx-abc' } }, 'transLogV1')).toEqual(['tx-abc']);
   });
 
-  it('returns undefined when the data wrapper is missing', () => {
-    expect(extractCorrelatorValue({}, 'transLogV1')).toBeUndefined();
+  it('returns an empty array when no candidate fields are present', () => {
+    expect(extractCorrelatorValues({ data: {} }, 'transLogV1')).toEqual([]);
   });
 
-  it('returns undefined for a non-object message', () => {
-    expect(extractCorrelatorValue('not json', 'transLogV1')).toBeUndefined();
+  it('returns an empty array when the data wrapper is missing', () => {
+    expect(extractCorrelatorValues({}, 'transLogV1')).toEqual([]);
   });
 
-  it('stringifies a numeric correlator value', () => {
-    expect(extractCorrelatorValue({ data: { appTransID: 12345 } }, 'transLogV1')).toBe('12345');
+  it('returns an empty array for a non-object message', () => {
+    expect(extractCorrelatorValues('not json', 'transLogV1')).toEqual([]);
+  });
+
+  it('stringifies numeric correlator values', () => {
+    expect(extractCorrelatorValues({ data: { appTransID: 12345, transID: 67890 } }, 'transLogV1')).toEqual([
+      '12345',
+      '67890',
+    ]);
   });
 });
 

@@ -83,6 +83,35 @@ describe('handleIncomingMessage', () => {
     expect((await store.get('tx-1'))?.status).toBe('pending');
   });
 
+  it('resolves a pending row registered under transID when appTransID does not match any pending row', async () => {
+    await store.create(pendingRow());
+    const message = {
+      data: Object.fromEntries(
+        [
+          'transID', 'appID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
+          'transStatus', 'status', 'userID', 'appTransID', 'isFullFlow', 'authInfo', 'merchantCategoryCode',
+          'productType', 'orderNo', 'paymentNo', 'paymentMethod', 'destTxnStatus', 'sourceTxnStatus',
+          'destAssetType', 'destAssetData', 'sourceAssetData',
+        ].map((field) => [field, 'x'])
+      ),
+    };
+    message.data.appTransID = 'some-other-app-trans-id-not-registered';
+    message.data.transID = 'tx-1';
+
+    await handleIncomingMessage('transLogV1', JSON.stringify(message), store);
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('passed');
+    expect(row?.matchedMessage).toEqual(message);
+  });
+
+  it('ignores a message when neither candidate field matches any pending row', async () => {
+    await store.create(pendingRow());
+    const message = { data: { appTransID: 'unknown-app-trans-id', transID: 'unknown-trans-id' } };
+    await handleIncomingMessage('transLogV1', JSON.stringify(message), store);
+    expect((await store.get('tx-1'))?.status).toBe('pending');
+  });
+
   it('ignores a message for a row already resolved (does not reprocess)', async () => {
     await store.create(pendingRow({ status: 'passed' }));
     await handleIncomingMessage('transLogV1', JSON.stringify({ data: { appTransID: 'tx-1' } }), store);
