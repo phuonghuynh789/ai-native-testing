@@ -1,4 +1,5 @@
 import { KAFKA_TOPIC_DEFINITIONS, type KafkaTopicKey } from './kafka-check-definitions.js';
+import { getTransLogRequiredFields } from './translog-required-fields.js';
 
 function payloadOf(message: unknown, topic: KafkaTopicKey): Record<string, unknown> | undefined {
   const definition = KAFKA_TOPIC_DEFINITIONS[topic];
@@ -29,12 +30,14 @@ export function extractCorrelatorValues(message: unknown, topic: KafkaTopicKey):
 }
 
 export function checkRequiredFields(message: unknown, topic: KafkaTopicKey): string[] {
-  const definition = KAFKA_TOPIC_DEFINITIONS[topic];
   const payload = payloadOf(message, topic);
+  const status = payload !== undefined && typeof payload.status === 'string' ? payload.status : undefined;
+  const requiredFields =
+    topic === 'transLogV1' ? getTransLogRequiredFields(status) : (KAFKA_TOPIC_DEFINITIONS[topic].requiredFields ?? []);
   if (!payload) {
-    return [...definition.requiredFields];
+    return [...requiredFields];
   }
-  return definition.requiredFields.filter((field) => !(field in payload));
+  return requiredFields.filter((field) => !(field in payload));
 }
 
 export function isTimedOut(

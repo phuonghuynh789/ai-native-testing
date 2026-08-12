@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { KafkaCheckStore, type KafkaCheckRow } from '../src/kafka-check-store.js';
 import { handleIncomingMessage, sweepTimedOutChecks, startKafkaConsumers } from '../src/kafka-consumer.js';
 import type { KafkaConfig } from '../src/kafka-config.js';
+import { getTransLogRequiredFields } from '../src/translog-required-fields.js';
 
 vi.mock('kafkajs', () => ({
   Kafka: vi.fn().mockImplementation(() => ({
@@ -47,14 +48,7 @@ describe('handleIncomingMessage', () => {
   it('marks a matching pending row passed when every required field is present', async () => {
     await store.create(pendingRow());
     const message = {
-      data: Object.fromEntries(
-        [
-          'transID', 'appID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
-          'transStatus', 'status', 'userID', 'appTransID', 'isFullFlow', 'authInfo', 'merchantCategoryCode',
-          'productType', 'orderNo', 'paymentNo', 'paymentMethod', 'destTxnStatus', 'sourceTxnStatus',
-          'destAssetType', 'destAssetData', 'sourceAssetData',
-        ].map((field) => [field, 'x'])
-      ),
+      data: Object.fromEntries(getTransLogRequiredFields(undefined).map((field) => [field, 'x'])),
     };
     message.data.appTransID = 'tx-1';
 
@@ -86,14 +80,7 @@ describe('handleIncomingMessage', () => {
   it('resolves a pending row registered under transID when appTransID does not match any pending row', async () => {
     await store.create(pendingRow());
     const message = {
-      data: Object.fromEntries(
-        [
-          'transID', 'appID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
-          'transStatus', 'status', 'userID', 'appTransID', 'isFullFlow', 'authInfo', 'merchantCategoryCode',
-          'productType', 'orderNo', 'paymentNo', 'paymentMethod', 'destTxnStatus', 'sourceTxnStatus',
-          'destAssetType', 'destAssetData', 'sourceAssetData',
-        ].map((field) => [field, 'x'])
-      ),
+      data: Object.fromEntries(getTransLogRequiredFields(undefined).map((field) => [field, 'x'])),
     };
     message.data.appTransID = 'some-other-app-trans-id-not-registered';
     message.data.transID = 'tx-1';

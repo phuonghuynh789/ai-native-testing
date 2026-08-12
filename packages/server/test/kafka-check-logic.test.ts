@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { extractCorrelatorValues, checkRequiredFields, isTimedOut } from '../src/kafka-check-logic.js';
+import { getTransLogRequiredFields } from '../src/translog-required-fields.js';
 
 const TRANS_LOG_MESSAGE = {
   logType: 1,
@@ -53,25 +54,23 @@ describe('extractCorrelatorValues', () => {
 });
 
 describe('checkRequiredFields', () => {
-  it('returns an empty array when every required field is present', () => {
-    const message = {
-      data: Object.fromEntries(
-        [
-          'transID', 'appID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
-          'transStatus', 'status', 'userID', 'appTransID', 'isFullFlow', 'authInfo', 'merchantCategoryCode',
-          'productType', 'orderNo', 'paymentNo', 'paymentMethod', 'destTxnStatus', 'sourceTxnStatus',
-          'destAssetType', 'destAssetData', 'sourceAssetData',
-        ].map((field) => [field, 'x'])
-      ),
-    };
+  it('returns an empty array for transLogV1 when every common field is present', () => {
+    const commonFields = getTransLogRequiredFields(undefined);
+    const message = { data: Object.fromEntries(commonFields.map((field) => [field, 'x'])) };
     expect(checkRequiredFields(message, 'transLogV1')).toEqual([]);
   });
 
-  it('lists every missing field', () => {
+  it('lists every missing field for transLogV1', () => {
     expect(checkRequiredFields({ data: { transID: 1 } }, 'transLogV1')).toEqual(
       expect.arrayContaining(['appID', 'appTransID', 'status'])
     );
     expect(checkRequiredFields({ data: { transID: 1 } }, 'transLogV1')).not.toContain('transID');
+  });
+
+  it('includes status-specific fields on top of common fields when the message status matches a known schema', () => {
+    const commonFields = getTransLogRequiredFields(undefined);
+    const successFields = getTransLogRequiredFields('SUCCESS');
+    expect(successFields).toEqual(expect.arrayContaining(commonFields));
   });
 
   it('treats an empty-string value as present', () => {
@@ -90,8 +89,8 @@ describe('checkRequiredFields', () => {
     expect(missing).not.toContain('order_no');
   });
 
-  it('returns the full required-fields list when the message has no usable payload', () => {
-    expect(checkRequiredFields({}, 'transLogV1')).toHaveLength(23);
+  it('returns the full common-fields list for transLogV1 when the message has no usable payload', () => {
+    expect(checkRequiredFields({}, 'transLogV1')).toEqual(getTransLogRequiredFields(undefined));
   });
 });
 

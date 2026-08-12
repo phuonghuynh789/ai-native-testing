@@ -5,19 +5,13 @@ export const KAFKA_TOPIC_KEYS: KafkaTopicKey[] = ['transLogV1', 'refundLog', 'pa
 export interface KafkaTopicDefinition {
   correlatorFields: string[];
   hasDataWrapper: boolean;
-  requiredFields: string[];
+  requiredFields?: string[];
 }
 
 export const KAFKA_TOPIC_DEFINITIONS: Record<KafkaTopicKey, KafkaTopicDefinition> = {
   transLogV1: {
     correlatorFields: ['appTransID', 'transID'],
     hasDataWrapper: true,
-    requiredFields: [
-      'transID', 'appID', 'transType', 'pmcID', 'amount', 'userChargeAmount', 'userFeeAmount',
-      'transStatus', 'status', 'userID', 'appTransID', 'isFullFlow', 'authInfo', 'merchantCategoryCode',
-      'productType', 'orderNo', 'paymentNo', 'paymentMethod', 'destTxnStatus', 'sourceTxnStatus',
-      'destAssetType', 'destAssetData', 'sourceAssetData',
-    ],
   },
   refundLog: {
     correlatorFields: ['appTransID', 'transID'],
