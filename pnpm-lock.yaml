@@ -127,6 +127,12 @@ importers:
       '@ai-native-testing/engine':
         specifier: workspace:*
         version: link:../engine
+      '@ai-native-testing/server':
+        specifier: workspace:*
+        version: link:../server
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -158,6 +164,9 @@ importers:
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.1
       typescript:
         specifier: ^5.6.3
         version: 5.9.3
