@@ -46,6 +46,7 @@ function baseOptions(overrides: Partial<CollectKafkaMessagesOptions> = {}): Coll
     transId: 'tx-1',
     correlatorField: 'appTransID',
     statusField: 'status',
+    hasDataWrapper: false,
     terminalStatuses: ['SUCCESS'],
     idleTimeoutMs: 15_000,
     ...overrides,
@@ -101,6 +102,44 @@ describe('collectKafkaMessages', () => {
       expect(result.receivedStatuses).toEqual(['SUCCESS']);
       expect(result.terminatedBy).toBe('terminal-status');
       expect(mocks.consumerMock.disconnect).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reads correlatorField/statusField from inside message.data when hasDataWrapper is true', async () => {
+    vi.useFakeTimers();
+    try {
+      const resultPromise = collectKafkaMessages(baseOptions({ hasDataWrapper: true }));
+      await vi.advanceTimersByTimeAsync(0);
+      const eachMessage = captureEachMessage();
+
+      // A real transLogV1-shaped message: the correlator/status fields are nested under `data`,
+      // not top-level — this is exactly the shape that was silently never matching before this fix.
+      const wrappedMessage = { logType: 1, data: { appTransID: 'tx-1', status: 'SUCCESS' } };
+      await eachMessage({ message: { value: Buffer.from(JSON.stringify(wrappedMessage)) } });
+
+      const result = await resultPromise;
+      expect(result.messages).toEqual([wrappedMessage]);
+      expect(result.terminatedBy).toBe('terminal-status');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores a message with hasDataWrapper true but no usable data object', async () => {
+    vi.useFakeTimers();
+    try {
+      const resultPromise = collectKafkaMessages(baseOptions({ hasDataWrapper: true }));
+      await vi.advanceTimersByTimeAsync(0);
+      const eachMessage = captureEachMessage();
+
+      await eachMessage({ message: { value: Buffer.from(JSON.stringify({ logType: 1 })) } });
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      const result = await resultPromise;
+      expect(result.messages).toEqual([]);
+      expect(result.terminatedBy).toBe('idle-timeout');
     } finally {
       vi.useRealTimers();
     }

@@ -7,6 +7,7 @@ export interface CollectKafkaMessagesOptions {
   transId: string;
   correlatorField: string;
   statusField: string;
+  hasDataWrapper: boolean;
   terminalStatuses: string[];
   idleTimeoutMs: number;
   startFromMs?: number;
@@ -86,7 +87,15 @@ export async function collectKafkaMessages(
             return;
           }
           const record = parsed as Record<string, unknown>;
-          const correlatorValue = record[options.correlatorField];
+          let payload: Record<string, unknown> | undefined = record;
+          if (options.hasDataWrapper) {
+            const data = record.data;
+            payload = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : undefined;
+          }
+          if (!payload) {
+            return;
+          }
+          const correlatorValue = payload[options.correlatorField];
           if (
             correlatorValue === undefined ||
             correlatorValue === null ||
@@ -96,7 +105,7 @@ export async function collectKafkaMessages(
           }
 
           messages.push(parsed);
-          const status = record[options.statusField];
+          const status = payload[options.statusField];
           if (typeof status === 'string') {
             receivedStatuses.add(status);
             if (options.terminalStatuses.includes(status)) {
