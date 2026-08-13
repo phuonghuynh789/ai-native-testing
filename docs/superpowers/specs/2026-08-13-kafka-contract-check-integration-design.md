@@ -9,11 +9,54 @@ This is a genuinely new, separate GUI surface — its own checkbox, its own stor
 ## Architecture & Data Flow
 
 1. In Simple Mode's Request Builder, a new "Kafka Contract Check" section (checkbox + Topic dropdown + Version text field) sits alongside the existing "Check Kafka" section, independently toggleable.
-2. On Run click, `RunButton.tsx` — the only place the existing Kafka Check registration happens today (`FlowRunner`/`ApiAutomationPage` never wired it in, so this feature stays scoped to Simple Mode too) — extracts the correlator value (reusing `extractCorrelatorValue`) and POSTs to a new `POST /kafka-contract-checks` endpoint with `{ message_id, name, topic, version }`. This returns instantly with a `pending` row, mirroring today's Check Kafka registration.
-3. Unlike the old system (which matches against an already-running shared consumer), this feature needs a fresh ephemeral consumer per registration. The route handler, when a real `kafka.yaml` is configured, fires an un-awaited background call: run `collectKafkaMessages` for that topic/transId, and once it resolves, load the matching baseline file and run `diffKafkaMessages` against it, then update the row to `passed`/`failed`/`error`.
+2. On Run click, `RunButton.tsx` — the only place the existing Kafka Check registration happens today (`FlowRunner`/`ApiAutomationPage` never wired it in, so this feature stays scoped to Simple Mode too) — extracts the correlator value (reusing `extractCorrelatorValue`) and POSTs to a new `POST /kafka-contract-checks` endpoint with `{ message_id, name, topic, version }`.
+3. Unlike the old system (which matches against an already-running shared consumer), this feature needs a fresh ephemeral consumer per registration. The route handler, when a real `kafka.yaml` is configured, fires an un-awaited background call that runs the state machine below.
 4. A new "Kafka Contract Checks" sidebar page polls `GET /kafka-contract-checks` every 3s (mirroring `KafkaChecksPage`) and shows each row's status, expandable to the full diff report (findings grouped by severity) once resolved, or the error message if the check couldn't complete.
 
-**Safety constraint, preserved from the existing system:** `buildApp()` (what tests use) must never touch a real Kafka broker. The old system enforces this by starting its long-lived consumer only from `index.ts`, never from `buildApp()`. This feature's trigger is different in kind (per-request, not a standing consumer), but needs the identical guarantee: the route only fires the real `collectKafkaMessages` call when a real `KafkaConfig` object is explicitly passed in. `buildApp()`'s test wiring passes `undefined`, so the route safely degrades under test — see "No-config handling" below for what it does instead of silently creating an unresolvable row.
+**Row state machine:**
+
+```
+POST /kafka-contract-checks
+        │
+        ▼
+  Validate request ──invalid──▶ 400 (no row created)
+        │ valid
+        ▼
+  Kafka configured? ──NO──▶ 503 (no row created — see "No-Config Handling")
+        │ YES
+        ▼
+  Create row: PENDING  (201 response returned to the browser here)
+        │
+        ▼
+  Start runKafkaContractCheck (un-awaited)
+        │
+        ▼
+      RUNNING  (collectKafkaMessages in flight)
+        │
+        ├──── throws, or idle-timeout with no terminal status ────▶ ERROR (store errorMessage)
+        │
+        └──── terminal status SUCCESS or FAILED reached
+                        │
+                        ▼
+              Load baseline {version}/{status}.json
+                        │
+              ┌─────────┴─────────┐
+         missing/unreadable   found
+              │                  │
+              ▼                  ▼
+            ERROR            diffKafkaMessages
+        (store errorMessage)      │
+                          ┌───────┴───────┐
+                     result: passed   result: failed
+                          │                │
+                          ▼                ▼
+                       PASSED            FAILED
+                (store diffReport)  (store diffReport)
+```
+
+`terminalStatuses` for this runner is `['SUCCESS', 'FAILED']` — narrower than Step 2's capture scripts, which also treat `PENDING` as terminal. A transaction that only ever reaches `PENDING` isn't a meaningful contract-check outcome here, so it falls out through the idle-timeout path into `ERROR` instead of triggering a diff. `ERROR` is a single row status covering three distinct causes — a `collectKafkaMessages` failure, an idle-timeout with no terminal status seen, and a missing/unreadable baseline file — each skipping the diff step entirely and storing a descriptive `errorMessage`. Note that `FAILED` appears at two different points in this diagram with two different meanings: a `FAILED` *business* status from the actual transaction (which still gets diffed against its own `FAILED.json` baseline, same as `SUCCESS` does) is not the same thing as a `FAILED` *diff result* (an actual contract violation) — both happen to reuse the same word, but the row's final `status` field always reflects the diff outcome, not the business status.
+
+**Safety constraint, preserved from the existing system:** `buildApp()` (what tests use) must never touch a real Kafka broker. The old system enforces this by starting its long-lived consumer only from `index.ts`, never from `buildApp()`. This feature's trigger is different in kind (per-request, not a standing consumer), but needs the identical guarantee: the route only fires the real `collectKafkaMessages` call when a real `KafkaConfig` object is explicitly passed in. `buildApp()`'s test wiring passes `undefined`, so the route safely degrades under test — see "No-Config Handling" below for what it does instead of silently creating an unresolvable row.
 
 ## Baseline Directory Relocation
 
@@ -56,9 +99,9 @@ export async function runKafkaContractCheck(
 ): Promise<void>
 ```
 
-It calls `collectKafkaMessages` (topic/brokers/correlatorField/hasDataWrapper resolved from `KAFKA_TOPIC_DEFINITIONS[row.topic]`, `transId: row.message_id`, `statusField: 'status'`, `terminalStatuses: ['SUCCESS', 'FAILED', 'PENDING']`, `idleTimeoutMs: 15000` — same constants Step 2's capture scripts use), then:
+It calls `collectKafkaMessages` (topic/brokers/correlatorField/hasDataWrapper resolved from `KAFKA_TOPIC_DEFINITIONS[row.topic]`, `transId: row.message_id`, `statusField: 'status'`, `terminalStatuses: ['SUCCESS', 'FAILED']` — narrower than Step 2's capture scripts, which also treat `PENDING` as terminal — `idleTimeoutMs: 15000`, same timeout Step 2 uses), then follows the state machine above:
 - collection throws → `status: 'error'`, `errorMessage` describing the failure.
-- `terminatedBy !== 'terminal-status'` → `status: 'error'`, `errorMessage` noting the timeout.
+- `terminatedBy !== 'terminal-status'` (idle-timeout, including a transaction that only ever reached `PENDING`) → `status: 'error'`, `errorMessage` noting the timeout.
 - baseline file at `{baselinesDir}/{row.version}/{actualStatus}.json` doesn't exist or fails to parse → `status: 'error'`, `errorMessage` naming the missing path.
 - otherwise → `diffKafkaMessages(baseline.messages, result.messages, row.topic)`, then `status: diffReport.result` (`'passed'`/`'failed'`), `diffReport` stored.
 
