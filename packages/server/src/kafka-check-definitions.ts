@@ -6,6 +6,7 @@ export interface KafkaTopicDefinition {
   correlatorFields: string[];
   hasDataWrapper: boolean;
   requiredFields?: string[];
+  diffIgnoreFields?: string[];
 }
 
 export const KAFKA_TOPIC_DEFINITIONS: Record<KafkaTopicKey, KafkaTopicDefinition> = {

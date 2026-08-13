@@ -1,7 +1,7 @@
 import { KAFKA_TOPIC_DEFINITIONS, type KafkaTopicKey } from './kafka-check-definitions.js';
 import { getTransLogRequiredFields } from './translog-required-fields.js';
 
-function payloadOf(message: unknown, topic: KafkaTopicKey): Record<string, unknown> | undefined {
+export function payloadOf(message: unknown, topic: KafkaTopicKey): Record<string, unknown> | undefined {
   const definition = KAFKA_TOPIC_DEFINITIONS[topic];
   if (typeof message !== 'object' || message === null) {
     return undefined;
