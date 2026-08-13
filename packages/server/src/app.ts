@@ -16,11 +16,15 @@ import { registerFlowRoutes } from './routes/flows.js';
 import { registerGrpcRoutes } from './routes/grpc.js';
 import { KafkaCheckStore } from './kafka-check-store.js';
 import { registerKafkaCheckRoutes } from './routes/kafka-checks.js';
+import type { KafkaConfig } from './kafka-config.js';
+import { KafkaContractCheckStore } from './kafka-contract-check-store.js';
+import { registerKafkaContractCheckRoutes } from './routes/kafka-contract-checks.js';
 
 export const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 
 export interface BuildAppOptions {
   dataDir?: string;
+  kafkaConfig?: KafkaConfig;
 }
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
@@ -47,6 +51,10 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   const kafkaCheckStore = new KafkaCheckStore(join(dataDir, 'kafka-checks.json'));
   registerKafkaCheckRoutes(app, kafkaCheckStore);
+
+  const kafkaContractCheckStore = new KafkaContractCheckStore(join(dataDir, 'kafka-contract-checks.json'));
+  const baselinesDir = join(dataDir, 'kafka-baselines');
+  registerKafkaContractCheckRoutes(app, kafkaContractCheckStore, options.kafkaConfig, baselinesDir);
 
   return app;
 }

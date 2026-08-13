@@ -5,15 +5,16 @@ import { loadKafkaConfig } from './kafka-config.js';
 import { KafkaCheckStore } from './kafka-check-store.js';
 import { startKafkaConsumers } from './kafka-consumer.js';
 
-const app = buildApp();
+const kafkaConfigPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'kafka.yaml');
+const kafkaConfig = loadKafkaConfig(kafkaConfigPath);
+
+const app = buildApp({ kafkaConfig });
 const port = Number(process.env.PORT ?? 3000);
 
 app.listen({ port, host: '0.0.0.0' }).then(() => {
   app.log.info(`server listening on port ${port}`);
 });
 
-const kafkaConfigPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'config', 'kafka.yaml');
-const kafkaConfig = loadKafkaConfig(kafkaConfigPath);
 if (kafkaConfig) {
   const kafkaCheckStore = new KafkaCheckStore(join(DEFAULT_DATA_DIR, 'kafka-checks.json'));
   startKafkaConsumers(kafkaConfig, kafkaCheckStore).catch((err) => {

@@ -1,8 +1,16 @@
 import { mkdir, writeFile, access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { RunCaptureResult } from './baseline-capture-core.js';
 
-const DEFAULT_BASELINES_DIR = join(process.cwd(), 'kafka-baselines');
+const DEFAULT_BASELINES_DIR = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'server',
+  'data',
+  'kafka-baselines'
+);
 
 export async function writeBaseline(
   result: RunCaptureResult,

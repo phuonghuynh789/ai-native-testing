@@ -13,6 +13,7 @@ const { values } = parseArgs({
     'server-url': { type: 'string', default: 'http://localhost:3000' },
     'kafka-config': { type: 'string' },
     'idle-timeout-ms': { type: 'string', default: '15000' },
+    'baselines-dir': { type: 'string' },
   },
 });
 
@@ -35,5 +36,9 @@ const result = await runCapture({
   terminalStatuses: ['SUCCESS', 'FAILED', 'PENDING'],
 });
 
-const path = await writeBaseline(result, { version: values.version, allowOverwrite: true });
+const path = await writeBaseline(result, {
+  version: values.version,
+  allowOverwrite: true,
+  baselinesDir: values['baselines-dir'],
+});
 console.log(`Baseline updated at ${path}`);
