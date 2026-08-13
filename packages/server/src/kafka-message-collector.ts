@@ -5,7 +5,7 @@ export interface CollectKafkaMessagesOptions {
   brokers: string[];
   topic: string;
   transId: string;
-  correlatorField: string;
+  correlatorFields: string[];
   statusField: string;
   hasDataWrapper: boolean;
   terminalStatuses: string[];
@@ -95,12 +95,15 @@ export async function collectKafkaMessages(
           if (!payload) {
             return;
           }
-          const correlatorValue = payload[options.correlatorField];
-          if (
-            correlatorValue === undefined ||
-            correlatorValue === null ||
-            String(correlatorValue) !== options.transId
-          ) {
+          const matches = options.correlatorFields.some((field) => {
+            const correlatorValue = payload[field];
+            return (
+              correlatorValue !== undefined &&
+              correlatorValue !== null &&
+              String(correlatorValue) === options.transId
+            );
+          });
+          if (!matches) {
             return;
           }
 

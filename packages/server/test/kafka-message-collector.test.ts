@@ -44,7 +44,7 @@ function baseOptions(overrides: Partial<CollectKafkaMessagesOptions> = {}): Coll
     brokers: ['broker:9092'],
     topic: 'transLogV1',
     transId: 'tx-1',
-    correlatorField: 'appTransID',
+    correlatorFields: ['appTransID'],
     statusField: 'status',
     hasDataWrapper: false,
     terminalStatuses: ['SUCCESS'],
@@ -140,6 +140,28 @@ describe('collectKafkaMessages', () => {
       const result = await resultPromise;
       expect(result.messages).toEqual([]);
       expect(result.terminatedBy).toBe('idle-timeout');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('matches a message via a second correlator field candidate when the first is absent', async () => {
+    vi.useFakeTimers();
+    try {
+      // transLogV1 real messages carry two possible identifying fields — appTransID
+      // (client-assigned) and transID (backend-assigned) — and a caller may be
+      // watching for either one. A message keyed only by transID must still match.
+      const resultPromise = collectKafkaMessages(
+        baseOptions({ transId: '260813000001418', correlatorFields: ['appTransID', 'transID'] })
+      );
+      await vi.advanceTimersByTimeAsync(0);
+      const eachMessage = captureEachMessage();
+
+      await eachMessage(messagePayload({ transID: '260813000001418', status: 'SUCCESS' }));
+
+      const result = await resultPromise;
+      expect(result.messages).toEqual([{ transID: '260813000001418', status: 'SUCCESS' }]);
+      expect(result.terminatedBy).toBe('terminal-status');
     } finally {
       vi.useRealTimers();
     }

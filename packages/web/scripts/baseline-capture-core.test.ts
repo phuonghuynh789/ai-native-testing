@@ -99,7 +99,7 @@ describe('runCapture', () => {
         brokers: ['broker:9092'],
         topic: 'ZPReportTransLogQC',
         transId: 'tx-1',
-        correlatorField: 'appTransID',
+        correlatorFields: ['appTransID', 'transID'],
         hasDataWrapper: true,
         statusField: 'status',
         idleTimeoutMs: 15_000,

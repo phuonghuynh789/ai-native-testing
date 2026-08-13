@@ -29,7 +29,7 @@ export async function runKafkaContractCheck(
       brokers: topicConfig.brokers,
       topic: topicConfig.topic,
       transId: row.message_id,
-      correlatorField: topicDefinition.correlatorFields[0],
+      correlatorFields: topicDefinition.correlatorFields,
       statusField: 'status',
       hasDataWrapper: topicDefinition.hasDataWrapper,
       terminalStatuses: TERMINAL_STATUSES,

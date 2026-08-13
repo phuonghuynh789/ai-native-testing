@@ -46,7 +46,7 @@ export async function runCapture(options: RunCaptureOptions): Promise<RunCapture
     brokers: topicConfig.brokers,
     topic: topicConfig.topic,
     transId,
-    correlatorField: topicDefinition.correlatorFields[0],
+    correlatorFields: topicDefinition.correlatorFields,
     statusField: 'status',
     hasDataWrapper: topicDefinition.hasDataWrapper,
     terminalStatuses: options.terminalStatuses,
