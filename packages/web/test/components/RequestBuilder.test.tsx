@@ -62,6 +62,8 @@ function baseProps(overrides: Partial<RequestBuilderProps> = {}): RequestBuilder
     onQuestionsChange: vi.fn(),
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
     onKafkaCheckChange: vi.fn(),
+    kafkaContractCheck: { enabled: false, topic: 'transLogV1', version: '' },
+    onKafkaContractCheckChange: vi.fn(),
     variables: [],
     onVariablesChange: vi.fn(),
     afterResponse: [],
@@ -403,6 +405,58 @@ describe('RequestBuilder', () => {
     );
     await userEvent.selectOptions(screen.getByLabelText('Kafka Topic'), 'paymentAuth');
     expect(onKafkaCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'paymentAuth' });
+  });
+
+  it('renders Kafka Contract Check unchecked by default, with no Contract Check fields', () => {
+    render(<RequestBuilder {...baseProps()} />);
+    expect(screen.getByLabelText('Kafka Contract Check')).not.toBeChecked();
+    expect(screen.queryByLabelText('Contract Check Topic')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Contract Check Version')).not.toBeInTheDocument();
+  });
+
+  it('shows the Contract Check fields, defaulted correctly, when Kafka Contract Check is checked', () => {
+    render(
+      <RequestBuilder
+        {...baseProps({ kafkaContractCheck: { enabled: true, topic: 'refundLog', version: '1.2.0' } })}
+      />
+    );
+    expect(screen.getByLabelText('Contract Check Topic')).toHaveValue('refundLog');
+    expect(screen.getByLabelText('Contract Check Version')).toHaveValue('1.2.0');
+  });
+
+  it('calls onKafkaContractCheckChange when the Kafka Contract Check checkbox is toggled', async () => {
+    const onKafkaContractCheckChange = vi.fn();
+    render(<RequestBuilder {...baseProps({ onKafkaContractCheckChange })} />);
+    await userEvent.click(screen.getByLabelText('Kafka Contract Check'));
+    expect(onKafkaContractCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'transLogV1', version: '' });
+  });
+
+  it('calls onKafkaContractCheckChange when the Contract Check Topic select changes', async () => {
+    const onKafkaContractCheckChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({
+          kafkaContractCheck: { enabled: true, topic: 'transLogV1', version: '' },
+          onKafkaContractCheckChange,
+        })}
+      />
+    );
+    await userEvent.selectOptions(screen.getByLabelText('Contract Check Topic'), 'paymentAuth');
+    expect(onKafkaContractCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'paymentAuth', version: '' });
+  });
+
+  it('calls onKafkaContractCheckChange when the Contract Check Version input changes', async () => {
+    const onKafkaContractCheckChange = vi.fn();
+    render(
+      <RequestBuilder
+        {...baseProps({
+          kafkaContractCheck: { enabled: true, topic: 'transLogV1', version: '' },
+          onKafkaContractCheckChange,
+        })}
+      />
+    );
+    await userEvent.type(screen.getByLabelText('Contract Check Version'), '2');
+    expect(onKafkaContractCheckChange).toHaveBeenCalledWith({ enabled: true, topic: 'transLogV1', version: '2' });
   });
 
   it('renders the Before invoke tab bound to the variables prop', async () => {

@@ -5,6 +5,7 @@ import {
   type ExtractRow,
   type GrpcFormState,
   type KafkaCheckFormState,
+  type KafkaContractCheckFormState,
   type KeyValueRow,
   type Protocol,
   type QuestionRow,
@@ -43,6 +44,8 @@ export interface RequestBuilderProps {
   onAfterResponseChange: (rows: KeyValueRow[]) => void;
   kafkaCheck: KafkaCheckFormState;
   onKafkaCheckChange: (kafkaCheck: KafkaCheckFormState) => void;
+  kafkaContractCheck: KafkaContractCheckFormState;
+  onKafkaContractCheckChange: (kafkaContractCheck: KafkaContractCheckFormState) => void;
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
@@ -134,6 +137,8 @@ export function RequestBuilder(props: RequestBuilderProps) {
     onAfterResponseChange,
     kafkaCheck,
     onKafkaCheckChange,
+    kafkaContractCheck,
+    onKafkaContractCheckChange,
   } = props;
 
   const [restTab, setRestTab] = useState<RestTab>('params');
@@ -273,6 +278,48 @@ export function RequestBuilder(props: RequestBuilderProps) {
               ))}
             </select>
           </label>
+        )}
+      </div>
+
+      <div className="row">
+        <label className="label">
+          Kafka Contract Check
+          <input
+            type="checkbox"
+            checked={kafkaContractCheck.enabled}
+            onChange={(e) => onKafkaContractCheckChange({ ...kafkaContractCheck, enabled: e.target.checked })}
+          />
+        </label>
+        {kafkaContractCheck.enabled && (
+          <>
+            <label className="label">
+              Contract Check Topic
+              <select
+                className="text-input"
+                value={kafkaContractCheck.topic}
+                onChange={(e) =>
+                  onKafkaContractCheckChange({
+                    ...kafkaContractCheck,
+                    topic: e.target.value as KafkaContractCheckFormState['topic'],
+                  })
+                }
+              >
+                {KAFKA_TOPICS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="label">
+              Contract Check Version
+              <input
+                className="text-input"
+                value={kafkaContractCheck.version}
+                onChange={(e) => onKafkaContractCheckChange({ ...kafkaContractCheck, version: e.target.value })}
+              />
+            </label>
+          </>
         )}
       </div>
 

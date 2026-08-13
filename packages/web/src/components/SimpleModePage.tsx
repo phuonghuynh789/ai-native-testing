@@ -93,6 +93,8 @@ export function SimpleModePage({
         onAfterResponseChange={(afterResponse) => onFormChange((prev) => ({ ...prev, afterResponse }))}
         kafkaCheck={form.kafkaCheck}
         onKafkaCheckChange={(kafkaCheck) => onFormChange((prev) => ({ ...prev, kafkaCheck }))}
+        kafkaContractCheck={form.kafkaContractCheck}
+        onKafkaContractCheckChange={(kafkaContractCheck) => onFormChange((prev) => ({ ...prev, kafkaContractCheck }))}
       />
       <RunButton form={form} disabled={disabled} onRunStart={onRunStart} onEvent={onEvent} onError={onError} />
       <SaveStepButton form={form} disabled={disabled} existingNames={stepNames} onSaved={onStepNamesChange} />
