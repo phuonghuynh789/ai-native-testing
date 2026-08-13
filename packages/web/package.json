@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "capture-baseline": "tsx scripts/capture-baseline.ts",
-    "update-baseline": "tsx scripts/update-baseline.ts"
+    "update-baseline": "tsx scripts/update-baseline.ts",
+    "compare-baselines": "tsx scripts/compare-baselines.ts"
   },
   "dependencies": {
     "@ai-native-testing/engine": "workspace:*",
