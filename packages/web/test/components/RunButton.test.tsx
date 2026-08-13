@@ -169,4 +169,71 @@ describe('RunButton', () => {
 
     expect(fetchMock).not.toHaveBeenCalledWith('/kafka-checks', expect.anything());
   });
+
+  it('registers a Kafka contract check alongside the run when enabled', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url === '/kafka-contract-checks') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const form = {
+      ...emptyForm(),
+      body: '{"appTransID":"tx-123"}',
+      kafkaContractCheck: { enabled: true, topic: 'transLogV1' as const, version: '1.0.0' },
+    };
+    render(<RunButton form={form} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={() => {}} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/kafka-contract-checks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: 'tx-123', name: 'Task', topic: 'transLogV1', version: '1.0.0' }),
+    });
+  });
+
+  it('calls onError and skips registration when the version field is blank', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) }));
+    const onError = vi.fn();
+    const form = {
+      ...emptyForm(),
+      body: '{"appTransID":"tx-123"}',
+      kafkaContractCheck: { enabled: true, topic: 'transLogV1' as const, version: '' },
+    };
+    render(<RunButton form={form} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={onError} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(onError).toHaveBeenCalledWith('Kafka Contract Check: version is required.');
+  });
+
+  it('calls onError and skips registration when the correlator field is missing from the body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) }));
+    const onError = vi.fn();
+    const form = {
+      ...emptyForm(),
+      body: '{"other":1}',
+      kafkaContractCheck: { enabled: true, topic: 'transLogV1' as const, version: '1.0.0' },
+    };
+    render(<RunButton form={form} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={onError} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(onError).toHaveBeenCalledWith(expect.stringContaining('appTransID'));
+  });
+
+  it('does not register a Kafka contract check when disabled', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ jobId: 'job-1' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <RunButton form={emptyForm()} disabled={false} onRunStart={() => {}} onEvent={() => {}} onError={() => {}} />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    expect(fetchMock).not.toHaveBeenCalledWith('/kafka-contract-checks', expect.anything());
+  });
 });

@@ -1,6 +1,7 @@
 import type { RunEvent } from '@ai-native-testing/engine';
 import { buildTestDefinition } from '../dsl';
 import { correlatorFieldFor, extractCorrelatorValue, registerKafkaCheck } from '../kafkaChecks';
+import { registerKafkaContractCheck } from '../kafkaContractChecks';
 import type { FormState } from '../types';
 
 interface RunButtonProps {
@@ -29,6 +30,28 @@ export function RunButton({ form, disabled, onRunStart, onEvent, onError }: RunB
         }).catch(() => {
           onError('Check Kafka: could not register the tracking check.');
         });
+      }
+    }
+
+    if (form.kafkaContractCheck.enabled) {
+      if (form.kafkaContractCheck.version.trim() === '') {
+        onError('Kafka Contract Check: version is required.');
+      } else {
+        const correlatorValue = extractCorrelatorValue(form, form.kafkaContractCheck.topic);
+        if (correlatorValue === undefined) {
+          onError(
+            `Kafka Contract Check: could not find "${correlatorFieldFor(form.kafkaContractCheck.topic)}" in the request body.`
+          );
+        } else {
+          registerKafkaContractCheck({
+            message_id: correlatorValue,
+            name: form.taskName,
+            topic: form.kafkaContractCheck.topic,
+            version: form.kafkaContractCheck.version,
+          }).catch(() => {
+            onError('Kafka Contract Check: could not register the check.');
+          });
+        }
       }
     }
 
