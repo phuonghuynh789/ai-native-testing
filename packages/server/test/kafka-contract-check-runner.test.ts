@@ -1,0 +1,145 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { runKafkaContractCheck } from '../src/kafka-contract-check-runner.js';
+import { KafkaContractCheckStore, type KafkaContractCheckRow } from '../src/kafka-contract-check-store.js';
+import type { KafkaConfig } from '../src/kafka-config.js';
+
+const mocks = vi.hoisted(() => {
+  return { collectKafkaMessages: vi.fn() };
+});
+
+vi.mock('../src/kafka-message-collector.js', () => ({
+  collectKafkaMessages: mocks.collectKafkaMessages,
+}));
+
+let dir: string;
+let baselinesDir: string;
+let store: KafkaContractCheckStore;
+
+const KAFKA_CONFIG: KafkaConfig = {
+  groupID: 'test-group',
+  topics: {
+    transLogV1: { brokers: ['broker:9092'], topic: 'ZPReportTransLogQC' },
+    refundLog: { brokers: ['broker:9092'], topic: 'ZPReportTransLog' },
+    paymentAuth: { brokers: ['broker:9092'], topic: 'payment_authentication_auth_session_status_qc' },
+  },
+};
+
+function sampleRow(overrides: Partial<KafkaContractCheckRow> = {}): KafkaContractCheckRow {
+  return {
+    message_id: 'tx-1',
+    name: 'Create Payment',
+    topic: 'transLogV1',
+    version: '1.0.0',
+    status: 'pending',
+    diffReport: null,
+    errorMessage: null,
+    created_at: '2026-08-13T00:00:00.000Z',
+    updated_at: '2026-08-13T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+async function writeBaselineFixture(version: string, status: string, messages: unknown[]) {
+  const versionDir = join(baselinesDir, version);
+  await mkdir(versionDir, { recursive: true });
+  await writeFile(join(versionDir, `${status}.json`), JSON.stringify({ messages }));
+}
+
+beforeEach(async () => {
+  vi.clearAllMocks();
+  dir = await mkdtemp(join(tmpdir(), 'kafka-contract-check-runner-'));
+  baselinesDir = join(dir, 'kafka-baselines');
+  store = new KafkaContractCheckStore(join(dir, 'kafka-contract-checks.json'));
+});
+
+afterEach(async () => {
+  await rm(dir, { recursive: true, force: true });
+});
+
+describe('runKafkaContractCheck', () => {
+  it('resolves to passed when the diff has no critical findings', async () => {
+    await store.create(sampleRow());
+    await writeBaselineFixture('1.0.0', 'SUCCESS', [
+      { data: { appTransID: 'tx-1', transID: 1, amount: 10000, status: 'SUCCESS' } },
+    ]);
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [{ data: { appTransID: 'tx-1', transID: 2, amount: 10000, status: 'SUCCESS' } }],
+      receivedStatuses: ['SUCCESS'],
+      terminatedBy: 'terminal-status',
+      durationMs: 500,
+    });
+
+    await runKafkaContractCheck(sampleRow(), KAFKA_CONFIG, baselinesDir, store);
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('passed');
+    expect(row?.diffReport?.result).toBe('passed');
+  });
+
+  it('resolves to failed when the diff has a critical finding', async () => {
+    await store.create(sampleRow());
+    await writeBaselineFixture('1.0.0', 'SUCCESS', [
+      { data: { appTransID: 'tx-1', transID: 1, amount: 10000, status: 'SUCCESS' } },
+    ]);
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [{ data: { appTransID: 'tx-1', transID: 2, status: 'SUCCESS' } }],
+      receivedStatuses: ['SUCCESS'],
+      terminatedBy: 'terminal-status',
+      durationMs: 500,
+    });
+
+    await runKafkaContractCheck(sampleRow(), KAFKA_CONFIG, baselinesDir, store);
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('failed');
+    expect(row?.diffReport?.findings).toContainEqual(
+      expect.objectContaining({ kind: 'missing-field', field: 'amount' })
+    );
+  });
+
+  it('resolves to error with a descriptive message when collection fails', async () => {
+    await store.create(sampleRow());
+    mocks.collectKafkaMessages.mockRejectedValue(new Error('connection timeout'));
+
+    await runKafkaContractCheck(sampleRow(), KAFKA_CONFIG, baselinesDir, store);
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('error');
+    expect(row?.errorMessage).toContain('connection timeout');
+  });
+
+  it('resolves to error when the collector times out without a terminal status', async () => {
+    await store.create(sampleRow());
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [],
+      receivedStatuses: [],
+      terminatedBy: 'idle-timeout',
+      durationMs: 15_000,
+    });
+
+    await runKafkaContractCheck(sampleRow(), KAFKA_CONFIG, baselinesDir, store);
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('error');
+    expect(row?.errorMessage).toMatch(/timed out/i);
+  });
+
+  it('resolves to error when no baseline file exists for the version/status', async () => {
+    await store.create(sampleRow());
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [{ data: { appTransID: 'tx-1', status: 'SUCCESS' } }],
+      receivedStatuses: ['SUCCESS'],
+      terminatedBy: 'terminal-status',
+      durationMs: 500,
+    });
+
+    await runKafkaContractCheck(sampleRow(), KAFKA_CONFIG, baselinesDir, store);
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('error');
+    expect(row?.errorMessage).toContain('No baseline found');
+  });
+});
