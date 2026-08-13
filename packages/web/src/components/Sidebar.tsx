@@ -35,6 +35,12 @@ export function Sidebar() {
       >
         Check Kafka
       </NavLink>
+      <NavLink
+        to="/kafka-contract-checks"
+        className={({ isActive }) => (isActive ? 'sidebar-link sidebar-link--active' : 'sidebar-link')}
+      >
+        Kafka Contract Checks
+      </NavLink>
     </nav>
   );
 }

@@ -12,6 +12,7 @@ import { SimpleModePage } from './components/SimpleModePage';
 import { EndToEndTestPage } from './components/EndToEndTestPage';
 import { ApiAutomationPage } from './components/ApiAutomationPage';
 import { KafkaChecksPage } from './components/KafkaChecksPage';
+import { KafkaContractChecksPage } from './components/KafkaContractChecksPage';
 import { ManageStepsPage } from './components/ManageStepsPage';
 
 function initialForm(): FormState {
@@ -212,6 +213,7 @@ export function App() {
             }
           />
           <Route path="/kafka-checks" element={<KafkaChecksPage />} />
+          <Route path="/kafka-contract-checks" element={<KafkaContractChecksPage />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -13,6 +13,7 @@ export default defineConfig({
       '/flows': 'http://localhost:3000',
       '/grpc': 'http://localhost:3000',
       '/kafka-checks': 'http://localhost:3000',
+      '/kafka-contract-checks': 'http://localhost:3000',
     },
   },
   test: {
