@@ -49,6 +49,7 @@ function minimalForm(overrides: Partial<FormState> = {}): FormState {
     extracts: [],
     questions: [],
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    kafkaContractCheck: { enabled: false, topic: 'transLogV1', version: '' },
     afterResponse: [],
     ...overrides,
   };

@@ -4,6 +4,7 @@ function normalizeFormState(form: FormState): FormState {
   return {
     ...form,
     kafkaCheck: form.kafkaCheck ?? { enabled: false, topic: 'transLogV1' },
+    kafkaContractCheck: form.kafkaContractCheck ?? { enabled: false, topic: 'transLogV1', version: '' },
     afterResponse: form.afterResponse ?? [],
   };
 }

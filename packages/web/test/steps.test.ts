@@ -33,6 +33,7 @@ function sampleForm(): FormState {
     extracts: [],
     questions: [],
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    kafkaContractCheck: { enabled: false, topic: 'transLogV1', version: '' },
     afterResponse: [],
   };
 }
@@ -74,8 +75,8 @@ describe('fetchStep', () => {
     expect(await fetchStep('Create Payment')).toBeUndefined();
   });
 
-  it('backfills kafkaCheck and afterResponse when a saved step predates those fields', async () => {
-    const { kafkaCheck, afterResponse, ...legacyForm } = sampleForm();
+  it('backfills kafkaCheck, kafkaContractCheck, and afterResponse when a saved step predates those fields', async () => {
+    const { kafkaCheck, kafkaContractCheck, afterResponse, ...legacyForm } = sampleForm();
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(legacyForm) })
@@ -84,6 +85,7 @@ describe('fetchStep', () => {
     const result = await fetchStep('Create Payment');
 
     expect(result?.kafkaCheck).toEqual({ enabled: false, topic: 'transLogV1' });
+    expect(result?.kafkaContractCheck).toEqual({ enabled: false, topic: 'transLogV1', version: '' });
     expect(result?.afterResponse).toEqual([]);
   });
 });

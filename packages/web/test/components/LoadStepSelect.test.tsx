@@ -35,6 +35,7 @@ function sampleForm(): FormState {
     extracts: [],
     questions: [],
     kafkaCheck: { enabled: false, topic: 'transLogV1' },
+    kafkaContractCheck: { enabled: false, topic: 'transLogV1', version: '' },
     afterResponse: [],
   };
 }

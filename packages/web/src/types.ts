@@ -37,6 +37,12 @@ export interface KafkaCheckFormState {
   topic: KafkaTopic;
 }
 
+export interface KafkaContractCheckFormState {
+  enabled: boolean;
+  topic: KafkaTopic;
+  version: string;
+}
+
 export interface GrpcFormState {
   protoContent: string;
   protoFilename: string;
@@ -64,5 +70,6 @@ export interface FormState {
   extracts: ExtractRow[];
   questions: QuestionRow[];
   kafkaCheck: KafkaCheckFormState;
+  kafkaContractCheck: KafkaContractCheckFormState;
   afterResponse: KeyValueRow[];
 }
