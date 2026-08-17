@@ -127,6 +127,24 @@ describe('runKafkaContractCheck', () => {
     expect(row?.errorMessage).toMatch(/timed out/i);
   });
 
+  it('passes a startFromMs looking back 24 hours, so an already-completed transaction can still be found', async () => {
+    await store.create(sampleRow());
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [],
+      receivedStatuses: [],
+      terminatedBy: 'idle-timeout',
+      durationMs: 1,
+    });
+
+    const beforeCall = Date.now();
+    await runKafkaContractCheck(sampleRow(), KAFKA_CONFIG, baselinesDir, store);
+
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+    const callArgs = mocks.collectKafkaMessages.mock.calls[0][0];
+    expect(callArgs.startFromMs).toBeLessThanOrEqual(beforeCall - TWENTY_FOUR_HOURS_MS);
+    expect(callArgs.startFromMs).toBeGreaterThan(beforeCall - TWENTY_FOUR_HOURS_MS - 5000);
+  });
+
   it('resolves to error when no baseline file exists for the version/status', async () => {
     await store.create(sampleRow());
     mocks.collectKafkaMessages.mockResolvedValue({

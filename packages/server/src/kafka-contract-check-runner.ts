@@ -8,6 +8,7 @@ import type { KafkaContractCheckRow, KafkaContractCheckStore } from './kafka-con
 
 const IDLE_TIMEOUT_MS = 15_000;
 const TERMINAL_STATUSES = ['SUCCESS', 'FAILED'];
+const LOOKBACK_MS = 24 * 60 * 60 * 1000;
 
 interface BaselineFile {
   messages: unknown[];
@@ -34,6 +35,7 @@ export async function runKafkaContractCheck(
       hasDataWrapper: topicDefinition.hasDataWrapper,
       terminalStatuses: TERMINAL_STATUSES,
       idleTimeoutMs: IDLE_TIMEOUT_MS,
+      startFromMs: Date.now() - LOOKBACK_MS,
     });
   } catch (err) {
     await store.update(row.message_id, {
