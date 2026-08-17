@@ -37,6 +37,7 @@ const result = await runCapture({
 });
 
 const path = await writeBaseline(result, {
+  topic: values.topic,
   version: values.version,
   allowOverwrite: true,
   baselinesDir: values['baselines-dir'],

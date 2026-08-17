@@ -42,8 +42,8 @@ function sampleRow(overrides: Partial<KafkaContractCheckRow> = {}): KafkaContrac
   };
 }
 
-async function writeBaselineFixture(version: string, status: string, messages: unknown[]) {
-  const versionDir = join(baselinesDir, version);
+async function writeBaselineFixture(topic: string, version: string, status: string, messages: unknown[]) {
+  const versionDir = join(baselinesDir, topic, version);
   await mkdir(versionDir, { recursive: true });
   await writeFile(join(versionDir, `${status}.json`), JSON.stringify({ messages }));
 }
@@ -62,7 +62,7 @@ afterEach(async () => {
 describe('runKafkaContractCheck', () => {
   it('resolves to passed when the diff has no critical findings', async () => {
     await store.create(sampleRow());
-    await writeBaselineFixture('1.0.0', 'SUCCESS', [
+    await writeBaselineFixture('transLogV1', '1.0.0', 'SUCCESS', [
       { data: { appTransID: 'tx-1', transID: 1, amount: 10000, status: 'SUCCESS' } },
     ]);
     mocks.collectKafkaMessages.mockResolvedValue({
@@ -81,7 +81,7 @@ describe('runKafkaContractCheck', () => {
 
   it('resolves to failed when the diff has a critical finding', async () => {
     await store.create(sampleRow());
-    await writeBaselineFixture('1.0.0', 'SUCCESS', [
+    await writeBaselineFixture('transLogV1', '1.0.0', 'SUCCESS', [
       { data: { appTransID: 'tx-1', transID: 1, amount: 10000, status: 'SUCCESS' } },
     ]);
     mocks.collectKafkaMessages.mockResolvedValue({
@@ -98,6 +98,32 @@ describe('runKafkaContractCheck', () => {
     expect(row?.diffReport?.findings).toContainEqual(
       expect.objectContaining({ kind: 'missing-field', field: 'amount' })
     );
+  });
+
+  it('keeps two topics using the same version independent, never reading the wrong topic\'s baseline', async () => {
+    await store.create(sampleRow({ message_id: 'tx-1', topic: 'transLogV1', version: '1' }));
+    await writeBaselineFixture('transLogV1', '1', 'SUCCESS', [
+      { data: { appTransID: 'tx-1', status: 'SUCCESS', amount: 10000 } },
+    ]);
+    await writeBaselineFixture('refundLog', '1', 'SUCCESS', [
+      { data: { appTransID: 'tx-2', status: 'SUCCESS', refundAmount: 5000 } },
+    ]);
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [{ data: { appTransID: 'tx-1', status: 'SUCCESS', amount: 10000 } }],
+      receivedStatuses: ['SUCCESS'],
+      terminatedBy: 'terminal-status',
+      durationMs: 500,
+    });
+
+    await runKafkaContractCheck(
+      sampleRow({ message_id: 'tx-1', topic: 'transLogV1', version: '1' }),
+      KAFKA_CONFIG,
+      baselinesDir,
+      store
+    );
+
+    const row = await store.get('tx-1');
+    expect(row?.status).toBe('passed');
   });
 
   it('resolves to error with a descriptive message when collection fails', async () => {

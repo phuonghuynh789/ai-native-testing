@@ -14,10 +14,10 @@ const DEFAULT_BASELINES_DIR = join(
 
 export async function writeBaseline(
   result: RunCaptureResult,
-  options: { version: string; allowOverwrite: boolean; baselinesDir?: string }
+  options: { topic: string; version: string; allowOverwrite: boolean; baselinesDir?: string }
 ): Promise<string> {
   const baselinesDir = options.baselinesDir ?? DEFAULT_BASELINES_DIR;
-  const versionDir = join(baselinesDir, options.version);
+  const versionDir = join(baselinesDir, options.topic, options.version);
   const filePath = join(versionDir, `${result.status}.json`);
 
   if (!options.allowOverwrite) {

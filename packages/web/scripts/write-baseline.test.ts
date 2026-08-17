@@ -20,9 +20,14 @@ function result(overrides: Partial<RunCaptureResult> = {}): RunCaptureResult {
 }
 
 describe('writeBaseline', () => {
-  it('writes a new baseline file at kafka-baselines/{version}/{status}.json', async () => {
-    const path = await writeBaseline(result(), { version: 'v1', allowOverwrite: false, baselinesDir: dir });
-    expect(path).toBe(join(dir, 'v1', 'SUCCESS.json'));
+  it('writes a new baseline file at kafka-baselines/{topic}/{version}/{status}.json', async () => {
+    const path = await writeBaseline(result(), {
+      topic: 'transLogV1',
+      version: 'v1',
+      allowOverwrite: false,
+      baselinesDir: dir,
+    });
+    expect(path).toBe(join(dir, 'transLogV1', 'v1', 'SUCCESS.json'));
     const written = JSON.parse(await readFile(path, 'utf8'));
     expect(written.status).toBe('SUCCESS');
     expect(written.version).toBe('v1');
@@ -30,17 +35,42 @@ describe('writeBaseline', () => {
     expect(typeof written.capturedAt).toBe('string');
   });
 
+  it('keeps two topics using the same version independent', async () => {
+    await writeBaseline(result({ messages: [{ topic: 'transLogV1' }] }), {
+      topic: 'transLogV1',
+      version: 'v1',
+      allowOverwrite: false,
+      baselinesDir: dir,
+    });
+    await writeBaseline(result({ messages: [{ topic: 'refundLog' }] }), {
+      topic: 'refundLog',
+      version: 'v1',
+      allowOverwrite: false,
+      baselinesDir: dir,
+    });
+
+    const transLogWritten = JSON.parse(await readFile(join(dir, 'transLogV1', 'v1', 'SUCCESS.json'), 'utf8'));
+    const refundLogWritten = JSON.parse(await readFile(join(dir, 'refundLog', 'v1', 'SUCCESS.json'), 'utf8'));
+    expect(transLogWritten.messages).toEqual([{ topic: 'transLogV1' }]);
+    expect(refundLogWritten.messages).toEqual([{ topic: 'refundLog' }]);
+  });
+
   it('refuses to overwrite an existing baseline when allowOverwrite is false', async () => {
-    await writeBaseline(result(), { version: 'v1', allowOverwrite: false, baselinesDir: dir });
+    await writeBaseline(result(), { topic: 'transLogV1', version: 'v1', allowOverwrite: false, baselinesDir: dir });
     await expect(
-      writeBaseline(result(), { version: 'v1', allowOverwrite: false, baselinesDir: dir })
+      writeBaseline(result(), { topic: 'transLogV1', version: 'v1', allowOverwrite: false, baselinesDir: dir })
     ).rejects.toThrow(/already exists/i);
   });
 
   it('overwrites an existing baseline when allowOverwrite is true', async () => {
-    await writeBaseline(result(), { version: 'v1', allowOverwrite: false, baselinesDir: dir });
-    await writeBaseline(result({ durationMs: 2000 }), { version: 'v1', allowOverwrite: true, baselinesDir: dir });
-    const path = join(dir, 'v1', 'SUCCESS.json');
+    await writeBaseline(result(), { topic: 'transLogV1', version: 'v1', allowOverwrite: false, baselinesDir: dir });
+    await writeBaseline(result({ durationMs: 2000 }), {
+      topic: 'transLogV1',
+      version: 'v1',
+      allowOverwrite: true,
+      baselinesDir: dir,
+    });
+    const path = join(dir, 'transLogV1', 'v1', 'SUCCESS.json');
     const written = JSON.parse(await readFile(path, 'utf8'));
     expect(written.durationMs).toBe(2000);
   });

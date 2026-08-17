@@ -54,7 +54,7 @@ export async function runKafkaContractCheck(
   }
 
   const actualStatus = result.receivedStatuses[result.receivedStatuses.length - 1];
-  const baselinePath = join(baselinesDir, row.version, `${actualStatus}.json`);
+  const baselinePath = join(baselinesDir, row.topic, row.version, `${actualStatus}.json`);
   let baselineFile: BaselineFile;
   try {
     const raw = await readFile(baselinePath, 'utf8');
@@ -62,7 +62,7 @@ export async function runKafkaContractCheck(
   } catch {
     await store.update(row.message_id, {
       status: 'error',
-      errorMessage: `No baseline found at ${row.version}/${actualStatus}.json`,
+      errorMessage: `No baseline found at ${row.topic}/${row.version}/${actualStatus}.json`,
     });
     return;
   }
