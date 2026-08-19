@@ -57,7 +57,11 @@ async function startConsumerForTopic(
   store: KafkaCheckStore
 ): Promise<void> {
   const topicConfig = config.topics[topicKey];
-  const kafka = new Kafka({ brokers: topicConfig.brokers });
+  const kafka = new Kafka({
+    brokers: topicConfig.brokers,
+    ...(topicConfig.ssl !== undefined ? { ssl: topicConfig.ssl } : {}),
+    ...(topicConfig.sasl !== undefined ? { sasl: topicConfig.sasl } : {}),
+  });
   const consumer = kafka.consumer({ groupId: `${config.groupID}-${topicKey}` });
   await consumer.connect();
   await consumer.subscribe({ topic: topicConfig.topic, fromBeginning: false });

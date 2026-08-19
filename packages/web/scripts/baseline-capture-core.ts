@@ -51,6 +51,8 @@ export async function runCapture(options: RunCaptureOptions): Promise<RunCapture
     hasDataWrapper: topicDefinition.hasDataWrapper,
     terminalStatuses: options.terminalStatuses,
     idleTimeoutMs: options.idleTimeoutMs,
+    ssl: topicConfig.ssl,
+    sasl: topicConfig.sasl,
   });
 
   const runResponse = await fetch(`${options.serverUrl}/runs`, {

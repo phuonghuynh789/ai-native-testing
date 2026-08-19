@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Kafka } from 'kafkajs';
+import type { KafkaSaslConfig } from './kafka-config.js';
 
 export interface CollectKafkaMessagesOptions {
   brokers: string[];
@@ -11,6 +12,8 @@ export interface CollectKafkaMessagesOptions {
   terminalStatuses: string[];
   idleTimeoutMs: number;
   startFromMs?: number;
+  ssl?: boolean;
+  sasl?: KafkaSaslConfig;
 }
 
 export interface CollectKafkaMessagesResult {
@@ -25,7 +28,11 @@ export async function collectKafkaMessages(
 ): Promise<CollectKafkaMessagesResult> {
   const startedAt = Date.now();
   const startFromMs = options.startFromMs ?? startedAt;
-  const kafka = new Kafka({ brokers: options.brokers });
+  const kafka = new Kafka({
+    brokers: options.brokers,
+    ...(options.ssl !== undefined ? { ssl: options.ssl } : {}),
+    ...(options.sasl !== undefined ? { sasl: options.sasl } : {}),
+  });
   const consumer = kafka.consumer({ groupId: `verifier-${randomUUID()}` });
   const admin = kafka.admin();
 

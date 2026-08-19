@@ -171,6 +171,34 @@ describe('runKafkaContractCheck', () => {
     expect(callArgs.startFromMs).toBeGreaterThan(beforeCall - TWENTY_FOUR_HOURS_MS - 5000);
   });
 
+  it('passes the topic config\'s ssl/sasl settings through to collectKafkaMessages', async () => {
+    const configWithAuth: KafkaConfig = {
+      ...KAFKA_CONFIG,
+      topics: {
+        ...KAFKA_CONFIG.topics,
+        refundLog: {
+          brokers: ['broker:9092'],
+          topic: 'ZPReportTransLog',
+          ssl: true,
+          sasl: { mechanism: 'plain', username: 'qa-user', password: 'qa-pass' },
+        },
+      },
+    };
+    await store.create(sampleRow({ topic: 'refundLog' }));
+    mocks.collectKafkaMessages.mockResolvedValue({
+      messages: [],
+      receivedStatuses: [],
+      terminatedBy: 'idle-timeout',
+      durationMs: 1,
+    });
+
+    await runKafkaContractCheck(sampleRow({ topic: 'refundLog' }), configWithAuth, baselinesDir, store);
+
+    const callArgs = mocks.collectKafkaMessages.mock.calls[0][0];
+    expect(callArgs.ssl).toBe(true);
+    expect(callArgs.sasl).toEqual({ mechanism: 'plain', username: 'qa-user', password: 'qa-pass' });
+  });
+
   it('resolves to error when no baseline file exists for the version/status', async () => {
     await store.create(sampleRow());
     mocks.collectKafkaMessages.mockResolvedValue({

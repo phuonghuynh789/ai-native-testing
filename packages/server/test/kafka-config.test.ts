@@ -25,6 +25,11 @@ refundLog:
 paymentAuth:
   brokers: 10.60.45.2:9092
   topic: payment_authentication_auth_session_status_qc
+  ssl: true
+  sasl:
+    mechanism: plain
+    username: qa-user
+    password: qa-pass
 disburseLog:
   brokers: 10.60.45.2:9092
   topic: td-transfer-disbursement-order-status-qc
@@ -46,6 +51,8 @@ describe('loadKafkaConfig', () => {
     expect(config?.topics.paymentAuth).toEqual({
       brokers: ['10.60.45.2:9092'],
       topic: 'payment_authentication_auth_session_status_qc',
+      ssl: true,
+      sasl: { mechanism: 'plain', username: 'qa-user', password: 'qa-pass' },
     });
   });
 

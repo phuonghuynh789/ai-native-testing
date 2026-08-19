@@ -249,6 +249,40 @@ describe('collectKafkaMessages', () => {
     }
   });
 
+  it('constructs the Kafka client without ssl/sasl when neither is configured', async () => {
+    vi.useFakeTimers();
+    try {
+      const resultPromise = collectKafkaMessages(baseOptions());
+      await vi.advanceTimersByTimeAsync(0);
+      await captureEachMessage()(messagePayload({ appTransID: 'tx-1', status: 'SUCCESS' }));
+      await resultPromise;
+
+      const constructorArgs = mocks.kafkaConstructorMock.mock.calls[0][0];
+      expect(constructorArgs.ssl).toBeUndefined();
+      expect(constructorArgs.sasl).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('passes ssl and sasl through to the Kafka client when configured', async () => {
+    vi.useFakeTimers();
+    try {
+      const resultPromise = collectKafkaMessages(
+        baseOptions({ ssl: true, sasl: { mechanism: 'plain', username: 'qa-user', password: 'qa-pass' } })
+      );
+      await vi.advanceTimersByTimeAsync(0);
+      await captureEachMessage()(messagePayload({ appTransID: 'tx-1', status: 'SUCCESS' }));
+      await resultPromise;
+
+      const constructorArgs = mocks.kafkaConstructorMock.mock.calls[0][0];
+      expect(constructorArgs.ssl).toBe(true);
+      expect(constructorArgs.sasl).toEqual({ mechanism: 'plain', username: 'qa-user', password: 'qa-pass' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects when the consumer fails to connect, and still attempts to disconnect', async () => {
     mocks.consumerMock.connect.mockRejectedValue(new Error('connection timeout'));
 

@@ -5,6 +5,12 @@ transLogV1:
 refundLog:
   brokers: localhost:9092
   topic: ZPReportTransLog
+  # ssl and sasl are optional per-topic — omit both for a plaintext, unauthenticated connection.
+  # ssl: true
+  # sasl:
+  #   mechanism: plain
+  #   username: qa-user
+  #   password: qa-pass
 paymentAuth:
   brokers: localhost:9092
   topic: payment_authentication_auth_session_status_qc

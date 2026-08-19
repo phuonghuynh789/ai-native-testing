@@ -36,6 +36,8 @@ export async function runKafkaContractCheck(
       terminalStatuses: TERMINAL_STATUSES,
       idleTimeoutMs: IDLE_TIMEOUT_MS,
       startFromMs: Date.now() - LOOKBACK_MS,
+      ssl: topicConfig.ssl,
+      sasl: topicConfig.sasl,
     });
   } catch (err) {
     await store.update(row.message_id, {
