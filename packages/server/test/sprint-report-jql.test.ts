@@ -22,23 +22,17 @@ describe('nextDay', () => {
 });
 
 describe('buildCommittedJql', () => {
-  it('builds the exact committed JQL', () => {
-    const jql = buildCommittedJql({ start: '2026/08/06', end: '2026/08/19', labels: ['nhuvth', 'minh2'] });
+  it('builds the exact committed JQL, matching by Sprint name per project', () => {
+    const jql = buildCommittedJql({ sprintCode: '26.08.B' });
     expect(jql).toBe(
-      'project in (PC, PCFUM, PCPOP) AND created >= "2026/08/06" AND created <= "2026/08/19" ' +
-        'AND type in (Task, Story) AND type != Bug AND reporter != jira-webhook-bot ' +
-        'AND status != Cancelled AND labels in (nhuvth, minh2)'
+      'reporter != jira-webhook-bot AND type in (Task, Story) AND status != Cancelled ' +
+        'AND Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")'
     );
   });
 
-  it('omits the labels clause entirely when no labels are given', () => {
-    const jql = buildCommittedJql({ start: '2026/08/06', end: '2026/08/19', labels: [] });
-    expect(jql).toBe(
-      'project in (PC, PCFUM, PCPOP) AND created >= "2026/08/06" AND created <= "2026/08/19" ' +
-        'AND type in (Task, Story) AND type != Bug AND reporter != jira-webhook-bot ' +
-        'AND status != Cancelled'
-    );
-    expect(jql).not.toContain('labels');
+  it('builds the three per-project sprint names generically for a different sprint code', () => {
+    const jql = buildCommittedJql({ sprintCode: '26.09.A' });
+    expect(jql).toContain('Sprint in ("PCDPC - Sprint 26.09.A","PCF-UM 26.09.A","OPF - 26.09.A")');
   });
 });
 

@@ -4,6 +4,10 @@ export interface JqlDateParams {
   labels: string[];
 }
 
+export interface CommittedJqlParams {
+  sprintCode: string;
+}
+
 export function nextDay(dateYYYYMMDD: string): string {
   const [year, month, day] = dateYYYYMMDD.split('/').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -18,11 +22,17 @@ function labelsClause(labels: string[]): string {
   return labels.length > 0 ? ` AND labels in (${labels.join(', ')})` : '';
 }
 
-export function buildCommittedJql(params: JqlDateParams): string {
+function committedSprintNames(sprintCode: string): string[] {
+  return [`PCDPC - Sprint ${sprintCode}`, `PCF-UM ${sprintCode}`, `OPF - ${sprintCode}`];
+}
+
+export function buildCommittedJql(params: CommittedJqlParams): string {
+  const sprintNamesClause = committedSprintNames(params.sprintCode)
+    .map((name) => `"${name}"`)
+    .join(',');
   return (
-    `project in (PC, PCFUM, PCPOP) AND created >= "${params.start}" AND created <= "${params.end}" ` +
-    `AND type in (Task, Story) AND type != Bug AND reporter != jira-webhook-bot ` +
-    `AND status != Cancelled${labelsClause(params.labels)}`
+    `reporter != jira-webhook-bot AND type in (Task, Story) AND status != Cancelled ` +
+    `AND Sprint in (${sprintNamesClause})`
   );
 }
 

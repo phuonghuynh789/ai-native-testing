@@ -28,6 +28,13 @@ AND type in (Task, Story) AND type != Bug AND reporter != jira-webhook-bot
 AND status != Cancelled AND labels in ({labels})
 ```
 
+**[Updated 2026-08-20]** Real dogfooding against `jira.zalopay.vn` showed this date-range approach doesn't match the user's actual Committed scope — sprints are tracked by Jira's native Sprint field, not `created` date, and each of the 3 projects names its sprints with its own template. Replaced with a Sprint-name match, **Committed only** (Delivered/Ready-for-Test above are unaffected and keep the date-range + `labels` approach):
+```
+reporter != jira-webhook-bot AND type in (Task, Story) AND status != Cancelled
+AND Sprint in ("PCDPC - Sprint {sprintCode}","PCF-UM {sprintCode}","OPF - {sprintCode}")
+```
+`{sprintCode}` is the report's own Sprint Code input (e.g. `26.08.B`) substituted into each project's sprint-name template — `PCDPC - Sprint {sprintCode}` for `PC`, `PCF-UM {sprintCode}` for `PCFUM`, `OPF - {sprintCode}` for `PCPOP`. `project in (...)`, `created >=/<=`, `type != Bug`, and `labels in (...)` are dropped entirely for Committed, since Sprint membership already scopes precisely to the right issues. Also, an empty `labels` list must omit the `labels in (...)` clause rather than emit `labels in ()`, which Jira rejects as invalid JQL — found the same way, via a real Jira error response.
+
 **Delivered** (Sprint Delivery Summary) — `type`/`labels` added to match Committed's scope, so Predictability % compares the same population at two points in its lifecycle:
 ```
 status changed to Done during ("{start}", "{end}")

@@ -65,7 +65,7 @@ export async function refreshSprintReport(
   const jqlParams = { start: params.startDate, end: params.endDate, labels: params.labels };
 
   const [committed, delivered, readyForTest, bugs] = await Promise.all([
-    searchJiraIssues(jiraConfig, buildCommittedJql(jqlParams)),
+    searchJiraIssues(jiraConfig, buildCommittedJql({ sprintCode })),
     searchJiraIssues(jiraConfig, buildDeliveredJql(jqlParams)),
     searchJiraIssues(jiraConfig, buildReadyForTestJql(jqlParams)),
     searchJiraIssues(jiraConfig, buildBugsJql(jqlParams)),

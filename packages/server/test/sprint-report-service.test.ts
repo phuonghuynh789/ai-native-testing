@@ -50,7 +50,7 @@ afterEach(async () => {
 describe('refreshSprintReport', () => {
   it('groups issues into all 5 rows and computes delivery/quality/impact-analysis per row', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
-      if (jql.startsWith('project in')) {
+      if (jql.startsWith('reporter != jira-webhook-bot')) {
         return Promise.resolve([issue('PC-1', 'PC'), issue('OP-1', 'PCPOP', { productDomain: 'Merchant Platform' })]);
       }
       if (jql.startsWith('status changed to Done')) {
@@ -102,7 +102,7 @@ describe('refreshSprintReport', () => {
 
   it('keeps a previously-entered root-cause reason for a ticket still awaiting delivery', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
-      if (jql.startsWith('project in')) {
+      if (jql.startsWith('reporter != jira-webhook-bot')) {
         return Promise.resolve([issue('PC-1', 'PC')]);
       }
       return Promise.resolve([]);
