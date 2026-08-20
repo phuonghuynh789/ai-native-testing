@@ -20,7 +20,15 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       newSP: 0,
       predictabilityNew: null,
     },
+    deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
     quality: { totalBugs: 25, critical: 0, major: 3, minor: 22, prodBug: 0 },
+    qualityJiraLinks: {
+      totalBugs: 'https://jira.example.com/issues/?jql=totalBugs',
+      critical: 'https://jira.example.com/issues/?jql=critical',
+      major: 'https://jira.example.com/issues/?jql=major',
+      minor: 'https://jira.example.com/issues/?jql=minor',
+      prodBug: 'https://jira.example.com/issues/?jql=prodBug',
+    },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
     qualityChecklist: {
       noCriticalBug: 'unset',
@@ -50,6 +58,13 @@ describe('QualityReportSection', () => {
     expect(screen.getByText('25')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('22')).toBeInTheDocument();
+  });
+
+  it('links each bug count to its Jira issue search', () => {
+    render(<QualityReportSection rows={[row()]} onRowsChange={() => {}} />);
+    expect(screen.getByText('25').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=totalBugs');
+    expect(screen.getByText('3').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=major');
+    expect(screen.getByText('22').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=minor');
   });
 
   it('calls onRowsChange when the assessment select changes', async () => {

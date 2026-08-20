@@ -20,7 +20,9 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       newSP: 0,
       predictabilityNew: null,
     },
+    deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0 },
+    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
     impactAnalysis: { totalTickets: 10, iaGood: 8, iaMissingInfo: 2 },
     qualityChecklist: {
       noCriticalBug: 'unset',

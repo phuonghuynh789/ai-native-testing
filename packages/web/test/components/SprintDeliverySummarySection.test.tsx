@@ -20,7 +20,14 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       newSP: 15,
       predictabilityNew: 0.1875,
     },
+    deliveryJiraLinks: {
+      committed: 'https://jira.example.com/issues/?jql=committed',
+      delivered: 'https://jira.example.com/issues/?jql=delivered',
+      readyForTest: 'https://jira.example.com/issues/?jql=readyForTest',
+      new: 'https://jira.example.com/issues/?jql=new',
+    },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0 },
+    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
     qualityChecklist: {
       noCriticalBug: 'unset',
@@ -56,6 +63,29 @@ describe('SprintDeliverySummarySection', () => {
     expect(screen.getByText('80')).toBeInTheDocument();
     expect(screen.getByText('70')).toBeInTheDocument();
     expect(screen.getByText('87.5%')).toBeInTheDocument();
+  });
+
+  it('links each ticket/SP count to its Jira issue search', () => {
+    render(
+      <SprintDeliverySummarySection
+        rows={[row()]}
+        deliveryComment=""
+        onDeliveryCommentChange={() => {}}
+      />
+    );
+    expect(screen.getByText('10').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=committed'
+    );
+    expect(screen.getByText('8').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=delivered'
+    );
+    expect(screen.getByText('9').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=readyForTest'
+    );
+    expect(screen.getByText('3').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=new');
   });
 
   it('renders New Tickets/SP and the Predictability RFT/New percentages', () => {

@@ -10,6 +10,14 @@ function formatPredictability(value: number | null): string {
   return value === null ? '—' : `${(value * 100).toFixed(1)}%`;
 }
 
+function JiraLinkCell({ href, value }: { href: string; value: number }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      {value}
+    </a>
+  );
+}
+
 export function SprintDeliverySummarySection({
   rows,
   deliveryComment,
@@ -39,16 +47,32 @@ export function SprintDeliverySummarySection({
           {rows.map((row) => (
             <tr key={row.rowKey}>
               <td>{row.rowKey}</td>
-              <td>{row.delivery.committedTickets}</td>
-              <td>{row.delivery.committedSP}</td>
-              <td>{row.delivery.deliveredTickets}</td>
-              <td>{row.delivery.deliveredSP}</td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.committed} value={row.delivery.committedTickets} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.committed} value={row.delivery.committedSP} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.delivered} value={row.delivery.deliveredTickets} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.delivered} value={row.delivery.deliveredSP} />
+              </td>
               <td>{formatPredictability(row.delivery.predictability)}</td>
-              <td>{row.delivery.readyForTestTickets}</td>
-              <td>{row.delivery.readyForTestSP}</td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.readyForTest} value={row.delivery.readyForTestTickets} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.readyForTest} value={row.delivery.readyForTestSP} />
+              </td>
               <td>{formatPredictability(row.delivery.predictabilityRFT)}</td>
-              <td>{row.delivery.newTickets}</td>
-              <td>{row.delivery.newSP}</td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.new} value={row.delivery.newTickets} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.deliveryJiraLinks.new} value={row.delivery.newSP} />
+              </td>
               <td>{formatPredictability(row.delivery.predictabilityNew)}</td>
             </tr>
           ))}

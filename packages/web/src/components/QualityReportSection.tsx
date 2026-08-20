@@ -36,11 +36,31 @@ export function QualityReportSection({ rows, onRowsChange }: QualityReportSectio
           {rows.map((row) => (
             <tr key={row.rowKey}>
               <td>{row.rowKey}</td>
-              <td>{row.quality.totalBugs}</td>
-              <td>{row.quality.critical}</td>
-              <td>{row.quality.major}</td>
-              <td>{row.quality.minor}</td>
-              <td>{row.quality.prodBug}</td>
+              <td>
+                <a href={row.qualityJiraLinks.totalBugs} target="_blank" rel="noopener noreferrer">
+                  {row.quality.totalBugs}
+                </a>
+              </td>
+              <td>
+                <a href={row.qualityJiraLinks.critical} target="_blank" rel="noopener noreferrer">
+                  {row.quality.critical}
+                </a>
+              </td>
+              <td>
+                <a href={row.qualityJiraLinks.major} target="_blank" rel="noopener noreferrer">
+                  {row.quality.major}
+                </a>
+              </td>
+              <td>
+                <a href={row.qualityJiraLinks.minor} target="_blank" rel="noopener noreferrer">
+                  {row.quality.minor}
+                </a>
+              </td>
+              <td>
+                <a href={row.qualityJiraLinks.prodBug} target="_blank" rel="noopener noreferrer">
+                  {row.quality.prodBug}
+                </a>
+              </td>
               <td>
                 <select
                   className="text-input"

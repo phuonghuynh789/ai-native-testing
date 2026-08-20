@@ -30,7 +30,9 @@ function sampleReportResponse() {
           newSP: 15,
           predictabilityNew: 0.1875,
         },
+        deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
         quality: { totalBugs: 25, critical: 0, major: 3, minor: 22, prodBug: 0 },
+        qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
         impactAnalysis: { totalTickets: 10, iaGood: 8, iaMissingInfo: 2 },
         qualityChecklist: {
           noCriticalBug: 'unset',
