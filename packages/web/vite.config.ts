@@ -14,6 +14,7 @@ export default defineConfig({
       '/grpc': 'http://localhost:3000',
       '/kafka-checks': 'http://localhost:3000',
       '/kafka-contract-checks': 'http://localhost:3000',
+      '/sprint-reports': 'http://localhost:3000',
     },
   },
   test: {

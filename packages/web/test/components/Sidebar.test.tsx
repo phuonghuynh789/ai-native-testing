@@ -11,77 +11,43 @@ function renderSidebar(path: string) {
   );
 }
 
+const ALL_LINKS = [
+  'Simple Mode',
+  'Manage Load Reusable Step',
+  'End-to-end test',
+  'API Automation',
+  'Check Kafka',
+  'Kafka Contract Checks',
+  'Sprint Report',
+];
+
+const LINK_HREFS: Record<string, string> = {
+  'Simple Mode': '/',
+  'Manage Load Reusable Step': '/manage-steps',
+  'End-to-end test': '/e2e-test',
+  'API Automation': '/api-automation',
+  'Check Kafka': '/kafka-checks',
+  'Kafka Contract Checks': '/kafka-contract-checks',
+  'Sprint Report': '/sprint-report',
+};
+
 describe('Sidebar', () => {
-  it('renders all six nav items with the correct hrefs', () => {
+  it('renders all seven nav items with the correct hrefs', () => {
     renderSidebar('/');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).toHaveAttribute('href', '/manage-steps');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).toHaveAttribute('href', '/e2e-test');
-    expect(screen.getByRole('link', { name: 'API Automation' })).toHaveAttribute('href', '/api-automation');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).toHaveAttribute('href', '/kafka-checks');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).toHaveAttribute(
-      'href',
-      '/kafka-contract-checks'
-    );
+    for (const name of ALL_LINKS) {
+      expect(screen.getByRole('link', { name })).toHaveAttribute('href', LINK_HREFS[name]);
+    }
   });
 
-  it('marks Simple Mode active on the root path', () => {
-    renderSidebar('/');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'API Automation' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('marks Manage Load Reusable Step active on /manage-steps, not the others', () => {
-    renderSidebar('/manage-steps');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'API Automation' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('marks End-to-end test active on /e2e-test, not the others', () => {
-    renderSidebar('/e2e-test');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'API Automation' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('marks API Automation active on /api-automation, not the others', () => {
-    renderSidebar('/api-automation');
-    expect(screen.getByRole('link', { name: 'API Automation' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('marks Check Kafka active on /kafka-checks, not the others', () => {
-    renderSidebar('/kafka-checks');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'API Automation' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).not.toHaveAttribute('aria-current');
-  });
-
-  it('marks Kafka Contract Checks active on /kafka-contract-checks, not the others', () => {
-    renderSidebar('/kafka-contract-checks');
-    expect(screen.getByRole('link', { name: 'Kafka Contract Checks' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Simple Mode' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Manage Load Reusable Step' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'End-to-end test' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'API Automation' })).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('link', { name: 'Check Kafka' })).not.toHaveAttribute('aria-current');
-  });
+  for (const activeName of ALL_LINKS) {
+    it(`marks ${activeName} active on ${LINK_HREFS[activeName]}, not the others`, () => {
+      renderSidebar(LINK_HREFS[activeName]);
+      expect(screen.getByRole('link', { name: activeName })).toHaveAttribute('aria-current', 'page');
+      for (const otherName of ALL_LINKS) {
+        if (otherName !== activeName) {
+          expect(screen.getByRole('link', { name: otherName })).not.toHaveAttribute('aria-current');
+        }
+      }
+    });
+  }
 });

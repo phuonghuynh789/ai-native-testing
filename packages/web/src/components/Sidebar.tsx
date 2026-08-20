@@ -41,6 +41,12 @@ export function Sidebar() {
       >
         Kafka Contract Checks
       </NavLink>
+      <NavLink
+        to="/sprint-report"
+        className={({ isActive }) => (isActive ? 'sidebar-link sidebar-link--active' : 'sidebar-link')}
+      >
+        Sprint Report
+      </NavLink>
     </nav>
   );
 }
