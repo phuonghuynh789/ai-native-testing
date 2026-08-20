@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a "Sprint Report" page that pulls real Jira data via JQL for 5 rows (PC, PCFUM, PCPOP_MP, PCPOP_CE, PCPOP_RC) and renders a 4-section report (Sprint Delivery Summary, Quality Report, Impact Analysis Review, Executive Summary), with auto-computed metrics and editable manual commentary, persisted per sprint code.
+**Goal:** Add a "Sprint Report" page that pulls real Jira data via JQL for 5 rows (PC, PCFUM, PCPOP_MP, PCPOP_UO, PCPOP_RC) and renders a 4-section report (Sprint Delivery Summary, Quality Report, Impact Analysis Review, Executive Summary), with auto-computed metrics and editable manual commentary, persisted per sprint code.
 
 **Architecture:** The browser never talks to Jira directly. A gitignored `packages/server/config/jira.yaml` holds the base URL + Bearer token; `jira-client.ts` is the sole module that calls Jira's REST API and is mocked in every test. A service layer (`sprint-report-service.ts`) runs 4 JQL searches, groups results into 5 rows, computes auto fields, and merges with any previously-saved manual fields before returning. A `SprintReportStore` persists the full report (auto + manual) keyed by sprint code.
 
@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Jira config lives in `packages/server/config/jira.yaml` (gitignored, mirrors `kafka.yaml`): `{ baseUrl: string, token: string }`. Sent as `Authorization: Bearer <token>`.
-- Rows are exactly `['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_CE', 'PCPOP_RC']`. `PC`/`PCFUM` map directly from the issue's `project.key`. `PCPOP` issues are split by the `Product Domain` custom field: `Merchant Platform`→`PCPOP_MP`, `Customer Experience`→`PCPOP_CE`, `Reconciliation Core`→`PCPOP_RC`. A `PCPOP` issue with no recognized Product Domain value is dropped (not counted in any row).
+- Rows are exactly `['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_UO', 'PCPOP_RC']`. `PC`/`PCFUM` map directly from the issue's `project.key`. `PCPOP` issues are split by the `Product Domain` custom field: `Merchant Platform`→`PCPOP_MP`, `Customer Experience`→`PCPOP_UO`, `Reconciliation Core`→`PCPOP_RC`. A `PCPOP` issue with no recognized Product Domain value is dropped (not counted in any row). **[Updated 2026-08-20]** The real Jira value is `User Operation`, not `Customer Experience` — the row key itself (`PCPOP_UO`, renamed from the originally-planned `PCPOP_CE`) was already right, only the domain string it matches against was wrong. The Task 4/5 code blocks below still show `Customer Experience` as originally executed; treat `User Operation` as the corrected, current value everywhere in the real source.
 - Custom fields are resolved by human-readable name via Jira's `/rest/api/2/field` endpoint (never hardcode a `customfield_NNNNN` ID) for exactly 3 names: `Story Points`, `Product Domain`, `Bug in Environments:`.
 - Priority → severity: `Highest`→critical, `High`/`Medium`→major, `Low`/`Lowest`→minor, anything else→null (not counted in any severity bucket, but still counted in `totalBugs`).
 - Prod Bug: the `Bug in Environments:` field's resolved values include `Production`.
@@ -641,7 +641,7 @@ git commit -m "feat(server): add Sprint Report JQL builders"
 
 **Interfaces:**
 - Consumes: `JiraIssue` from `./jira-client.js` (Task 2).
-- Produces: `ROW_KEYS: readonly ['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_CE', 'PCPOP_RC']`, `RowKey` type, `groupIssuesByRow(issues: JiraIssue[]): Record<RowKey, JiraIssue[]>` — every later task depends on these exact names.
+- Produces: `ROW_KEYS: readonly ['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_UO', 'PCPOP_RC']`, `RowKey` type, `groupIssuesByRow(issues: JiraIssue[]): Record<RowKey, JiraIssue[]>` — every later task depends on these exact names.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -681,14 +681,14 @@ describe('groupIssuesByRow', () => {
       issue({ key: 'OP-3', project: 'PCPOP', productDomain: 'Reconciliation Core' }),
     ]);
     expect(groups.PCPOP_MP.map((i) => i.key)).toEqual(['OP-1']);
-    expect(groups.PCPOP_CE.map((i) => i.key)).toEqual(['OP-2']);
+    expect(groups.PCPOP_UO.map((i) => i.key)).toEqual(['OP-2']);
     expect(groups.PCPOP_RC.map((i) => i.key)).toEqual(['OP-3']);
   });
 
   it('drops a PCPOP issue with no recognized Product Domain', () => {
     const groups = groupIssuesByRow([issue({ key: 'OP-9', project: 'PCPOP', productDomain: null })]);
     expect(groups.PCPOP_MP).toEqual([]);
-    expect(groups.PCPOP_CE).toEqual([]);
+    expect(groups.PCPOP_UO).toEqual([]);
     expect(groups.PCPOP_RC).toEqual([]);
   });
 
@@ -711,12 +711,12 @@ Create `packages/server/src/sprint-report-rows.ts`:
 ```ts
 import type { JiraIssue } from './jira-client.js';
 
-export const ROW_KEYS = ['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_CE', 'PCPOP_RC'] as const;
+export const ROW_KEYS = ['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_UO', 'PCPOP_RC'] as const;
 export type RowKey = (typeof ROW_KEYS)[number];
 
 const PRODUCT_DOMAIN_TO_ROW: Record<string, RowKey> = {
   'Merchant Platform': 'PCPOP_MP',
-  'Customer Experience': 'PCPOP_CE',
+  'Customer Experience': 'PCPOP_UO',
   'Reconciliation Core': 'PCPOP_RC',
 };
 
@@ -725,7 +725,7 @@ export function groupIssuesByRow(issues: JiraIssue[]): Record<RowKey, JiraIssue[
     PC: [],
     PCFUM: [],
     PCPOP_MP: [],
-    PCPOP_CE: [],
+    PCPOP_UO: [],
     PCPOP_RC: [],
   };
   for (const issue of issues) {

@@ -1,11 +1,11 @@
 import type { JiraIssue } from './jira-client.js';
 
-export const ROW_KEYS = ['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_CE', 'PCPOP_RC'] as const;
+export const ROW_KEYS = ['PC', 'PCFUM', 'PCPOP_MP', 'PCPOP_UO', 'PCPOP_RC'] as const;
 export type RowKey = (typeof ROW_KEYS)[number];
 
 const PRODUCT_DOMAIN_TO_ROW: Record<string, RowKey> = {
   'Merchant Platform': 'PCPOP_MP',
-  'Customer Experience': 'PCPOP_CE',
+  'User Operation': 'PCPOP_UO',
   'Reconciliation Core': 'PCPOP_RC',
 };
 
@@ -14,7 +14,7 @@ export function groupIssuesByRow(issues: JiraIssue[]): Record<RowKey, JiraIssue[
     PC: [],
     PCFUM: [],
     PCPOP_MP: [],
-    PCPOP_CE: [],
+    PCPOP_UO: [],
     PCPOP_RC: [],
   };
   for (const issue of issues) {

@@ -59,7 +59,9 @@ AND project IN (PC, PCPOP, PCFUM)
 
 **Impact Analysis** issues a zero extra queries: it reuses the *Ready for Test* result set directly. For each of those issues, the server fetches the issue's description and its comments (`GET /rest/api/2/issue/{key}?fields=description&expand=renderedFields` plus `GET /rest/api/2/issue/{key}/comment`) and checks, case-insensitively, whether any of `"IA"`, `"Technical Impact"`, `"Impact Analysis"` appears as a substring anywhere in that combined text.
 
-**Row grouping:** every result set is grouped first by the issue's `project.key` into `PC` and `PCFUM` rows directly. `PCPOP` issues are further split by the `Product Domain` custom field value into three rows: `Merchant Platform` → `PCPOP_MP`, `Customer Experience` → `PCPOP_CE`, `Reconciliation Core` → `PCPOP_RC`. This produces exactly 5 rows, applied consistently across all 4 report sections (including the Executive Summary — confirmed not to use a different rollup).
+**Row grouping:** every result set is grouped first by the issue's `project.key` into `PC` and `PCFUM` rows directly. `PCPOP` issues are further split by the `Product Domain` custom field value into three rows: `Merchant Platform` → `PCPOP_MP`, `User Operation` → `PCPOP_UO`, `Reconciliation Core` → `PCPOP_RC`. This produces exactly 5 rows, applied consistently across all 4 report sections (including the Executive Summary — confirmed not to use a different rollup).
+
+**[Updated 2026-08-20]** The middle `PCPOP` domain's real Jira `Product Domain` value is `User Operation`, not `Customer Experience` as originally specced — corrected after dogfooding showed the row (then `PCPOP_CE`) always came back empty against real data. Row key renamed `PCPOP_CE` → `PCPOP_UO` to match.
 
 **Field mappings:**
 - Story Points: the `Story Points` field, summed per row for Committed/Delivered/Ready-for-Test.
