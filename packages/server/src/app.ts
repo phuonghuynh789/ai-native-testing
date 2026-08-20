@@ -19,12 +19,16 @@ import { registerKafkaCheckRoutes } from './routes/kafka-checks.js';
 import type { KafkaConfig } from './kafka-config.js';
 import { KafkaContractCheckStore } from './kafka-contract-check-store.js';
 import { registerKafkaContractCheckRoutes } from './routes/kafka-contract-checks.js';
+import type { JiraConfig } from './jira-config.js';
+import { SprintReportStore } from './sprint-report-store.js';
+import { registerSprintReportRoutes } from './routes/sprint-reports.js';
 
 export const DEFAULT_DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'data');
 
 export interface BuildAppOptions {
   dataDir?: string;
   kafkaConfig?: KafkaConfig;
+  jiraConfig?: JiraConfig;
 }
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
@@ -55,6 +59,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   const kafkaContractCheckStore = new KafkaContractCheckStore(join(dataDir, 'kafka-contract-checks.json'));
   const baselinesDir = join(dataDir, 'kafka-baselines');
   registerKafkaContractCheckRoutes(app, kafkaContractCheckStore, options.kafkaConfig, baselinesDir);
+
+  const sprintReportStore = new SprintReportStore(join(dataDir, 'sprint-reports.json'));
+  registerSprintReportRoutes(app, sprintReportStore, options.jiraConfig);
 
   return app;
 }
