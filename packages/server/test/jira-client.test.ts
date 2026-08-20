@@ -126,7 +126,7 @@ describe('searchJiraIssues', () => {
     expect(issues[0].bugEnvironments).toEqual(['Production', 'Staging']);
   });
 
-  it('throws when the search request fails', async () => {
+  it('throws with just the status when the failure response has no JSON body', async () => {
     const fetchMock = vi.fn((url: string) => {
       if (url.includes('/rest/api/2/field')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve(FIELD_LIST) });
@@ -136,6 +136,23 @@ describe('searchJiraIssues', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(searchJiraIssues(CONFIG, 'bad jql')).rejects.toThrow(/400/);
+  });
+
+  it("throws with Jira's own error detail when the failure response includes errorMessages", async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/rest/api/2/field')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIELD_LIST) });
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 400,
+        json: () =>
+          Promise.resolve({ errorMessages: ["Error in the JQL Query: Expecting operator but got 'AND'."] }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(searchJiraIssues(CONFIG, 'bad jql')).rejects.toThrow(/Error in the JQL Query/);
   });
 });
 
@@ -160,5 +177,17 @@ describe('fetchIssueTextForKeywordCheck', () => {
   it('throws when the issue request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     await expect(fetchIssueTextForKeywordCheck(CONFIG, 'PC-999')).rejects.toThrow(/404/);
+  });
+
+  it("throws with Jira's own error detail when the failure response includes errorMessages", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ errorMessages: ['Issue does not exist or you do not have permission to see it.'] }),
+      })
+    );
+    await expect(fetchIssueTextForKeywordCheck(CONFIG, 'PC-999')).rejects.toThrow(/do not have permission/);
   });
 });

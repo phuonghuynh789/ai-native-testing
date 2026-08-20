@@ -29,10 +29,24 @@ function authHeaders(config: JiraConfig): { Authorization: string } {
   return { Authorization: `Bearer ${config.token}` };
 }
 
+async function errorDetail(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { errorMessages?: string[] };
+    return body.errorMessages?.length ? body.errorMessages.join('; ') : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function throwWithDetail(response: Response, message: string): Promise<never> {
+  const detail = await errorDetail(response);
+  throw new Error(detail ? `${message} - ${detail}` : message);
+}
+
 async function fetchCustomFieldIds(config: JiraConfig): Promise<Record<string, string>> {
   const response = await fetch(`${config.baseUrl}/rest/api/2/field`, { headers: authHeaders(config) });
   if (!response.ok) {
-    throw new Error(`Could not fetch Jira field list: HTTP ${response.status}`);
+    await throwWithDetail(response, `Could not fetch Jira field list: HTTP ${response.status}`);
   }
   const fields = (await response.json()) as RawJiraField[];
   const map: Record<string, string> = {};
@@ -102,7 +116,7 @@ export async function searchJiraIssues(config: JiraConfig, jql: string): Promise
     const url = `${config.baseUrl}/rest/api/2/search?jql=${encodeURIComponent(jql)}&fields=${fieldParam}&startAt=${startAt}&maxResults=${maxResults}`;
     const response = await fetch(url, { headers: authHeaders(config) });
     if (!response.ok) {
-      throw new Error(`Jira search failed: HTTP ${response.status}`);
+      await throwWithDetail(response, `Jira search failed: HTTP ${response.status}`);
     }
     const body = (await response.json()) as { issues: RawJiraIssue[]; total: number };
     for (const raw of body.issues) {
@@ -122,7 +136,7 @@ export async function fetchIssueTextForKeywordCheck(config: JiraConfig, issueKey
     headers: authHeaders(config),
   });
   if (!response.ok) {
-    throw new Error(`Could not fetch issue ${issueKey}: HTTP ${response.status}`);
+    await throwWithDetail(response, `Could not fetch issue ${issueKey}: HTTP ${response.status}`);
   }
   const body = (await response.json()) as {
     fields?: { description?: string; comment?: { comments?: Array<{ body?: string }> } };
