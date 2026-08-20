@@ -67,7 +67,7 @@ export function SprintReportPage() {
   }
 
   return (
-    <main className="app-main">
+    <main className="app-main app-main--wide">
       <h1 className="heading-xl">Sprint Report</h1>
       {error && (
         <p role="alert" className="alert">
@@ -75,7 +75,7 @@ export function SprintReportPage() {
         </p>
       )}
 
-      <section className="card">
+      <section className="card card--narrow">
         <label className="label">
           Sprint Code
           <input className="text-input" value={sprintCode} onChange={(e) => setSprintCode(e.target.value)} />
