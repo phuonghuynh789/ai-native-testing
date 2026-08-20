@@ -27,9 +27,10 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       major: 'https://jira.example.com/issues/?jql=major',
       minor: 'https://jira.example.com/issues/?jql=minor',
       prodBug: 'https://jira.example.com/issues/?jql=prodBug',
+      noRC: 'https://jira.example.com/issues/?jql=noRC',
     },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
-    iaWrongScope: 0,
+    impactAnalysisJiraLinks: { iaGood: '', iaMissingInfo: '' },
     sandboxDateBreakdown: {
       readyOrInTestTickets: 0,
       missingSandboxDate: 0,
@@ -61,8 +62,8 @@ describe('QualityReportSection', () => {
     expect(screen.getByText('22').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=minor');
   });
 
-  it('does not link No RC, since it is not a native Jira field filter', () => {
+  it('links No RC to its approximate Jira text-search result', () => {
     render(<QualityReportSection rows={[row()]} />);
-    expect(screen.getByText('7').closest('a')).toBeNull();
+    expect(screen.getByText('7').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=noRC');
   });
 });

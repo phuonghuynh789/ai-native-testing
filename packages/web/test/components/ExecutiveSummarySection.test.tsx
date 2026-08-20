@@ -22,9 +22,9 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
     },
     deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0, noRC: 0 },
-    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
+    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '', noRC: '' },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
-    iaWrongScope: 0,
+    impactAnalysisJiraLinks: { iaGood: '', iaMissingInfo: '' },
     sandboxDateBreakdown: {
       readyOrInTestTickets: 0,
       missingSandboxDate: 0,

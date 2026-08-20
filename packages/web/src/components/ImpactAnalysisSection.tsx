@@ -2,18 +2,9 @@ import type { SprintReportRowData } from '../sprintReports';
 
 export interface ImpactAnalysisSectionProps {
   rows: SprintReportRowData[];
-  onRowsChange: (rows: SprintReportRowData[]) => void;
 }
 
-function updateRow(
-  rows: SprintReportRowData[],
-  rowKey: SprintReportRowData['rowKey'],
-  patch: Partial<SprintReportRowData>
-): SprintReportRowData[] {
-  return rows.map((row) => (row.rowKey === rowKey ? { ...row, ...patch } : row));
-}
-
-export function ImpactAnalysisSection({ rows, onRowsChange }: ImpactAnalysisSectionProps) {
+export function ImpactAnalysisSection({ rows }: ImpactAnalysisSectionProps) {
   return (
     <section className="card">
       <h2 className="heading-md">3. Impact Analysis Review</h2>
@@ -24,7 +15,6 @@ export function ImpactAnalysisSection({ rows, onRowsChange }: ImpactAnalysisSect
             <th>Total Tickets</th>
             <th>IA Good</th>
             <th>IA Missing Info</th>
-            <th>IA Wrong Scope</th>
           </tr>
         </thead>
         <tbody>
@@ -36,17 +26,15 @@ export function ImpactAnalysisSection({ rows, onRowsChange }: ImpactAnalysisSect
                   {row.impactAnalysis.totalTickets}
                 </a>
               </td>
-              <td>{row.impactAnalysis.iaGood}</td>
-              <td>{row.impactAnalysis.iaMissingInfo}</td>
               <td>
-                <input
-                  className="text-input"
-                  type="number"
-                  min={0}
-                  aria-label={`${row.rowKey} IA Wrong Scope`}
-                  value={row.iaWrongScope}
-                  onChange={(e) => onRowsChange(updateRow(rows, row.rowKey, { iaWrongScope: Number(e.target.value) }))}
-                />
+                <a href={row.impactAnalysisJiraLinks.iaGood} target="_blank" rel="noopener noreferrer">
+                  {row.impactAnalysis.iaGood}
+                </a>
+              </td>
+              <td>
+                <a href={row.impactAnalysisJiraLinks.iaMissingInfo} target="_blank" rel="noopener noreferrer">
+                  {row.impactAnalysis.iaMissingInfo}
+                </a>
               </td>
             </tr>
           ))}

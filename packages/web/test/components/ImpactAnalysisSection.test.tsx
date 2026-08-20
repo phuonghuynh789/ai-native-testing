@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { ImpactAnalysisSection } from '../../src/components/ImpactAnalysisSection';
 import type { SprintReportRowData } from '../../src/sprintReports';
 
@@ -27,9 +26,12 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       new: '',
     },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0, noRC: 0 },
-    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
+    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '', noRC: '' },
     impactAnalysis: { totalTickets: 10, iaGood: 8, iaMissingInfo: 2 },
-    iaWrongScope: 0,
+    impactAnalysisJiraLinks: {
+      iaGood: 'https://jira.example.com/issues/?jql=iaGood',
+      iaMissingInfo: 'https://jira.example.com/issues/?jql=iaMissingInfo',
+    },
     sandboxDateBreakdown: {
       readyOrInTestTickets: 0,
       missingSandboxDate: 0,
@@ -46,26 +48,25 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
 
 describe('ImpactAnalysisSection', () => {
   it('renders the auto-computed IA counts', () => {
-    render(<ImpactAnalysisSection rows={[row()]} onRowsChange={() => {}} />);
+    render(<ImpactAnalysisSection rows={[row()]} />);
     expect(screen.getByText('8')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('links Total Tickets to the same Jira search as Ready for Test Tickets', () => {
-    render(<ImpactAnalysisSection rows={[row()]} onRowsChange={() => {}} />);
+    render(<ImpactAnalysisSection rows={[row()]} />);
     expect(screen.getByText('10').closest('a')).toHaveAttribute(
       'href',
       'https://jira.example.com/issues/?jql=readyForTest'
     );
   });
 
-  it('calls onRowsChange when IA Wrong Scope is edited', async () => {
-    const onRowsChange = vi.fn();
-    render(<ImpactAnalysisSection rows={[row()]} onRowsChange={onRowsChange} />);
-    const input = screen.getByLabelText('PC IA Wrong Scope');
-    await userEvent.clear(input);
-    await userEvent.type(input, '3');
-    const updatedRows = onRowsChange.mock.calls[onRowsChange.mock.calls.length - 1][0] as SprintReportRowData[];
-    expect(updatedRows[0].iaWrongScope).toBe(3);
+  it('links IA Good and IA Missing Info to their approximate Jira text-search results', () => {
+    render(<ImpactAnalysisSection rows={[row()]} />);
+    expect(screen.getByText('8').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=iaGood');
+    expect(screen.getByText('2').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=iaMissingInfo'
+    );
   });
 });

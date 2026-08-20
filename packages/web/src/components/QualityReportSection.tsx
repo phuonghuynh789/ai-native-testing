@@ -49,7 +49,11 @@ export function QualityReportSection({ rows }: QualityReportSectionProps) {
                   {row.quality.prodBug}
                 </a>
               </td>
-              <td>{row.quality.noRC}</td>
+              <td>
+                <a href={row.qualityJiraLinks.noRC} target="_blank" rel="noopener noreferrer">
+                  {row.quality.noRC}
+                </a>
+              </td>
             </tr>
           ))}
         </tbody>
