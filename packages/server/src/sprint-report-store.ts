@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { RowKey } from './sprint-report-rows.js';
-import type { DeliveryRow, RootCauseRow } from './sprint-report-delivery.js';
+import type { DeliveryRow, SandboxDateBreakdown } from './sprint-report-delivery.js';
 import type { QualityRow } from './sprint-report-quality.js';
 import type { ImpactAnalysisRow, MissingImpactRow } from './sprint-report-impact-analysis.js';
 
@@ -30,7 +30,7 @@ export interface SprintReportRowData {
   impactAnalysis: ImpactAnalysisRow;
   qualityChecklist: QualityChecklist;
   iaWrongScope: number;
-  rootCause: RootCauseRow[];
+  sandboxDateBreakdown: SandboxDateBreakdown;
   missingImpact: MissingImpactRow[];
   executiveSummary: ExecutiveSummaryRow;
 }

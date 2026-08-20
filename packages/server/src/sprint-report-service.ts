@@ -8,7 +8,7 @@ import {
   buildBugsJql,
 } from './sprint-report-jql.js';
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
-import { computeDeliveryRow, prefillRootCauseTable, type RootCauseRow } from './sprint-report-delivery.js';
+import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
 import { computeQualityRow } from './sprint-report-quality.js';
 import {
   hasImpactAnalysisKeyword,
@@ -49,7 +49,14 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
       assessment: 'unset',
     },
     iaWrongScope: 0,
-    rootCause: [],
+    sandboxDateBreakdown: {
+      readyOrInTestTickets: 0,
+      missingSandboxDate: 0,
+      sandboxDateEqualsSprintEnd: 0,
+      sandboxDateMinus1: 0,
+      sandboxDatePlus1: 0,
+      sandboxDatePlus2: 0,
+    },
     missingImpact: [],
     executiveSummary: {
       delivery: 'unset',
@@ -64,14 +71,6 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
 function mergeManualTableRows<T extends { ticket: string }>(fresh: T[], previous: T[]): T[] {
   const previousByTicket = new Map(previous.map((row) => [row.ticket, row]));
   return fresh.map((row) => previousByTicket.get(row.ticket) ?? row);
-}
-
-function mergeRootCauseRows(fresh: RootCauseRow[], previous: RootCauseRow[]): RootCauseRow[] {
-  const previousByTicket = new Map(previous.map((row) => [row.ticket, row]));
-  return fresh.map((row) => {
-    const prev = previousByTicket.get(row.ticket);
-    return prev ? { ...row, reason: prev.reason, owner: prev.owner, action: prev.action } : row;
-  });
 }
 
 export async function refreshSprintReport(
@@ -115,7 +114,6 @@ export async function refreshSprintReport(
     );
 
     const previousRow = previousRows.get(rowKey);
-    const freshRootCause = prefillRootCauseTable(rowCommitted, rowDelivered);
     const freshMissingImpact = prefillMissingImpactTable(rowReadyForTest, keywordResults);
     const base = previousRow ?? defaultRowData(rowKey);
 
@@ -124,9 +122,9 @@ export async function refreshSprintReport(
       delivery: computeDeliveryRow(rowCommitted, rowDelivered, rowReadyForTest, rowNew),
       quality: computeQualityRow(rowBugs),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
+      sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
       qualityChecklist: base.qualityChecklist,
       iaWrongScope: base.iaWrongScope,
-      rootCause: mergeRootCauseRows(freshRootCause, base.rootCause),
       missingImpact: mergeManualTableRows(freshMissingImpact, base.missingImpact),
       executiveSummary: base.executiveSummary,
     });

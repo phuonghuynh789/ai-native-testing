@@ -40,7 +40,14 @@ function sampleRow(rowKey: SprintReportRowData['rowKey']): SprintReportRowData {
       assessment: 'unset',
     },
     iaWrongScope: 0,
-    rootCause: [],
+    sandboxDateBreakdown: {
+      readyOrInTestTickets: 0,
+      missingSandboxDate: 0,
+      sandboxDateEqualsSprintEnd: 0,
+      sandboxDateMinus1: 0,
+      sandboxDatePlus1: 0,
+      sandboxDatePlus2: 0,
+    },
     missingImpact: [],
     executiveSummary: { delivery: 'unset', quality: 'unset', impactAnalysis: 'unset', overall: 'unset', commentary: '' },
   };

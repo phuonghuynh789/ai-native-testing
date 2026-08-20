@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDeliveryRow, prefillRootCauseTable } from '../src/sprint-report-delivery.js';
+import { computeDeliveryRow, computeSandboxDateBreakdown } from '../src/sprint-report-delivery.js';
 import type { JiraIssue } from '../src/jira-client.js';
 
 function issue(key: string, storyPoints: number | null, overrides: Partial<JiraIssue> = {}): JiraIssue {
@@ -54,33 +54,53 @@ describe('computeDeliveryRow', () => {
   });
 });
 
-describe('prefillRootCauseTable', () => {
-  it('lists a committed, undelivered ticket that is Ready for Testing, with sandboxDate prefilled and manual fields blank', () => {
-    const rows = prefillRootCauseTable(
-      [issue('A', 5, { status: 'Ready for Testing', sandboxDate: '2026-08-15' }), issue('B', 3, { status: 'Done' })],
-      []
+describe('computeSandboxDateBreakdown', () => {
+  it('counts committed tickets currently Ready for Testing or In Test, matching case-insensitively', () => {
+    const breakdown = computeSandboxDateBreakdown(
+      [
+        issue('A', 5, { status: 'Ready for Testing' }),
+        issue('B', 3, { status: 'in test' }),
+        issue('C', 2, { status: 'To Do' }),
+      ],
+      '2026/08/19'
     );
-    expect(rows).toEqual([{ ticket: 'A', sandboxDate: '2026-08-15', reason: '', owner: '', action: '' }]);
+    expect(breakdown.readyOrInTestTickets).toBe(2);
   });
 
-  it('matches the Ready for Testing / In Test statuses case-insensitively', () => {
-    const rows = prefillRootCauseTable(
-      [issue('A', 5, { status: 'ready for testing' }), issue('B', 3, { status: 'in test' })],
-      []
+  it('counts tickets with no Sandbox Date set', () => {
+    const breakdown = computeSandboxDateBreakdown(
+      [issue('A', 5, { status: 'Ready for Testing', sandboxDate: null })],
+      '2026/08/19'
     );
-    expect(rows.map((r) => r.ticket)).toEqual(['A', 'B']);
+    expect(breakdown.missingSandboxDate).toBe(1);
   });
 
-  it('excludes a committed, undelivered ticket whose status is neither Ready for Testing nor In Test', () => {
-    const rows = prefillRootCauseTable([issue('A', 5, { status: 'To Do' })], []);
-    expect(rows).toEqual([]);
+  it('buckets Sandbox Date by its offset from the sprint end date', () => {
+    const breakdown = computeSandboxDateBreakdown(
+      [
+        issue('A', 5, { status: 'Ready for Testing', sandboxDate: '2026-08-19' }), // = end
+        issue('B', 3, { status: 'In Test', sandboxDate: '2026-08-18' }), // end - 1
+        issue('C', 2, { status: 'Ready for Testing', sandboxDate: '2026-08-20' }), // end + 1
+        issue('D', 1, { status: 'In Test', sandboxDate: '2026-08-21' }), // end + 2
+        issue('E', 4, { status: 'Ready for Testing', sandboxDate: '2026-08-10' }), // outside all buckets
+      ],
+      '2026/08/19'
+    );
+    expect(breakdown).toEqual({
+      readyOrInTestTickets: 5,
+      missingSandboxDate: 0,
+      sandboxDateEqualsSprintEnd: 1,
+      sandboxDateMinus1: 1,
+      sandboxDatePlus1: 1,
+      sandboxDatePlus2: 1,
+    });
   });
 
-  it('excludes a ticket that is Ready for Testing but already delivered', () => {
-    const rows = prefillRootCauseTable(
-      [issue('A', 5, { status: 'Ready for Testing' })],
-      [issue('A', 5, { status: 'Ready for Testing' })]
+  it('handles a Sandbox Date given in slash-separated format the same as dash-separated', () => {
+    const breakdown = computeSandboxDateBreakdown(
+      [issue('A', 5, { status: 'Ready for Testing', sandboxDate: '2026/08/19' })],
+      '2026/08/19'
     );
-    expect(rows).toEqual([]);
+    expect(breakdown.sandboxDateEqualsSprintEnd).toBe(1);
   });
 });

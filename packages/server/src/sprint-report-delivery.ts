@@ -14,15 +14,22 @@ export interface DeliveryRow {
   predictabilityNew: number | null;
 }
 
-export interface RootCauseRow {
-  ticket: string;
-  sandboxDate: string | null;
-  reason: string;
-  owner: string;
-  action: string;
+export interface SandboxDateBreakdown {
+  readyOrInTestTickets: number;
+  missingSandboxDate: number;
+  sandboxDateEqualsSprintEnd: number;
+  sandboxDateMinus1: number;
+  sandboxDatePlus1: number;
+  sandboxDatePlus2: number;
 }
 
-const ROOT_CAUSE_STATUSES = new Set(['ready for testing', 'in test']);
+const READY_OR_IN_TEST_STATUSES = new Set(['ready for testing', 'in test']);
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function parseDate(dateStr: string): Date | null {
+  const date = new Date(`${dateStr.replaceAll('/', '-')}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 function sumStoryPoints(issues: JiraIssue[]): number {
   return issues.reduce((sum, issue) => sum + (issue.storyPoints ?? 0), 0);
@@ -53,10 +60,39 @@ export function computeDeliveryRow(
   };
 }
 
-export function prefillRootCauseTable(committed: JiraIssue[], delivered: JiraIssue[]): RootCauseRow[] {
-  const deliveredKeys = new Set(delivered.map((issue) => issue.key));
-  return committed
-    .filter((issue) => !deliveredKeys.has(issue.key))
-    .filter((issue) => ROOT_CAUSE_STATUSES.has(issue.status.toLowerCase()))
-    .map((issue) => ({ ticket: issue.key, sandboxDate: issue.sandboxDate, reason: '', owner: '', action: '' }));
+export function computeSandboxDateBreakdown(committed: JiraIssue[], sprintEndDate: string): SandboxDateBreakdown {
+  const readyOrInTest = committed.filter((issue) => READY_OR_IN_TEST_STATUSES.has(issue.status.toLowerCase()));
+  const endDate = parseDate(sprintEndDate);
+
+  const breakdown: SandboxDateBreakdown = {
+    readyOrInTestTickets: readyOrInTest.length,
+    missingSandboxDate: 0,
+    sandboxDateEqualsSprintEnd: 0,
+    sandboxDateMinus1: 0,
+    sandboxDatePlus1: 0,
+    sandboxDatePlus2: 0,
+  };
+
+  for (const issue of readyOrInTest) {
+    if (!issue.sandboxDate) {
+      breakdown.missingSandboxDate += 1;
+      continue;
+    }
+    const sandboxDate = parseDate(issue.sandboxDate);
+    if (!sandboxDate || !endDate) {
+      continue;
+    }
+    const offsetDays = Math.round((sandboxDate.getTime() - endDate.getTime()) / MS_PER_DAY);
+    if (offsetDays === 0) {
+      breakdown.sandboxDateEqualsSprintEnd += 1;
+    } else if (offsetDays === -1) {
+      breakdown.sandboxDateMinus1 += 1;
+    } else if (offsetDays === 1) {
+      breakdown.sandboxDatePlus1 += 1;
+    } else if (offsetDays === 2) {
+      breakdown.sandboxDatePlus2 += 1;
+    }
+  }
+
+  return breakdown;
 }
