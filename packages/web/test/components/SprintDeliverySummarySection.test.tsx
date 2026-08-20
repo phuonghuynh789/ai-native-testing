@@ -30,7 +30,7 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       assessment: 'unset',
     },
     iaWrongScope: 0,
-    rootCause: [{ ticket: 'PC-1', reason: '', owner: '', action: '' }],
+    rootCause: [{ ticket: 'PC-1', sandboxDate: '2026-08-15', reason: '', owner: '', action: '' }],
     missingImpact: [],
     executiveSummary: { delivery: 'unset', quality: 'unset', impactAnalysis: 'unset', overall: 'unset', commentary: '' },
     ...overrides,
@@ -101,6 +101,19 @@ describe('SprintDeliverySummarySection', () => {
     );
     await userEvent.type(screen.getByLabelText('Nhận xét'), 'x');
     expect(onDeliveryCommentChange).toHaveBeenCalledWith('x');
+  });
+
+  it('renders the Sandbox Date column in the Root Cause table', () => {
+    render(
+      <SprintDeliverySummarySection
+        rows={[row()]}
+        onRowsChange={() => {}}
+        deliveryComment=""
+        onDeliveryCommentChange={() => {}}
+      />
+    );
+    expect(screen.getByText('Sandbox Date')).toBeInTheDocument();
+    expect(screen.getByText('2026-08-15')).toBeInTheDocument();
   });
 
   it('calls onRowsChange with an updated reason when a root cause reason is edited', async () => {

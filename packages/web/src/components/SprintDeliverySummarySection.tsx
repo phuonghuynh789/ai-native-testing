@@ -84,6 +84,7 @@ export function SprintDeliverySummarySection({
                 <thead>
                   <tr>
                     <th>Ticket</th>
+                    <th>Sandbox Date</th>
                     <th>Reason</th>
                     <th>Owner</th>
                     <th>Action</th>
@@ -93,6 +94,7 @@ export function SprintDeliverySummarySection({
                   {row.rootCause.map((rc, index) => (
                     <tr key={rc.ticket}>
                       <td>{rc.ticket}</td>
+                      <td>{rc.sandboxDate ?? '—'}</td>
                       <td>
                         <input
                           className="text-input"
