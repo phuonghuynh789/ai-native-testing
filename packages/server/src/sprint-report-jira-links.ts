@@ -89,9 +89,9 @@ export function buildQualityJiraLinks(
   const bugsJql = buildBugsJql(dateParams);
   return {
     totalBugs: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope}`),
-    critical: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority = Highest`),
-    major: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority in (High, Medium)`),
-    minor: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority in (Low, Lowest)`),
+    critical: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority in ("P1 (Highest)", "P2 (High)")`),
+    major: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority = "P3 (Medium)"`),
+    minor: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority in ("P4 (Low)", "P5 (Lowest)")`),
     prodBug: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND "Bug in Environments:" = Production`),
   };
 }

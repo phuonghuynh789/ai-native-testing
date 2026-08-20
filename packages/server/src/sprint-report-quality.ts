@@ -6,16 +6,17 @@ export interface QualityRow {
   major: number;
   minor: number;
   prodBug: number;
+  noRC: number;
 }
 
 export function mapPriorityToSeverity(priority: string | null): 'critical' | 'major' | 'minor' | null {
-  if (priority === 'Highest') {
+  if (priority === 'P1 (Highest)' || priority === 'P2 (High)') {
     return 'critical';
   }
-  if (priority === 'High' || priority === 'Medium') {
+  if (priority === 'P3 (Medium)') {
     return 'major';
   }
-  if (priority === 'Low' || priority === 'Lowest') {
+  if (priority === 'P4 (Low)' || priority === 'P5 (Lowest)') {
     return 'minor';
   }
   return null;
@@ -25,7 +26,14 @@ export function isProdBug(bugEnvironments: string[]): boolean {
   return bugEnvironments.includes('Production');
 }
 
-export function computeQualityRow(bugs: JiraIssue[]): QualityRow {
+export function hasRootCauseKeyword(text: string): boolean {
+  if (/\brc\b/i.test(text)) {
+    return true;
+  }
+  return text.toLowerCase().includes('root cause');
+}
+
+export function computeQualityRow(bugs: JiraIssue[], hasRootCauseResults: boolean[]): QualityRow {
   let critical = 0;
   let major = 0;
   let minor = 0;
@@ -43,5 +51,6 @@ export function computeQualityRow(bugs: JiraIssue[]): QualityRow {
       prodBug += 1;
     }
   }
-  return { totalBugs: bugs.length, critical, major, minor, prodBug };
+  const noRC = hasRootCauseResults.filter((hasKeyword) => !hasKeyword).length;
+  return { totalBugs: bugs.length, critical, major, minor, prodBug, noRC };
 }

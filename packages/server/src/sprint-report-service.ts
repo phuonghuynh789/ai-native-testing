@@ -9,13 +9,9 @@ import {
 } from './sprint-report-jql.js';
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
 import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
-import { computeQualityRow } from './sprint-report-quality.js';
+import { computeQualityRow, hasRootCauseKeyword } from './sprint-report-quality.js';
 import { buildDeliveryJiraLinks, buildQualityJiraLinks, buildSandboxDateJiraLinks } from './sprint-report-jira-links.js';
-import {
-  hasImpactAnalysisKeyword,
-  computeImpactAnalysisRow,
-  prefillMissingImpactTable,
-} from './sprint-report-impact-analysis.js';
+import { hasImpactAnalysisKeyword, computeImpactAnalysisRow } from './sprint-report-impact-analysis.js';
 import type { SprintReport, SprintReportRowData, SprintReportStore } from './sprint-report-store.js';
 
 export interface RefreshParams {
@@ -41,16 +37,9 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
       predictabilityNew: null,
     },
     deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
-    quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0 },
+    quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0, noRC: 0 },
     qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
-    qualityChecklist: {
-      noCriticalBug: 'unset',
-      noProductionBug: 'unset',
-      reopenRateUnder10: 'unset',
-      uatStable: 'unset',
-      assessment: 'unset',
-    },
     iaWrongScope: 0,
     sandboxDateBreakdown: {
       readyOrInTestTickets: 0,
@@ -61,7 +50,6 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
       sandboxDatePlus2: 0,
     },
     sandboxDateJiraLinks: { readyOrInTest: '', missingSandboxDate: '', equalsSprintEnd: '', minus1: '', plus1: '', plus2: '' },
-    missingImpact: [],
     executiveSummary: {
       delivery: 'unset',
       quality: 'unset',
@@ -70,11 +58,6 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
       commentary: '',
     },
   };
-}
-
-function mergeManualTableRows<T extends { ticket: string }>(fresh: T[], previous: T[]): T[] {
-  const previousByTicket = new Map(previous.map((row) => [row.ticket, row]));
-  return fresh.map((row) => previousByTicket.get(row.ticket) ?? row);
 }
 
 export async function refreshSprintReport(
@@ -117,22 +100,26 @@ export async function refreshSprintReport(
       })
     );
 
+    const rootCauseResults = await Promise.all(
+      rowBugs.map(async (issue) => {
+        const text = await fetchIssueTextForKeywordCheck(jiraConfig, issue.key);
+        return hasRootCauseKeyword(text);
+      })
+    );
+
     const previousRow = previousRows.get(rowKey);
-    const freshMissingImpact = prefillMissingImpactTable(rowReadyForTest, keywordResults);
     const base = previousRow ?? defaultRowData(rowKey);
 
     rows.push({
       rowKey,
       delivery: computeDeliveryRow(rowCommitted, rowDelivered, rowReadyForTest, rowNew),
       deliveryJiraLinks: buildDeliveryJiraLinks(jiraConfig, rowKey, sprintCode, jqlParams),
-      quality: computeQualityRow(rowBugs),
+      quality: computeQualityRow(rowBugs, rootCauseResults),
       qualityJiraLinks: buildQualityJiraLinks(jiraConfig, rowKey, jqlParams),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
       sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
       sandboxDateJiraLinks: buildSandboxDateJiraLinks(jiraConfig, rowKey, sprintCode, params.endDate),
-      qualityChecklist: base.qualityChecklist,
       iaWrongScope: base.iaWrongScope,
-      missingImpact: mergeManualTableRows(freshMissingImpact, base.missingImpact),
       executiveSummary: base.executiveSummary,
     });
   }

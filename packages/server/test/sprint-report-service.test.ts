@@ -78,14 +78,13 @@ describe('refreshSprintReport', () => {
     expect(mpRow.delivery.committedTickets).toBe(1);
   });
 
-  it('preserves manual fields (checklist, iaWrongScope, executive summary, comment) from a previously saved report', async () => {
+  it('preserves manual fields (iaWrongScope, executive summary, comment) from a previously saved report', async () => {
     mocks.searchJiraIssues.mockResolvedValue([]);
     const first = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
       startDate: '2026/08/06',
       endDate: '2026/08/19',
       labels: [],
     });
-    first.rows[0].qualityChecklist.noCriticalBug = 'pass';
     first.rows[0].iaWrongScope = 2;
     first.deliveryComment = 'manual notes';
     await store.save(first);
@@ -96,7 +95,6 @@ describe('refreshSprintReport', () => {
       labels: [],
     });
 
-    expect(second.rows[0].qualityChecklist.noCriticalBug).toBe('pass');
     expect(second.rows[0].iaWrongScope).toBe(2);
     expect(second.deliveryComment).toBe('manual notes');
   });
@@ -155,7 +153,28 @@ describe('refreshSprintReport', () => {
 
     const pcRow = report.rows.find((r) => r.rowKey === 'PC')!;
     expect(pcRow.impactAnalysis).toEqual({ totalTickets: 2, iaGood: 1, iaMissingInfo: 1 });
-    expect(pcRow.missingImpact).toEqual([{ ticket: 'PC-2', missingInfo: '' }]);
+  });
+
+  it('checks each bug for the RC keyword and tallies noRC', async () => {
+    mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
+      if (jql.startsWith('type = Bug')) {
+        return Promise.resolve([issue('BUG-1', 'PC'), issue('BUG-2', 'PC')]);
+      }
+      return Promise.resolve([]);
+    });
+    mocks.fetchIssueTextForKeywordCheck.mockImplementation((_config: JiraConfig, key: string) =>
+      Promise.resolve(key === 'BUG-1' ? 'RC: flaky network' : 'Nothing relevant here')
+    );
+
+    const report = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
+      startDate: '2026/08/06',
+      endDate: '2026/08/19',
+      labels: [],
+    });
+
+    const pcRow = report.rows.find((r) => r.rowKey === 'PC')!;
+    expect(pcRow.quality.totalBugs).toBe(2);
+    expect(pcRow.quality.noRC).toBe(1);
   });
 
   it('queries New Tickets/SP separately from Committed and computes predictabilityNew', async () => {

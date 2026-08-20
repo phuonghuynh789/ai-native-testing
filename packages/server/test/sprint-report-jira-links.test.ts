@@ -58,13 +58,13 @@ describe('buildQualityJiraLinks', () => {
     expect(totalBugsJql).not.toContain('priority');
 
     const criticalJql = decodeURIComponent(links.critical.split('?jql=')[1]);
-    expect(criticalJql).toContain('priority = Highest');
+    expect(criticalJql).toContain('priority in ("P1 (Highest)", "P2 (High)")');
 
     const majorJql = decodeURIComponent(links.major.split('?jql=')[1]);
-    expect(majorJql).toContain('priority in (High, Medium)');
+    expect(majorJql).toContain('priority = "P3 (Medium)"');
 
     const minorJql = decodeURIComponent(links.minor.split('?jql=')[1]);
-    expect(minorJql).toContain('priority in (Low, Lowest)');
+    expect(minorJql).toContain('priority in ("P4 (Low)", "P5 (Lowest)")');
 
     const prodBugJql = decodeURIComponent(links.prodBug.split('?jql=')[1]);
     expect(prodBugJql).toContain('"Bug in Environments:" = Production');

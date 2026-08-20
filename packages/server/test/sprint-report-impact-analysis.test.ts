@@ -1,25 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  hasImpactAnalysisKeyword,
-  computeImpactAnalysisRow,
-  prefillMissingImpactTable,
-} from '../src/sprint-report-impact-analysis.js';
-import type { JiraIssue } from '../src/jira-client.js';
-
-function issue(key: string): JiraIssue {
-  return {
-    key,
-    project: 'PC',
-    summary: '',
-    status: 'Ready for Testing',
-    priority: null,
-    labels: [],
-    storyPoints: null,
-    productDomain: null,
-    bugEnvironments: [],
-    sandboxDate: null,
-  };
-}
+import { hasImpactAnalysisKeyword, computeImpactAnalysisRow } from '../src/sprint-report-impact-analysis.js';
 
 describe('hasImpactAnalysisKeyword', () => {
   it('matches a standalone "IA" acronym, case-insensitively', () => {
@@ -48,12 +28,5 @@ describe('computeImpactAnalysisRow', () => {
       iaGood: 2,
       iaMissingInfo: 1,
     });
-  });
-});
-
-describe('prefillMissingImpactTable', () => {
-  it('lists only tickets missing the IA keyword, with blank manual info', () => {
-    const rows = prefillMissingImpactTable([issue('A'), issue('B')], [true, false]);
-    expect(rows).toEqual([{ ticket: 'B', missingInfo: '' }]);
   });
 });
