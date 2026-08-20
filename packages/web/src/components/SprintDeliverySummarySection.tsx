@@ -15,6 +15,10 @@ function updateRow(
   return rows.map((row) => (row.rowKey === rowKey ? { ...row, ...patch } : row));
 }
 
+function formatPredictability(value: number | null): string {
+  return value === null ? '—' : `${(value * 100).toFixed(1)}%`;
+}
+
 export function SprintDeliverySummarySection({
   rows,
   onRowsChange,
@@ -35,6 +39,10 @@ export function SprintDeliverySummarySection({
             <th>Predictability</th>
             <th>Ready for Test Tickets</th>
             <th>Ready for Test SP</th>
+            <th>Predictability RFT</th>
+            <th>New Tickets</th>
+            <th>New SP</th>
+            <th>Predictability New</th>
           </tr>
         </thead>
         <tbody>
@@ -45,9 +53,13 @@ export function SprintDeliverySummarySection({
               <td>{row.delivery.committedSP}</td>
               <td>{row.delivery.deliveredTickets}</td>
               <td>{row.delivery.deliveredSP}</td>
-              <td>{row.delivery.predictability === null ? '—' : `${(row.delivery.predictability * 100).toFixed(1)}%`}</td>
+              <td>{formatPredictability(row.delivery.predictability)}</td>
               <td>{row.delivery.readyForTestTickets}</td>
               <td>{row.delivery.readyForTestSP}</td>
+              <td>{formatPredictability(row.delivery.predictabilityRFT)}</td>
+              <td>{row.delivery.newTickets}</td>
+              <td>{row.delivery.newSP}</td>
+              <td>{formatPredictability(row.delivery.predictabilityNew)}</td>
             </tr>
           ))}
         </tbody>

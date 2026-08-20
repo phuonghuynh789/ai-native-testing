@@ -15,6 +15,10 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       readyForTestTickets: 9,
       readyForTestSP: 75,
       predictability: 0.875,
+      predictabilityRFT: 0.9375,
+      newTickets: 3,
+      newSP: 15,
+      predictabilityNew: 0.1875,
     },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0 },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
@@ -48,16 +52,41 @@ describe('SprintDeliverySummarySection', () => {
     expect(screen.getByText('87.5%')).toBeInTheDocument();
   });
 
-  it('shows a dash for predictability when committed SP is 0', () => {
+  it('renders New Tickets/SP and the Predictability RFT/New percentages', () => {
     render(
       <SprintDeliverySummarySection
-        rows={[row({ delivery: { ...row().delivery, committedSP: 0, predictability: null } })]}
+        rows={[row()]}
         onRowsChange={() => {}}
         deliveryComment=""
         onDeliveryCommentChange={() => {}}
       />
     );
-    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getByText('93.8%')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText('18.8%')).toBeInTheDocument();
+  });
+
+  it('shows a dash for every predictability variant when committed SP is 0', () => {
+    render(
+      <SprintDeliverySummarySection
+        rows={[
+          row({
+            delivery: {
+              ...row().delivery,
+              committedSP: 0,
+              predictability: null,
+              predictabilityRFT: null,
+              predictabilityNew: null,
+            },
+          }),
+        ]}
+        onRowsChange={() => {}}
+        deliveryComment=""
+        onDeliveryCommentChange={() => {}}
+      />
+    );
+    expect(screen.getAllByText('—')).toHaveLength(3);
   });
 
   it('calls onDeliveryCommentChange when the Nhận xét textarea changes', async () => {
