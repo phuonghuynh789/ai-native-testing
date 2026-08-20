@@ -14,11 +14,15 @@ export function nextDay(dateYYYYMMDD: string): string {
   return `${nextYear}/${nextMonth}/${nextDayOfMonth}`;
 }
 
+function labelsClause(labels: string[]): string {
+  return labels.length > 0 ? ` AND labels in (${labels.join(', ')})` : '';
+}
+
 export function buildCommittedJql(params: JqlDateParams): string {
   return (
     `project in (PC, PCFUM, PCPOP) AND created >= "${params.start}" AND created <= "${params.end}" ` +
     `AND type in (Task, Story) AND type != Bug AND reporter != jira-webhook-bot ` +
-    `AND status != Cancelled AND labels in (${params.labels.join(', ')})`
+    `AND status != Cancelled${labelsClause(params.labels)}`
   );
 }
 
@@ -28,7 +32,7 @@ export function buildDeliveredJql(params: JqlDateParams): string {
     `status changed to Done during ("${params.start}", "${params.end}") ` +
     `AND NOT status changed to Done during ("${endPlusOne}", "2027/12/31") ` +
     `AND statusCategory = Done AND status in (Done, Live) ` +
-    `AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in (${params.labels.join(', ')})`
+    `AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)${labelsClause(params.labels)}`
   );
 }
 
@@ -37,7 +41,7 @@ export function buildReadyForTestJql(params: JqlDateParams): string {
   return (
     `status changed to "Ready for Testing" during ("${params.start}", "${params.end}") ` +
     `AND NOT status changed to "Ready for Testing" during ("${endPlusOne}", "2027/12/31") ` +
-    `AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in (${params.labels.join(', ')})`
+    `AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)${labelsClause(params.labels)}`
   );
 }
 
