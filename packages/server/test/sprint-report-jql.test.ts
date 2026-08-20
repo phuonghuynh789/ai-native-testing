@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   nextDay,
+  addDays,
   buildCommittedJql,
   buildNewJql,
   buildDeliveredJql,
@@ -19,6 +20,22 @@ describe('nextDay', () => {
 
   it('rolls over to the next year', () => {
     expect(nextDay('2026/12/31')).toBe('2027/01/01');
+  });
+});
+
+describe('addDays', () => {
+  it('adds a positive number of days, rolling over the month', () => {
+    expect(addDays('2026/08/19', 2)).toBe('2026/08/21');
+    expect(addDays('2026/08/31', 1)).toBe('2026/09/01');
+  });
+
+  it('subtracts days when given a negative number, rolling back the month', () => {
+    expect(addDays('2026/08/19', -1)).toBe('2026/08/18');
+    expect(addDays('2026/08/01', -1)).toBe('2026/07/31');
+  });
+
+  it('returns the same date when given 0', () => {
+    expect(addDays('2026/08/19', 0)).toBe('2026/08/19');
   });
 });
 

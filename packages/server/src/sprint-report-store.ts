@@ -4,7 +4,7 @@ import type { RowKey } from './sprint-report-rows.js';
 import type { DeliveryRow, SandboxDateBreakdown } from './sprint-report-delivery.js';
 import type { QualityRow } from './sprint-report-quality.js';
 import type { ImpactAnalysisRow, MissingImpactRow } from './sprint-report-impact-analysis.js';
-import type { DeliveryJiraLinks, QualityJiraLinks } from './sprint-report-jira-links.js';
+import type { DeliveryJiraLinks, QualityJiraLinks, SandboxDateJiraLinks } from './sprint-report-jira-links.js';
 
 export type TriState = 'unset' | 'pass' | 'fail';
 
@@ -34,6 +34,7 @@ export interface SprintReportRowData {
   qualityChecklist: QualityChecklist;
   iaWrongScope: number;
   sandboxDateBreakdown: SandboxDateBreakdown;
+  sandboxDateJiraLinks: SandboxDateJiraLinks;
   missingImpact: MissingImpactRow[];
   executiveSummary: ExecutiveSummaryRow;
 }

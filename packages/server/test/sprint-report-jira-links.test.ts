@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeliveryJiraLinks, buildQualityJiraLinks } from '../src/sprint-report-jira-links.js';
+import { buildDeliveryJiraLinks, buildQualityJiraLinks, buildSandboxDateJiraLinks } from '../src/sprint-report-jira-links.js';
 import type { JiraConfig } from '../src/jira-config.js';
 
 const JIRA_CONFIG: JiraConfig = { baseUrl: 'https://jira.example.com', token: 'test-token' };
@@ -68,5 +68,42 @@ describe('buildQualityJiraLinks', () => {
 
     const prodBugJql = decodeURIComponent(links.prodBug.split('?jql=')[1]);
     expect(prodBugJql).toContain('"Bug in Environments:" = Production');
+  });
+});
+
+describe('buildSandboxDateJiraLinks', () => {
+  it('builds a Jira issue-search URL per Sandbox Date bucket, scoped to the row project', () => {
+    const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PC', '26.08.B', '2026/08/19');
+
+    for (const url of Object.values(links)) {
+      expect(url.startsWith('https://jira.example.com/issues/?jql=')).toBe(true);
+    }
+
+    const readyOrInTestJql = decodeURIComponent(links.readyOrInTest.split('?jql=')[1]);
+    expect(readyOrInTestJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
+    expect(readyOrInTestJql).toContain('status in ("Ready for Testing", "In Test")');
+    expect(readyOrInTestJql).toContain('project = PC');
+    expect(readyOrInTestJql).not.toContain('Sandbox Date');
+
+    const missingJql = decodeURIComponent(links.missingSandboxDate.split('?jql=')[1]);
+    expect(missingJql).toContain('"Sandbox Date" is EMPTY');
+
+    const equalsJql = decodeURIComponent(links.equalsSprintEnd.split('?jql=')[1]);
+    expect(equalsJql).toContain('"Sandbox Date" = "2026/08/19"');
+
+    const minus1Jql = decodeURIComponent(links.minus1.split('?jql=')[1]);
+    expect(minus1Jql).toContain('"Sandbox Date" = "2026/08/18"');
+
+    const plus1Jql = decodeURIComponent(links.plus1.split('?jql=')[1]);
+    expect(plus1Jql).toContain('"Sandbox Date" = "2026/08/20"');
+
+    const plus2Jql = decodeURIComponent(links.plus2.split('?jql=')[1]);
+    expect(plus2Jql).toContain('"Sandbox Date" = "2026/08/21"');
+  });
+
+  it('scopes a PCPOP row by its Product Domain', () => {
+    const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PCPOP_RC', '26.08.B', '2026/08/19');
+    const readyOrInTestJql = decodeURIComponent(links.readyOrInTest.split('?jql=')[1]);
+    expect(readyOrInTestJql).toContain('project = PCPOP AND "Product Domain" = "Reconciliation Core"');
   });
 });

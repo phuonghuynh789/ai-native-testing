@@ -10,7 +10,7 @@ import {
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
 import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
 import { computeQualityRow } from './sprint-report-quality.js';
-import { buildDeliveryJiraLinks, buildQualityJiraLinks } from './sprint-report-jira-links.js';
+import { buildDeliveryJiraLinks, buildQualityJiraLinks, buildSandboxDateJiraLinks } from './sprint-report-jira-links.js';
 import {
   hasImpactAnalysisKeyword,
   computeImpactAnalysisRow,
@@ -60,6 +60,7 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
       sandboxDatePlus1: 0,
       sandboxDatePlus2: 0,
     },
+    sandboxDateJiraLinks: { readyOrInTest: '', missingSandboxDate: '', equalsSprintEnd: '', minus1: '', plus1: '', plus2: '' },
     missingImpact: [],
     executiveSummary: {
       delivery: 'unset',
@@ -128,6 +129,7 @@ export async function refreshSprintReport(
       qualityJiraLinks: buildQualityJiraLinks(jiraConfig, rowKey, jqlParams),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
       sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
+      sandboxDateJiraLinks: buildSandboxDateJiraLinks(jiraConfig, rowKey, sprintCode, params.endDate),
       qualityChecklist: base.qualityChecklist,
       iaWrongScope: base.iaWrongScope,
       missingImpact: mergeManualTableRows(freshMissingImpact, base.missingImpact),

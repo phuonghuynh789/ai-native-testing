@@ -1,6 +1,14 @@
 import type { JiraConfig } from './jira-config.js';
 import { jqlProjectScope, type RowKey } from './sprint-report-rows.js';
-import { buildCommittedJql, buildNewJql, buildDeliveredJql, buildReadyForTestJql, buildBugsJql, type JqlDateParams } from './sprint-report-jql.js';
+import {
+  buildCommittedJql,
+  buildNewJql,
+  buildDeliveredJql,
+  buildReadyForTestJql,
+  buildBugsJql,
+  addDays,
+  type JqlDateParams,
+} from './sprint-report-jql.js';
 
 export interface DeliveryJiraLinks {
   committed: string;
@@ -15,6 +23,15 @@ export interface QualityJiraLinks {
   major: string;
   minor: string;
   prodBug: string;
+}
+
+export interface SandboxDateJiraLinks {
+  readyOrInTest: string;
+  missingSandboxDate: string;
+  equalsSprintEnd: string;
+  minus1: string;
+  plus1: string;
+  plus2: string;
 }
 
 function jiraSearchUrl(baseUrl: string, jql: string): string {
@@ -33,6 +50,33 @@ export function buildDeliveryJiraLinks(
     delivered: jiraSearchUrl(jiraConfig.baseUrl, `${buildDeliveredJql(dateParams)} AND ${scope}`),
     readyForTest: jiraSearchUrl(jiraConfig.baseUrl, `${buildReadyForTestJql(dateParams)} AND ${scope}`),
     new: jiraSearchUrl(jiraConfig.baseUrl, `${buildNewJql({ sprintCode })} AND ${scope}`),
+  };
+}
+
+export function buildSandboxDateJiraLinks(
+  jiraConfig: JiraConfig,
+  rowKey: RowKey,
+  sprintCode: string,
+  sprintEndDate: string
+): SandboxDateJiraLinks {
+  const scope = jqlProjectScope(rowKey);
+  const readyOrInTestJql = `${buildCommittedJql({ sprintCode })} AND status in ("Ready for Testing", "In Test") AND ${scope}`;
+  return {
+    readyOrInTest: jiraSearchUrl(jiraConfig.baseUrl, readyOrInTestJql),
+    missingSandboxDate: jiraSearchUrl(jiraConfig.baseUrl, `${readyOrInTestJql} AND "Sandbox Date" is EMPTY`),
+    equalsSprintEnd: jiraSearchUrl(jiraConfig.baseUrl, `${readyOrInTestJql} AND "Sandbox Date" = "${sprintEndDate}"`),
+    minus1: jiraSearchUrl(
+      jiraConfig.baseUrl,
+      `${readyOrInTestJql} AND "Sandbox Date" = "${addDays(sprintEndDate, -1)}"`
+    ),
+    plus1: jiraSearchUrl(
+      jiraConfig.baseUrl,
+      `${readyOrInTestJql} AND "Sandbox Date" = "${addDays(sprintEndDate, 1)}"`
+    ),
+    plus2: jiraSearchUrl(
+      jiraConfig.baseUrl,
+      `${readyOrInTestJql} AND "Sandbox Date" = "${addDays(sprintEndDate, 2)}"`
+    ),
   };
 }
 

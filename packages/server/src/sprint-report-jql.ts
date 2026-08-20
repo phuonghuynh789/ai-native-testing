@@ -8,14 +8,18 @@ export interface CommittedJqlParams {
   sprintCode: string;
 }
 
-export function nextDay(dateYYYYMMDD: string): string {
+export function addDays(dateYYYYMMDD: string, days: number): string {
   const [year, month, day] = dateYYYYMMDD.split('/').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCDate(date.getUTCDate() + 1);
-  const nextYear = date.getUTCFullYear();
-  const nextMonth = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const nextDayOfMonth = String(date.getUTCDate()).padStart(2, '0');
-  return `${nextYear}/${nextMonth}/${nextDayOfMonth}`;
+  date.setUTCDate(date.getUTCDate() + days);
+  const resultYear = date.getUTCFullYear();
+  const resultMonth = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const resultDay = String(date.getUTCDate()).padStart(2, '0');
+  return `${resultYear}/${resultMonth}/${resultDay}`;
+}
+
+export function nextDay(dateYYYYMMDD: string): string {
+  return addDays(dateYYYYMMDD, 1);
 }
 
 function labelsClause(labels: string[]): string {
