@@ -94,6 +94,7 @@ describe('buildReadyForTestJql', () => {
     expect(jql).toBe(
       'status changed to "Ready for Testing" during ("2026/08/06", "2026/08/19") ' +
         'AND NOT status changed to "Ready for Testing" during ("2026/08/20", "2027/12/31") ' +
+        'AND status not in (Done, Live) ' +
         'AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in (nhuvth)'
     );
   });
@@ -103,6 +104,7 @@ describe('buildReadyForTestJql', () => {
     expect(jql).toBe(
       'status changed to "Ready for Testing" during ("2026/08/06", "2026/08/19") ' +
         'AND NOT status changed to "Ready for Testing" during ("2026/08/20", "2027/12/31") ' +
+        'AND status not in (Done, Live) ' +
         'AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)'
     );
     expect(jql).not.toContain('labels');

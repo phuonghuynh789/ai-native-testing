@@ -66,6 +66,7 @@ export function buildReadyForTestJql(params: JqlDateParams): string {
   return (
     `status changed to "Ready for Testing" during ("${params.start}", "${params.end}") ` +
     `AND NOT status changed to "Ready for Testing" during ("${endPlusOne}", "2027/12/31") ` +
+    `AND status not in (Done, Live) ` +
     `AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)${labelsClause(params.labels)}`
   );
 }

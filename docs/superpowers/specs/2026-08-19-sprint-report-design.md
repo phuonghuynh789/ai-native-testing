@@ -47,8 +47,10 @@ AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in ({labe
 ```
 status changed to "Ready for Testing" during ("{start}", "{end}")
 AND NOT status changed to "Ready for Testing" during ("{end+1}", "2027/12/31")
+AND status not in (Done, Live)
 AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in ({labels})
 ```
+**[Fixed 2026-08-21]** Added `AND status not in (Done, Live)`. Without it, a ticket that moved Ready for Testing → Done both within the same report window matched this query *and* the Delivered query, double-counting its story points across `Predictability` and `Predictability RFT` — real symptom: the three Predictability percentages summed to over 100%. Ready for Test now means "currently awaiting/in QA, not yet delivered," matching the mutual-exclusion pattern `buildNewJql` already used.
 
 **New** (Sprint Delivery Summary) — **[Added 2026-08-20]** same Sprint-name scope as Committed, narrowed to tickets that haven't progressed past New yet:
 ```
