@@ -84,7 +84,7 @@ export function SprintReportPage() {
           Start Date
           <input
             className="text-input"
-            placeholder="2026/08/06"
+            placeholder="YYYY/MM/DD"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
@@ -93,7 +93,7 @@ export function SprintReportPage() {
           End Date
           <input
             className="text-input"
-            placeholder="2026/08/19"
+            placeholder="YYYY/MM/DD"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
