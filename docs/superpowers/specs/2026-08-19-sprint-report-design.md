@@ -72,7 +72,7 @@ AND project IN (PC, PCPOP, PCFUM)
 
 **Field mappings:**
 - Story Points: the `Story Points` field, summed per row for Committed/Delivered/Ready-for-Test.
-- Bug severity: the `Priority` field — `Highest` → Critical, `High`/`Medium` → Major, `Low`/`Lowest` → Minor.
+- Bug severity: the `Priority` field. **[Corrected 2026-08-21]** This Jira instance's real Priority values are `P1 (Highest)` through `P5 (Lowest)`, not the plain `Highest`/`High`/etc. originally assumed — the mismatch meant Critical/Major/Minor silently stayed 0 even though Total Bugs was correct. Real mapping: `P1 (Highest)`/`P2 (High)` → Critical, `P3 (Medium)` → Major, `P4 (Low)`/`P5 (Lowest)` → Minor.
 - Prod Bug: the `Bug in Environments:` field contains `Production`.
 - **[Added 2026-08-20]** Sandbox Date: the `Sandbox Date` field, a plain date string, used only in the Root Cause table.
 
@@ -84,16 +84,16 @@ AND project IN (PC, PCPOP, PCFUM)
 - **Root Cause Tickets Trễ [Rewritten 2026-08-20]** — no longer a per-ticket manual table. It went through two real revisions in the same day: first narrowed to only tickets currently `Ready for Testing`/`In Test` with a new auto-populated `Sandbox Date` column (from Jira's real `Sandbox Date` field, filled in by DEV during planning to tell QE when a ticket lands in Sandbox), then replaced entirely with a fully auto-computed per-squad summary table — no manual fields (`Reason`/`Owner`/`Action`) remain. Columns: **Ready for Testing or In Test Tickets** (count of committed tickets currently at that status), **Sandbox Date** (count of those with no Sandbox Date set), **Sandbox Date = Close Sprint** / **Sandbox Date - 1** / **Sandbox Date + 1** / **Sandbox Date + 2** (counts whose Sandbox Date falls exactly on, one day before, one day after, or two days after the report's End Date). A Sandbox Date more than 1 day before or more than 2 days after the sprint end isn't counted in any of the four offset buckets — only these five specific relationships to the sprint boundary are tracked.
 
 **2. Quality Report**
-- Auto: Total Bugs, Critical, Major, Minor, Prod Bug counts, per row.
-- Manual: the 4-item Quality Rating checklist (No Critical Bug / No Production Bug / Reopen Rate < 10% / UAT Stable, each a tri-state: unset/pass/fail) and an overall Assessment (Good / Need Improvement), per row.
+- Auto: Total Bugs, Critical, Major, Minor, Prod Bug counts, per row. **[Rewritten 2026-08-21]** The manual Assessment select and the whole Quality Rating checklist (No Critical Bug / No Production Bug / Reopen Rate < 10% / UAT Stable) are removed. Replaced with an auto-computed **No RC** column: fetches each bug's description + comments (same fetch as the IA keyword check) and counts how many have neither a standalone `RC` nor the phrase `root cause` anywhere in that text — `hasRootCauseKeyword`, mirroring `hasImpactAnalysisKeyword`'s word-boundary-for-acronym / substring-for-phrase pattern. No RC is **not** linked to Jira (unlike the other 5 columns) since it's a JS text-match result, not a native field filter — there's no exact JQL equivalent, same reasoning as IA Good/Missing below.
+- Manual: none remaining in this section.
 
 **3. Impact Analysis Review**
-- Auto: Total Tickets (the Ready-for-Test population for that row), IA Good (keyword found), IA Missing Info (keyword not found).
-- Manual: IA Wrong Scope (a number, starts at 0 — incremented by hand after actually reading a ticket's IA content and judging it insufficient; this project does not attempt to auto-move a ticket from "IA Good" to "IA Wrong Scope"). Missing Impact Examples table (`Ticket | Missing Info`) — **prefilled**: one row per ticket flagged "IA Missing Info", `Ticket` filled in, `Missing Info` left blank for manual entry.
+- Auto: Total Tickets (the Ready-for-Test population for that row), IA Good (keyword found), IA Missing Info (keyword not found). **[Updated 2026-08-21]** Total Tickets links to Jira — it reuses `deliveryJiraLinks.readyForTest` directly, since it's the exact same underlying ticket set as Sprint Delivery Summary's Ready for Test Tickets, no separate link needed. IA Good/IA Missing Info stay unlinked: both are computed via a JS regex check on fetched text, and Jira's JQL text search (`~`) isn't guaranteed to return the same ticket set that regex would.
+- Manual: IA Wrong Scope (a number, starts at 0 — incremented by hand after actually reading a ticket's IA content and judging it insufficient; this project does not attempt to auto-move a ticket from "IA Good" to "IA Wrong Scope"). **[Removed 2026-08-21]** The Missing Impact Examples per-ticket table (`Ticket | Missing Info`) is gone, along with its backing schema (`missingImpact`, `MissingImpactRow`, `prefillMissingImpactTable`).
 
 **4. Executive Summary**
 - Auto: nothing computed — this section is pure rollup/judgment on top of numbers already visible in the sections above.
-- Manual: all four indicators per row (Delivery, Quality, Impact Analysis, Overall — each a simple ✅/🟡/🔴/⚠️/❌ picker) and all free-text narrative commentary. Turning a Predictability % or bug count into a traffic-light color is exactly the kind of judgment call already kept manual for the Quality Rating checklist and IA Wrong Scope elsewhere in this report — no invented numeric threshold decides it automatically.
+- Manual: all four indicators per row (Delivery, Quality, Impact Analysis, Overall — each a simple ✅/🟡/🔴/⚠️/❌ picker) and all free-text narrative commentary. Turning a Predictability % or bug count into a traffic-light color is exactly the kind of judgment call already kept manual for IA Wrong Scope elsewhere in this report — no invented numeric threshold decides it automatically.
 
 ## Persistence & API
 
@@ -118,7 +118,8 @@ New Sidebar entry "Sprint Report" (own route, `/sprint-report`). The page has an
 - Priority → severity mapping (including values outside the known set).
 - Prod Bug detection from `Bug in Environments:`.
 - IA keyword search across description + comments (case-insensitivity, all 3 candidate phrases, absence case).
-- The Sandbox Date breakdown computation / Missing Impact Examples table prefill logic.
+- RC keyword search across description + comments, mirroring the IA keyword search's test shape.
+- The Sandbox Date breakdown computation.
 - `SprintReportStore` CRUD, and the refresh-endpoint's merge-with-existing-manual-fields behavior.
 
 ## Error Handling
