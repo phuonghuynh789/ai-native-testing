@@ -45,6 +45,14 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       sandboxDatePlus1: 11,
       sandboxDatePlus2: 13,
     },
+    sandboxDateJiraLinks: {
+      readyOrInTest: 'https://jira.example.com/issues/?jql=readyOrInTest',
+      missingSandboxDate: 'https://jira.example.com/issues/?jql=missingSandboxDate',
+      equalsSprintEnd: 'https://jira.example.com/issues/?jql=equalsSprintEnd',
+      minus1: 'https://jira.example.com/issues/?jql=minus1',
+      plus1: 'https://jira.example.com/issues/?jql=plus1',
+      plus2: 'https://jira.example.com/issues/?jql=plus2',
+    },
     missingImpact: [],
     executiveSummary: { delivery: 'unset', quality: 'unset', impactAnalysis: 'unset', overall: 'unset', commentary: '' },
     ...overrides,
@@ -155,5 +163,30 @@ describe('SprintDeliverySummarySection', () => {
     expect(screen.getByText('11')).toBeInTheDocument();
     expect(screen.getByText('Sandbox Date + 2')).toBeInTheDocument();
     expect(screen.getByText('13')).toBeInTheDocument();
+  });
+
+  it('links each Sandbox Date breakdown count to its Jira issue search', () => {
+    render(
+      <SprintDeliverySummarySection
+        rows={[row()]}
+        deliveryComment=""
+        onDeliveryCommentChange={() => {}}
+      />
+    );
+    expect(screen.getByText('20').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=readyOrInTest'
+    );
+    expect(screen.getByText('5').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=missingSandboxDate'
+    );
+    expect(screen.getByText('6').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=equalsSprintEnd'
+    );
+    expect(screen.getByText('7').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=minus1');
+    expect(screen.getByText('11').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=plus1');
+    expect(screen.getByText('13').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=plus2');
   });
 });

@@ -50,6 +50,7 @@ function sampleReportResponse() {
           sandboxDatePlus1: 0,
           sandboxDatePlus2: 0,
         },
+        sandboxDateJiraLinks: { readyOrInTest: '', missingSandboxDate: '', equalsSprintEnd: '', minus1: '', plus1: '', plus2: '' },
         missingImpact: [],
         executiveSummary: { delivery: 'unset', quality: 'unset', impactAnalysis: 'unset', overall: 'unset', commentary: '' },
       },

@@ -105,12 +105,33 @@ export function SprintDeliverySummarySection({
           {rows.map((row) => (
             <tr key={row.rowKey}>
               <td>{row.rowKey}</td>
-              <td>{row.sandboxDateBreakdown.readyOrInTestTickets}</td>
-              <td>{row.sandboxDateBreakdown.missingSandboxDate}</td>
-              <td>{row.sandboxDateBreakdown.sandboxDateEqualsSprintEnd}</td>
-              <td>{row.sandboxDateBreakdown.sandboxDateMinus1}</td>
-              <td>{row.sandboxDateBreakdown.sandboxDatePlus1}</td>
-              <td>{row.sandboxDateBreakdown.sandboxDatePlus2}</td>
+              <td>
+                <JiraLinkCell
+                  href={row.sandboxDateJiraLinks.readyOrInTest}
+                  value={row.sandboxDateBreakdown.readyOrInTestTickets}
+                />
+              </td>
+              <td>
+                <JiraLinkCell
+                  href={row.sandboxDateJiraLinks.missingSandboxDate}
+                  value={row.sandboxDateBreakdown.missingSandboxDate}
+                />
+              </td>
+              <td>
+                <JiraLinkCell
+                  href={row.sandboxDateJiraLinks.equalsSprintEnd}
+                  value={row.sandboxDateBreakdown.sandboxDateEqualsSprintEnd}
+                />
+              </td>
+              <td>
+                <JiraLinkCell href={row.sandboxDateJiraLinks.minus1} value={row.sandboxDateBreakdown.sandboxDateMinus1} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.sandboxDateJiraLinks.plus1} value={row.sandboxDateBreakdown.sandboxDatePlus1} />
+              </td>
+              <td>
+                <JiraLinkCell href={row.sandboxDateJiraLinks.plus2} value={row.sandboxDateBreakdown.sandboxDatePlus2} />
+              </td>
             </tr>
           ))}
         </tbody>
