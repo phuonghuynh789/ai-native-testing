@@ -50,6 +50,13 @@ AND NOT status changed to "Ready for Testing" during ("{end+1}", "2027/12/31")
 AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in ({labels})
 ```
 
+**New** (Sprint Delivery Summary) — **[Added 2026-08-20]** same Sprint-name scope as Committed, narrowed to tickets that haven't progressed past New yet:
+```
+reporter != jira-webhook-bot AND type in (Task, Story) AND status != Cancelled
+and status not in ("ready for testing", "In test", Done)
+AND Sprint in ("PCDPC - Sprint {sprintCode}","PCF-UM {sprintCode}","OPF - {sprintCode}")
+```
+
 **Bugs** (Quality Report) — deliberately no `labels` filter (bugs can be reported by anyone, not just the team):
 ```
 type = Bug AND created >= "{start}" AND created <= "{end}"
@@ -71,7 +78,7 @@ AND project IN (PC, PCPOP, PCFUM)
 ## Section-by-Section: Auto-Computed vs. Manual
 
 **1. Sprint Delivery Summary**
-- Auto: Committed Tickets/SP, Delivered Tickets/SP, Ready-for-Test Tickets/SP (all per row), Predictability % = `Delivered SP / Committed SP`.
+- Auto: Committed Tickets/SP, Delivered Tickets/SP, Ready-for-Test Tickets/SP (all per row), Predictability % = `Delivered SP / Committed SP`. **[Added 2026-08-20]** Predictability RFT % = `Ready for Test SP / Committed SP`; New Tickets/SP (from the New query above); Predictability New % = `New SP / Committed SP`.
 - Manual: "Nhận xét" free text (per row or one shared block — see Open Question below, resolved as one shared free-text block per section, not per row, matching the mockup's single "Nhận xét" area under the whole table). Root Cause table (`Ticket | Reason | Owner | Action`) — **prefilled**: one row per ticket that is Committed but not (yet) Delivered, with `Ticket` filled in and `Reason`/`Owner`/`Action` left blank for manual entry.
 
 **2. Quality Report**
