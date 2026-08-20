@@ -10,7 +10,12 @@ import {
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
 import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
 import { computeQualityRow, hasRootCauseKeyword } from './sprint-report-quality.js';
-import { buildDeliveryJiraLinks, buildQualityJiraLinks, buildSandboxDateJiraLinks } from './sprint-report-jira-links.js';
+import {
+  buildDeliveryJiraLinks,
+  buildQualityJiraLinks,
+  buildSandboxDateJiraLinks,
+  buildImpactAnalysisJiraLinks,
+} from './sprint-report-jira-links.js';
 import { hasImpactAnalysisKeyword, computeImpactAnalysisRow } from './sprint-report-impact-analysis.js';
 import type { SprintReport, SprintReportRowData, SprintReportStore } from './sprint-report-store.js';
 
@@ -38,9 +43,9 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
     },
     deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0, noRC: 0 },
-    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
+    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '', noRC: '' },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
-    iaWrongScope: 0,
+    impactAnalysisJiraLinks: { iaGood: '', iaMissingInfo: '' },
     sandboxDateBreakdown: {
       readyOrInTestTickets: 0,
       missingSandboxDate: 0,
@@ -117,9 +122,9 @@ export async function refreshSprintReport(
       quality: computeQualityRow(rowBugs, rootCauseResults),
       qualityJiraLinks: buildQualityJiraLinks(jiraConfig, rowKey, jqlParams),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
+      impactAnalysisJiraLinks: buildImpactAnalysisJiraLinks(jiraConfig, rowKey, jqlParams),
       sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
       sandboxDateJiraLinks: buildSandboxDateJiraLinks(jiraConfig, rowKey, sprintCode, params.endDate),
-      iaWrongScope: base.iaWrongScope,
       executiveSummary: base.executiveSummary,
     });
   }

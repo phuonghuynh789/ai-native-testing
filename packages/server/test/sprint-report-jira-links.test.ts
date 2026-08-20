@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildDeliveryJiraLinks, buildQualityJiraLinks, buildSandboxDateJiraLinks } from '../src/sprint-report-jira-links.js';
+import {
+  buildDeliveryJiraLinks,
+  buildQualityJiraLinks,
+  buildSandboxDateJiraLinks,
+  buildImpactAnalysisJiraLinks,
+} from '../src/sprint-report-jira-links.js';
 import type { JiraConfig } from '../src/jira-config.js';
 
 const JIRA_CONFIG: JiraConfig = { baseUrl: 'https://jira.example.com', token: 'test-token' };
@@ -68,6 +73,10 @@ describe('buildQualityJiraLinks', () => {
 
     const prodBugJql = decodeURIComponent(links.prodBug.split('?jql=')[1]);
     expect(prodBugJql).toContain('"Bug in Environments:" = Production');
+
+    const noRCJql = decodeURIComponent(links.noRC.split('?jql=')[1]);
+    expect(noRCJql).toContain('NOT (description ~ "RC" OR comment ~ "RC" OR description ~ "root cause" OR comment ~ "root cause")');
+    expect(noRCJql).toContain('project = PC');
   });
 });
 
@@ -105,5 +114,40 @@ describe('buildSandboxDateJiraLinks', () => {
     const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PCPOP_RC', '26.08.B', '2026/08/19');
     const readyOrInTestJql = decodeURIComponent(links.readyOrInTest.split('?jql=')[1]);
     expect(readyOrInTestJql).toContain('project = PCPOP AND "Product Domain" = "Reconciliation Core"');
+  });
+});
+
+describe('buildImpactAnalysisJiraLinks', () => {
+  const IA_KEYWORD_CLAUSE =
+    '(description ~ "IA" OR comment ~ "IA" OR description ~ "Technical Impact" OR comment ~ "Technical Impact" OR description ~ "Impact Analysis" OR comment ~ "Impact Analysis")';
+
+  it('builds an approximate Jira text-search URL for IA Good/Missing Info, scoped to the row project', () => {
+    const links = buildImpactAnalysisJiraLinks(JIRA_CONFIG, 'PC', {
+      start: '2026/08/06',
+      end: '2026/08/19',
+      labels: [],
+    });
+
+    for (const url of Object.values(links)) {
+      expect(url.startsWith('https://jira.example.com/issues/?jql=')).toBe(true);
+    }
+
+    const iaGoodJql = decodeURIComponent(links.iaGood.split('?jql=')[1]);
+    expect(iaGoodJql).toContain('status changed to "Ready for Testing" during');
+    expect(iaGoodJql).toContain('project = PC');
+    expect(iaGoodJql).toContain(`AND ${IA_KEYWORD_CLAUSE}`);
+
+    const iaMissingInfoJql = decodeURIComponent(links.iaMissingInfo.split('?jql=')[1]);
+    expect(iaMissingInfoJql).toContain(`AND NOT ${IA_KEYWORD_CLAUSE}`);
+  });
+
+  it('scopes a PCPOP row by its Product Domain', () => {
+    const links = buildImpactAnalysisJiraLinks(JIRA_CONFIG, 'PCPOP_MP', {
+      start: '2026/08/06',
+      end: '2026/08/19',
+      labels: [],
+    });
+    const iaGoodJql = decodeURIComponent(links.iaGood.split('?jql=')[1]);
+    expect(iaGoodJql).toContain('project = PCPOP AND "Product Domain" = "Merchant Platform"');
   });
 });

@@ -4,7 +4,12 @@ import type { RowKey } from './sprint-report-rows.js';
 import type { DeliveryRow, SandboxDateBreakdown } from './sprint-report-delivery.js';
 import type { QualityRow } from './sprint-report-quality.js';
 import type { ImpactAnalysisRow } from './sprint-report-impact-analysis.js';
-import type { DeliveryJiraLinks, QualityJiraLinks, SandboxDateJiraLinks } from './sprint-report-jira-links.js';
+import type {
+  DeliveryJiraLinks,
+  QualityJiraLinks,
+  SandboxDateJiraLinks,
+  ImpactAnalysisJiraLinks,
+} from './sprint-report-jira-links.js';
 
 export interface ExecutiveSummaryRow {
   delivery: 'unset' | 'good' | 'bad';
@@ -21,7 +26,7 @@ export interface SprintReportRowData {
   quality: QualityRow;
   qualityJiraLinks: QualityJiraLinks;
   impactAnalysis: ImpactAnalysisRow;
-  iaWrongScope: number;
+  impactAnalysisJiraLinks: ImpactAnalysisJiraLinks;
   sandboxDateBreakdown: SandboxDateBreakdown;
   sandboxDateJiraLinks: SandboxDateJiraLinks;
   executiveSummary: ExecutiveSummaryRow;

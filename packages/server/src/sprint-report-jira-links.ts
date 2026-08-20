@@ -23,7 +23,21 @@ export interface QualityJiraLinks {
   major: string;
   minor: string;
   prodBug: string;
+  noRC: string;
 }
+
+export interface ImpactAnalysisJiraLinks {
+  iaGood: string;
+  iaMissingInfo: string;
+}
+
+// Jira's `~` text search is a fuzzy/tokenized match over description+comments (the same fields
+// fetchIssueTextForKeywordCheck reads), not the exact word-boundary regex hasImpactAnalysisKeyword/
+// hasRootCauseKeyword use -- these links are a best-effort approximation and may occasionally
+// disagree with the displayed count.
+const IA_KEYWORD_CLAUSE =
+  '(description ~ "IA" OR comment ~ "IA" OR description ~ "Technical Impact" OR comment ~ "Technical Impact" OR description ~ "Impact Analysis" OR comment ~ "Impact Analysis")';
+const RC_KEYWORD_CLAUSE = '(description ~ "RC" OR comment ~ "RC" OR description ~ "root cause" OR comment ~ "root cause")';
 
 export interface SandboxDateJiraLinks {
   readyOrInTest: string;
@@ -93,5 +107,19 @@ export function buildQualityJiraLinks(
     major: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority = "P3 (Medium)"`),
     minor: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND priority in ("P4 (Low)", "P5 (Lowest)")`),
     prodBug: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND "Bug in Environments:" = Production`),
+    noRC: jiraSearchUrl(jiraConfig.baseUrl, `${bugsJql} AND ${scope} AND NOT ${RC_KEYWORD_CLAUSE}`),
+  };
+}
+
+export function buildImpactAnalysisJiraLinks(
+  jiraConfig: JiraConfig,
+  rowKey: RowKey,
+  dateParams: JqlDateParams
+): ImpactAnalysisJiraLinks {
+  const scope = jqlProjectScope(rowKey);
+  const readyForTestJql = `${buildReadyForTestJql(dateParams)} AND ${scope}`;
+  return {
+    iaGood: jiraSearchUrl(jiraConfig.baseUrl, `${readyForTestJql} AND ${IA_KEYWORD_CLAUSE}`),
+    iaMissingInfo: jiraSearchUrl(jiraConfig.baseUrl, `${readyForTestJql} AND NOT ${IA_KEYWORD_CLAUSE}`),
   };
 }

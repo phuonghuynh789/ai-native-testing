@@ -78,14 +78,14 @@ describe('refreshSprintReport', () => {
     expect(mpRow.delivery.committedTickets).toBe(1);
   });
 
-  it('preserves manual fields (iaWrongScope, executive summary, comment) from a previously saved report', async () => {
+  it('preserves manual fields (executive summary, comment) from a previously saved report', async () => {
     mocks.searchJiraIssues.mockResolvedValue([]);
     const first = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
       startDate: '2026/08/06',
       endDate: '2026/08/19',
       labels: [],
     });
-    first.rows[0].iaWrongScope = 2;
+    first.rows[0].executiveSummary.commentary = 'looking good';
     first.deliveryComment = 'manual notes';
     await store.save(first);
 
@@ -95,7 +95,7 @@ describe('refreshSprintReport', () => {
       labels: [],
     });
 
-    expect(second.rows[0].iaWrongScope).toBe(2);
+    expect(second.rows[0].executiveSummary.commentary).toBe('looking good');
     expect(second.deliveryComment).toBe('manual notes');
   });
 
@@ -217,6 +217,10 @@ describe('refreshSprintReport', () => {
       expect(decodeURIComponent(url.split('?jql=')[1])).toContain('project = PC');
     }
     for (const url of Object.values(pcRow.qualityJiraLinks)) {
+      expect(url).toContain(`${JIRA_CONFIG.baseUrl}/issues/?jql=`);
+      expect(decodeURIComponent(url.split('?jql=')[1])).toContain('project = PC');
+    }
+    for (const url of Object.values(pcRow.impactAnalysisJiraLinks)) {
       expect(url).toContain(`${JIRA_CONFIG.baseUrl}/issues/?jql=`);
       expect(decodeURIComponent(url.split('?jql=')[1])).toContain('project = PC');
     }
