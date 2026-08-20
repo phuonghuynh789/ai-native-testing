@@ -80,7 +80,8 @@ AND project IN (PC, PCPOP, PCFUM)
 
 **1. Sprint Delivery Summary**
 - Auto: Committed Tickets/SP, Delivered Tickets/SP, Ready-for-Test Tickets/SP (all per row), Predictability % = `Delivered SP / Committed SP`. **[Added 2026-08-20]** Predictability RFT % = `Ready for Test SP / Committed SP`; New Tickets/SP (from the New query above); Predictability New % = `New SP / Committed SP`.
-- Manual: "Nhận xét" free text (per row or one shared block — see Open Question below, resolved as one shared free-text block per section, not per row, matching the mockup's single "Nhận xét" area under the whole table). Root Cause table (`Ticket | Sandbox Date | Reason | Owner | Action`) — **prefilled**: one row per ticket that is Committed but not (yet) Delivered, with `Ticket` filled in and `Reason`/`Owner`/`Action` left blank for manual entry. **[Updated 2026-08-20]** Narrowed to only tickets whose current status is `Ready for Testing` or `In Test` (a committed-but-undelivered ticket still in an earlier status, e.g. To Do/In Progress, is excluded — it isn't "late" in the sense this table tracks yet). Added `Sandbox Date`, auto-populated from Jira's real `Sandbox Date` custom field (filled in by DEV during planning to tell QE when a ticket lands in Sandbox for testing) — always re-read fresh on every refresh, never frozen at whatever value it had on first save, unlike `Reason`/`Owner`/`Action` which are preserved from the previous save.
+- Manual: "Nhận xét" free text (per row or one shared block — see Open Question below, resolved as one shared free-text block per section, not per row, matching the mockup's single "Nhận xét" area under the whole table).
+- **Root Cause Tickets Trễ [Rewritten 2026-08-20]** — no longer a per-ticket manual table. It went through two real revisions in the same day: first narrowed to only tickets currently `Ready for Testing`/`In Test` with a new auto-populated `Sandbox Date` column (from Jira's real `Sandbox Date` field, filled in by DEV during planning to tell QE when a ticket lands in Sandbox), then replaced entirely with a fully auto-computed per-squad summary table — no manual fields (`Reason`/`Owner`/`Action`) remain. Columns: **Ready for Testing or In Test Tickets** (count of committed tickets currently at that status), **Sandbox Date** (count of those with no Sandbox Date set), **Sandbox Date = Close Sprint** / **Sandbox Date - 1** / **Sandbox Date + 1** / **Sandbox Date + 2** (counts whose Sandbox Date falls exactly on, one day before, one day after, or two days after the report's End Date). A Sandbox Date more than 1 day before or more than 2 days after the sprint end isn't counted in any of the four offset buckets — only these five specific relationships to the sprint boundary are tracked.
 
 **2. Quality Report**
 - Auto: Total Bugs, Critical, Major, Minor, Prod Bug counts, per row.
@@ -115,7 +116,7 @@ New Sidebar entry "Sprint Report" (own route, `/sprint-report`). The page has an
 - Priority → severity mapping (including values outside the known set).
 - Prod Bug detection from `Bug in Environments:`.
 - IA keyword search across description + comments (case-insensitivity, all 3 candidate phrases, absence case).
-- The Root Cause / Missing Impact Examples table prefill logic.
+- The Sandbox Date breakdown computation / Missing Impact Examples table prefill logic.
 - `SprintReportStore` CRUD, and the refresh-endpoint's merge-with-existing-manual-fields behavior.
 
 ## Error Handling
