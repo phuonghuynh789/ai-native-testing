@@ -5,7 +5,7 @@ export type RowKey = (typeof ROW_KEYS)[number];
 
 const PRODUCT_DOMAIN_TO_ROW: Record<string, RowKey> = {
   'Merchant Platform': 'PCPOP_MP',
-  'User Operation': 'PCPOP_UO',
+  'Customer Experience': 'PCPOP_UO',
   'Reconciliation Core': 'PCPOP_RC',
 };
 

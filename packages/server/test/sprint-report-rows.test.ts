@@ -27,7 +27,7 @@ describe('groupIssuesByRow', () => {
   it('splits PCPOP issues by Product Domain into three rows', () => {
     const groups = groupIssuesByRow([
       issue({ key: 'OP-1', project: 'PCPOP', productDomain: 'Merchant Platform' }),
-      issue({ key: 'OP-2', project: 'PCPOP', productDomain: 'User Operation' }),
+      issue({ key: 'OP-2', project: 'PCPOP', productDomain: 'Customer Experience' }),
       issue({ key: 'OP-3', project: 'PCPOP', productDomain: 'Reconciliation Core' }),
     ]);
     expect(groups.PCPOP_MP.map((i) => i.key)).toEqual(['OP-1']);
