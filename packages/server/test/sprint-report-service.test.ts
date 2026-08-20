@@ -182,4 +182,28 @@ describe('refreshSprintReport', () => {
     expect(pcRow.delivery.newSP).toBe(2);
     expect(pcRow.delivery.predictabilityNew).toBe(2 / 8);
   });
+
+  it('builds Jira issue-search links per row for both Delivery Summary and Quality Report metrics', async () => {
+    mocks.searchJiraIssues.mockResolvedValue([]);
+
+    const report = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
+      startDate: '2026/08/06',
+      endDate: '2026/08/19',
+      labels: [],
+    });
+
+    const pcRow = report.rows.find((r) => r.rowKey === 'PC')!;
+    for (const url of Object.values(pcRow.deliveryJiraLinks)) {
+      expect(url).toContain(`${JIRA_CONFIG.baseUrl}/issues/?jql=`);
+      expect(decodeURIComponent(url.split('?jql=')[1])).toContain('project = PC');
+    }
+    for (const url of Object.values(pcRow.qualityJiraLinks)) {
+      expect(url).toContain(`${JIRA_CONFIG.baseUrl}/issues/?jql=`);
+      expect(decodeURIComponent(url.split('?jql=')[1])).toContain('project = PC');
+    }
+
+    const mpRow = report.rows.find((r) => r.rowKey === 'PCPOP_MP')!;
+    const mpCommittedJql = decodeURIComponent(mpRow.deliveryJiraLinks.committed.split('?jql=')[1]);
+    expect(mpCommittedJql).toContain('"Product Domain" = "Merchant Platform"');
+  });
 });

@@ -10,6 +10,7 @@ import {
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
 import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
 import { computeQualityRow } from './sprint-report-quality.js';
+import { buildDeliveryJiraLinks, buildQualityJiraLinks } from './sprint-report-jira-links.js';
 import {
   hasImpactAnalysisKeyword,
   computeImpactAnalysisRow,
@@ -39,7 +40,9 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
       newSP: 0,
       predictabilityNew: null,
     },
+    deliveryJiraLinks: { committed: '', delivered: '', readyForTest: '', new: '' },
     quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0 },
+    qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
     qualityChecklist: {
       noCriticalBug: 'unset',
@@ -120,7 +123,9 @@ export async function refreshSprintReport(
     rows.push({
       rowKey,
       delivery: computeDeliveryRow(rowCommitted, rowDelivered, rowReadyForTest, rowNew),
+      deliveryJiraLinks: buildDeliveryJiraLinks(jiraConfig, rowKey, sprintCode, jqlParams),
       quality: computeQualityRow(rowBugs),
+      qualityJiraLinks: buildQualityJiraLinks(jiraConfig, rowKey, jqlParams),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
       sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
       qualityChecklist: base.qualityChecklist,

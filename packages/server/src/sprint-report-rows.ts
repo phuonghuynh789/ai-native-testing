@@ -9,6 +9,14 @@ const PRODUCT_DOMAIN_TO_ROW: Record<string, RowKey> = {
   'Reconciliation Core': 'PCPOP_RC',
 };
 
+export function jqlProjectScope(rowKey: RowKey): string {
+  if (rowKey === 'PC' || rowKey === 'PCFUM') {
+    return `project = ${rowKey}`;
+  }
+  const domain = Object.entries(PRODUCT_DOMAIN_TO_ROW).find(([, key]) => key === rowKey)?.[0];
+  return `project = PCPOP AND "Product Domain" = "${domain}"`;
+}
+
 export function groupIssuesByRow(issues: JiraIssue[]): Record<RowKey, JiraIssue[]> {
   const groups: Record<RowKey, JiraIssue[]> = {
     PC: [],

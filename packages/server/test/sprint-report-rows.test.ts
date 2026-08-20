@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { groupIssuesByRow } from '../src/sprint-report-rows.js';
+import { groupIssuesByRow, jqlProjectScope } from '../src/sprint-report-rows.js';
 import type { JiraIssue } from '../src/jira-client.js';
 
 function issue(overrides: Partial<JiraIssue>): JiraIssue {
@@ -46,5 +46,18 @@ describe('groupIssuesByRow', () => {
   it('ignores an issue from an unrecognized project', () => {
     const groups = groupIssuesByRow([issue({ key: 'OTHER-1', project: 'OTHER' })]);
     expect(Object.values(groups).flat()).toEqual([]);
+  });
+});
+
+describe('jqlProjectScope', () => {
+  it('scopes PC and PCFUM to their own project', () => {
+    expect(jqlProjectScope('PC')).toBe('project = PC');
+    expect(jqlProjectScope('PCFUM')).toBe('project = PCFUM');
+  });
+
+  it('scopes each PCPOP row to project PCPOP plus its Product Domain value', () => {
+    expect(jqlProjectScope('PCPOP_MP')).toBe('project = PCPOP AND "Product Domain" = "Merchant Platform"');
+    expect(jqlProjectScope('PCPOP_UO')).toBe('project = PCPOP AND "Product Domain" = "Customer Experience"');
+    expect(jqlProjectScope('PCPOP_RC')).toBe('project = PCPOP AND "Product Domain" = "Reconciliation Core"');
   });
 });
