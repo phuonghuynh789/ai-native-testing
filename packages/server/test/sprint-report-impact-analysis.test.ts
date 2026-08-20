@@ -17,6 +17,7 @@ function issue(key: string): JiraIssue {
     storyPoints: null,
     productDomain: null,
     bugEnvironments: [],
+    sandboxDate: null,
   };
 }
 

@@ -13,6 +13,7 @@ function issue(overrides: Partial<JiraIssue>): JiraIssue {
     storyPoints: null,
     productDomain: null,
     bugEnvironments: [],
+    sandboxDate: null,
     ...overrides,
   };
 }

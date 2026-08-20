@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeDeliveryRow, prefillRootCauseTable } from '../src/sprint-report-delivery.js';
 import type { JiraIssue } from '../src/jira-client.js';
 
-function issue(key: string, storyPoints: number | null): JiraIssue {
+function issue(key: string, storyPoints: number | null, overrides: Partial<JiraIssue> = {}): JiraIssue {
   return {
     key,
     project: 'PC',
@@ -13,6 +13,8 @@ function issue(key: string, storyPoints: number | null): JiraIssue {
     storyPoints,
     productDomain: null,
     bugEnvironments: [],
+    sandboxDate: null,
+    ...overrides,
   };
 }
 
@@ -53,13 +55,32 @@ describe('computeDeliveryRow', () => {
 });
 
 describe('prefillRootCauseTable', () => {
-  it('lists committed tickets that are not yet delivered, with blank manual fields', () => {
-    const rows = prefillRootCauseTable([issue('A', 5), issue('B', 3)], [issue('A', 5)]);
-    expect(rows).toEqual([{ ticket: 'B', reason: '', owner: '', action: '' }]);
+  it('lists a committed, undelivered ticket that is Ready for Testing, with sandboxDate prefilled and manual fields blank', () => {
+    const rows = prefillRootCauseTable(
+      [issue('A', 5, { status: 'Ready for Testing', sandboxDate: '2026-08-15' }), issue('B', 3, { status: 'Done' })],
+      []
+    );
+    expect(rows).toEqual([{ ticket: 'A', sandboxDate: '2026-08-15', reason: '', owner: '', action: '' }]);
   });
 
-  it('returns an empty list when every committed ticket was delivered', () => {
-    const rows = prefillRootCauseTable([issue('A', 5)], [issue('A', 5)]);
+  it('matches the Ready for Testing / In Test statuses case-insensitively', () => {
+    const rows = prefillRootCauseTable(
+      [issue('A', 5, { status: 'ready for testing' }), issue('B', 3, { status: 'in test' })],
+      []
+    );
+    expect(rows.map((r) => r.ticket)).toEqual(['A', 'B']);
+  });
+
+  it('excludes a committed, undelivered ticket whose status is neither Ready for Testing nor In Test', () => {
+    const rows = prefillRootCauseTable([issue('A', 5, { status: 'To Do' })], []);
+    expect(rows).toEqual([]);
+  });
+
+  it('excludes a ticket that is Ready for Testing but already delivered', () => {
+    const rows = prefillRootCauseTable(
+      [issue('A', 5, { status: 'Ready for Testing' })],
+      [issue('A', 5, { status: 'Ready for Testing' })]
+    );
     expect(rows).toEqual([]);
   });
 });

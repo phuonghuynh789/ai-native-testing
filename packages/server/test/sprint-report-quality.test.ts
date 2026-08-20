@@ -13,6 +13,7 @@ function bug(priority: string | null, bugEnvironments: string[] = []): JiraIssue
     storyPoints: null,
     productDomain: null,
     bugEnvironments,
+    sandboxDate: null,
   };
 }
 

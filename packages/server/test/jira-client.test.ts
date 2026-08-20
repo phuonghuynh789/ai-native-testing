@@ -13,6 +13,7 @@ const FIELD_LIST = [
   { id: 'customfield_10001', name: 'Story Points' },
   { id: 'customfield_10002', name: 'Product Domain' },
   { id: 'customfield_10003', name: 'Bug in Environments:' },
+  { id: 'customfield_10004', name: 'Sandbox Date' },
 ];
 
 function jiraIssueJson(overrides: Record<string, unknown> = {}) {
@@ -28,6 +29,7 @@ function jiraIssueJson(overrides: Record<string, unknown> = {}) {
       customfield_10001: 5,
       customfield_10002: null,
       customfield_10003: [],
+      customfield_10004: null,
       ...fieldOverrides,
     },
   };
@@ -56,6 +58,7 @@ describe('searchJiraIssues', () => {
         storyPoints: 5,
         productDomain: null,
         bugEnvironments: [],
+        sandboxDate: null,
       },
     ]);
     const searchCall = fetchMock.mock.calls.find(([url]) => url.includes('/rest/api/2/search'));
@@ -124,6 +127,26 @@ describe('searchJiraIssues', () => {
 
     const issues = await searchJiraIssues(CONFIG, 'type = Bug');
     expect(issues[0].bugEnvironments).toEqual(['Production', 'Staging']);
+  });
+
+  it('extracts sandboxDate as a plain date string', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/rest/api/2/field')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIELD_LIST) });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            issues: [jiraIssueJson({ customfield_10004: '2026-08-15' })],
+            total: 1,
+          }),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const issues = await searchJiraIssues(CONFIG, 'project = PC');
+    expect(issues[0].sandboxDate).toBe('2026-08-15');
   });
 
   it('throws with just the status when the failure response has no JSON body', async () => {

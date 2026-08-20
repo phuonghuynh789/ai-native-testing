@@ -32,6 +32,7 @@ function issue(key: string, project: string, overrides: Partial<JiraIssue> = {})
     storyPoints: 3,
     productDomain: null,
     bugEnvironments: [],
+    sandboxDate: null,
     ...overrides,
   };
 }
@@ -100,10 +101,10 @@ describe('refreshSprintReport', () => {
     expect(second.deliveryComment).toBe('manual notes');
   });
 
-  it('keeps a previously-entered root-cause reason for a ticket still awaiting delivery', async () => {
+  it('keeps a previously-entered root-cause reason for a ticket still awaiting delivery, while refreshing its sandboxDate', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
       if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
-        return Promise.resolve([issue('PC-1', 'PC')]);
+        return Promise.resolve([issue('PC-1', 'PC', { status: 'Ready for Testing', sandboxDate: '2026-08-15' })]);
       }
       return Promise.resolve([]);
     });
@@ -114,9 +115,18 @@ describe('refreshSprintReport', () => {
       labels: [],
     });
     const pcRow = first.rows.find((r) => r.rowKey === 'PC')!;
-    expect(pcRow.rootCause).toEqual([{ ticket: 'PC-1', reason: '', owner: '', action: '' }]);
+    expect(pcRow.rootCause).toEqual([
+      { ticket: 'PC-1', sandboxDate: '2026-08-15', reason: '', owner: '', action: '' },
+    ]);
     pcRow.rootCause[0].reason = 'blocked on infra';
     await store.save(first);
+
+    mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
+      if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
+        return Promise.resolve([issue('PC-1', 'PC', { status: 'Ready for Testing', sandboxDate: '2026-08-20' })]);
+      }
+      return Promise.resolve([]);
+    });
 
     const second = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
       startDate: '2026/08/06',
@@ -124,7 +134,9 @@ describe('refreshSprintReport', () => {
       labels: [],
     });
     const secondPcRow = second.rows.find((r) => r.rowKey === 'PC')!;
-    expect(secondPcRow.rootCause).toEqual([{ ticket: 'PC-1', reason: 'blocked on infra', owner: '', action: '' }]);
+    expect(secondPcRow.rootCause).toEqual([
+      { ticket: 'PC-1', sandboxDate: '2026-08-20', reason: 'blocked on infra', owner: '', action: '' },
+    ]);
   });
 
   it('checks each Ready-for-Test issue for the IA keyword and tallies IA Good/Missing', async () => {

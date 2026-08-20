@@ -8,7 +8,7 @@ import {
   buildBugsJql,
 } from './sprint-report-jql.js';
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
-import { computeDeliveryRow, prefillRootCauseTable } from './sprint-report-delivery.js';
+import { computeDeliveryRow, prefillRootCauseTable, type RootCauseRow } from './sprint-report-delivery.js';
 import { computeQualityRow } from './sprint-report-quality.js';
 import {
   hasImpactAnalysisKeyword,
@@ -66,6 +66,14 @@ function mergeManualTableRows<T extends { ticket: string }>(fresh: T[], previous
   return fresh.map((row) => previousByTicket.get(row.ticket) ?? row);
 }
 
+function mergeRootCauseRows(fresh: RootCauseRow[], previous: RootCauseRow[]): RootCauseRow[] {
+  const previousByTicket = new Map(previous.map((row) => [row.ticket, row]));
+  return fresh.map((row) => {
+    const prev = previousByTicket.get(row.ticket);
+    return prev ? { ...row, reason: prev.reason, owner: prev.owner, action: prev.action } : row;
+  });
+}
+
 export async function refreshSprintReport(
   jiraConfig: JiraConfig,
   store: SprintReportStore,
@@ -118,7 +126,7 @@ export async function refreshSprintReport(
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
       qualityChecklist: base.qualityChecklist,
       iaWrongScope: base.iaWrongScope,
-      rootCause: mergeManualTableRows(freshRootCause, base.rootCause),
+      rootCause: mergeRootCauseRows(freshRootCause, base.rootCause),
       missingImpact: mergeManualTableRows(freshMissingImpact, base.missingImpact),
       executiveSummary: base.executiveSummary,
     });

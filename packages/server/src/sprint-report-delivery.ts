@@ -16,10 +16,13 @@ export interface DeliveryRow {
 
 export interface RootCauseRow {
   ticket: string;
+  sandboxDate: string | null;
   reason: string;
   owner: string;
   action: string;
 }
+
+const ROOT_CAUSE_STATUSES = new Set(['ready for testing', 'in test']);
 
 function sumStoryPoints(issues: JiraIssue[]): number {
   return issues.reduce((sum, issue) => sum + (issue.storyPoints ?? 0), 0);
@@ -54,5 +57,6 @@ export function prefillRootCauseTable(committed: JiraIssue[], delivered: JiraIss
   const deliveredKeys = new Set(delivered.map((issue) => issue.key));
   return committed
     .filter((issue) => !deliveredKeys.has(issue.key))
-    .map((issue) => ({ ticket: issue.key, reason: '', owner: '', action: '' }));
+    .filter((issue) => ROOT_CAUSE_STATUSES.has(issue.status.toLowerCase()))
+    .map((issue) => ({ ticket: issue.key, sandboxDate: issue.sandboxDate, reason: '', owner: '', action: '' }));
 }

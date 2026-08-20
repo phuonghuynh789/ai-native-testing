@@ -10,10 +10,11 @@ export interface JiraIssue {
   storyPoints: number | null;
   productDomain: string | null;
   bugEnvironments: string[];
+  sandboxDate: string | null;
 }
 
 const STANDARD_FIELDS = ['project', 'summary', 'status', 'priority', 'labels'];
-const CUSTOM_FIELD_NAMES = ['Story Points', 'Product Domain', 'Bug in Environments:'];
+const CUSTOM_FIELD_NAMES = ['Story Points', 'Product Domain', 'Bug in Environments:', 'Sandbox Date'];
 
 interface RawJiraField {
   id: string;
@@ -81,6 +82,10 @@ function extractMultiSelectValues(raw: unknown): string[] {
     .filter((value): value is string => typeof value === 'string');
 }
 
+function extractDateValue(raw: unknown): string | null {
+  return typeof raw === 'string' ? raw : null;
+}
+
 function toJiraIssue(raw: RawJiraIssue, customFieldIds: Record<string, string>): JiraIssue {
   const fields = raw.fields;
   const project = fields.project as { key?: string } | undefined;
@@ -89,6 +94,7 @@ function toJiraIssue(raw: RawJiraIssue, customFieldIds: Record<string, string>):
   const storyPointsId = customFieldIds['Story Points'];
   const productDomainId = customFieldIds['Product Domain'];
   const bugEnvId = customFieldIds['Bug in Environments:'];
+  const sandboxDateId = customFieldIds['Sandbox Date'];
   const storyPointsValue = storyPointsId ? fields[storyPointsId] : undefined;
 
   return {
@@ -101,6 +107,7 @@ function toJiraIssue(raw: RawJiraIssue, customFieldIds: Record<string, string>):
     storyPoints: typeof storyPointsValue === 'number' ? storyPointsValue : null,
     productDomain: productDomainId ? extractSingleSelectValue(fields[productDomainId]) : null,
     bugEnvironments: bugEnvId ? extractMultiSelectValues(fields[bugEnvId]) : [],
+    sandboxDate: sandboxDateId ? extractDateValue(fields[sandboxDateId]) : null,
   };
 }
 
