@@ -4,3 +4,4 @@ dist/
 .superpowers/
 packages/server/data/
 packages/server/config/kafka.yaml
+packages/server/config/jira.yaml
