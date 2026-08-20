@@ -11,6 +11,35 @@ import { QualityReportSection } from './QualityReportSection';
 import { ImpactAnalysisSection } from './ImpactAnalysisSection';
 import { ExecutiveSummarySection } from './ExecutiveSummarySection';
 
+const SPRINT_CODE_OPTIONS = [
+  '26.01.A',
+  '26.01.B',
+  '26.02.A',
+  '26.02.B',
+  '26.03.A',
+  '26.03.B',
+  '26.04.A',
+  '26.04.B',
+  '26.04.C',
+  '26.05.A',
+  '26.05.B',
+  '26.06.A',
+  '26.06.B',
+  '26.07.A',
+  '26.07.B',
+  '26.08.A',
+  '26.08.B',
+  '26.09.A',
+  '26.09.B',
+  '26.09.C',
+  '26.10.A',
+  '26.10.B',
+  '26.11.A',
+  '26.11.B',
+  '26.12.A',
+  '26.12.B',
+];
+
 export function SprintReportPage() {
   const [sprintCode, setSprintCode] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -78,7 +107,17 @@ export function SprintReportPage() {
       <section className="card card--narrow">
         <label className="label">
           Sprint Code
-          <input className="text-input" value={sprintCode} onChange={(e) => setSprintCode(e.target.value)} />
+          <input
+            className="text-input"
+            list="sprint-code-options"
+            value={sprintCode}
+            onChange={(e) => setSprintCode(e.target.value)}
+          />
+          <datalist id="sprint-code-options">
+            {SPRINT_CODE_OPTIONS.map((code) => (
+              <option key={code} value={code} />
+            ))}
+          </datalist>
         </label>
         <label className="label">
           Start Date

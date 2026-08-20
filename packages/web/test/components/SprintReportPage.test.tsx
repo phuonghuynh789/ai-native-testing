@@ -63,6 +63,19 @@ describe('SprintReportPage', () => {
     expect(screen.getByText('4. Executive Summary (Quan trọng nhất)')).toBeInTheDocument();
   });
 
+  it('offers the Sprint Code field as a filterable dropdown of known sprint codes', () => {
+    render(<SprintReportPage />);
+    const input = screen.getByLabelText('Sprint Code');
+    expect(input).toHaveAttribute('list');
+    const listId = input.getAttribute('list')!;
+    const datalist = document.getElementById(listId) as HTMLDataListElement;
+    const optionValues = Array.from(datalist.options).map((option) => option.value);
+    expect(optionValues).toContain('26.08.B');
+    expect(optionValues).toContain('26.01.A');
+    expect(optionValues).toContain('26.12.B');
+    expect(optionValues).toHaveLength(26);
+  });
+
   it('shows an error when Generate fails', async () => {
     vi.stubGlobal(
       'fetch',
