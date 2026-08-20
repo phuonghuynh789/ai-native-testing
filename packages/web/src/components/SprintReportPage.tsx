@@ -166,7 +166,7 @@ export function SprintReportPage() {
             deliveryComment={report.deliveryComment}
             onDeliveryCommentChange={(deliveryComment) => setReport({ ...report, deliveryComment })}
           />
-          <QualityReportSection rows={report.rows} onRowsChange={updateReportRows} />
+          <QualityReportSection rows={report.rows} />
           <ImpactAnalysisSection rows={report.rows} onRowsChange={updateReportRows} />
           <ExecutiveSummarySection rows={report.rows} onRowsChange={updateReportRows} />
           <button type="button" className="btn-primary" onClick={handleSave}>

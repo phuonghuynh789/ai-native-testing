@@ -26,16 +26,9 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       readyForTest: 'https://jira.example.com/issues/?jql=readyForTest',
       new: 'https://jira.example.com/issues/?jql=new',
     },
-    quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0 },
+    quality: { totalBugs: 0, critical: 0, major: 0, minor: 0, prodBug: 0, noRC: 0 },
     qualityJiraLinks: { totalBugs: '', critical: '', major: '', minor: '', prodBug: '' },
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
-    qualityChecklist: {
-      noCriticalBug: 'unset',
-      noProductionBug: 'unset',
-      reopenRateUnder10: 'unset',
-      uatStable: 'unset',
-      assessment: 'unset',
-    },
     iaWrongScope: 0,
     sandboxDateBreakdown: {
       readyOrInTestTickets: 20,
@@ -53,7 +46,6 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       plus1: 'https://jira.example.com/issues/?jql=plus1',
       plus2: 'https://jira.example.com/issues/?jql=plus2',
     },
-    missingImpact: [],
     executiveSummary: { delivery: 'unset', quality: 'unset', impactAnalysis: 'unset', overall: 'unset', commentary: '' },
     ...overrides,
   };
