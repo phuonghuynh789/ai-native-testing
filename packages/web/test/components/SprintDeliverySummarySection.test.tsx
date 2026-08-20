@@ -30,7 +30,14 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       assessment: 'unset',
     },
     iaWrongScope: 0,
-    rootCause: [{ ticket: 'PC-1', sandboxDate: '2026-08-15', reason: '', owner: '', action: '' }],
+    sandboxDateBreakdown: {
+      readyOrInTestTickets: 20,
+      missingSandboxDate: 5,
+      sandboxDateEqualsSprintEnd: 6,
+      sandboxDateMinus1: 7,
+      sandboxDatePlus1: 11,
+      sandboxDatePlus2: 13,
+    },
     missingImpact: [],
     executiveSummary: { delivery: 'unset', quality: 'unset', impactAnalysis: 'unset', overall: 'unset', commentary: '' },
     ...overrides,
@@ -42,7 +49,6 @@ describe('SprintDeliverySummarySection', () => {
     render(
       <SprintDeliverySummarySection
         rows={[row()]}
-        onRowsChange={() => {}}
         deliveryComment=""
         onDeliveryCommentChange={() => {}}
       />
@@ -56,7 +62,6 @@ describe('SprintDeliverySummarySection', () => {
     render(
       <SprintDeliverySummarySection
         rows={[row()]}
-        onRowsChange={() => {}}
         deliveryComment=""
         onDeliveryCommentChange={() => {}}
       />
@@ -81,7 +86,6 @@ describe('SprintDeliverySummarySection', () => {
             },
           }),
         ]}
-        onRowsChange={() => {}}
         deliveryComment=""
         onDeliveryCommentChange={() => {}}
       />
@@ -94,7 +98,6 @@ describe('SprintDeliverySummarySection', () => {
     render(
       <SprintDeliverySummarySection
         rows={[row()]}
-        onRowsChange={() => {}}
         deliveryComment=""
         onDeliveryCommentChange={onDeliveryCommentChange}
       />
@@ -103,31 +106,24 @@ describe('SprintDeliverySummarySection', () => {
     expect(onDeliveryCommentChange).toHaveBeenCalledWith('x');
   });
 
-  it('renders the Sandbox Date column in the Root Cause table', () => {
+  it('renders the Root Cause Tickets Trễ Sandbox Date breakdown per squad', () => {
     render(
       <SprintDeliverySummarySection
         rows={[row()]}
-        onRowsChange={() => {}}
         deliveryComment=""
         onDeliveryCommentChange={() => {}}
       />
     );
-    expect(screen.getByText('Sandbox Date')).toBeInTheDocument();
-    expect(screen.getByText('2026-08-15')).toBeInTheDocument();
-  });
-
-  it('calls onRowsChange with an updated reason when a root cause reason is edited', async () => {
-    const onRowsChange = vi.fn();
-    render(
-      <SprintDeliverySummarySection
-        rows={[row()]}
-        onRowsChange={onRowsChange}
-        deliveryComment=""
-        onDeliveryCommentChange={() => {}}
-      />
-    );
-    await userEvent.type(screen.getByLabelText('PC-1 reason'), 'x');
-    const updatedRows = onRowsChange.mock.calls[0][0] as SprintReportRowData[];
-    expect(updatedRows[0].rootCause[0].reason).toBe('x');
+    expect(screen.getByText('Root Cause Tickets Trễ')).toBeInTheDocument();
+    expect(screen.getByText('Ready for Testing or In Test Tickets')).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('Sandbox Date = Close Sprint')).toBeInTheDocument();
+    expect(screen.getByText('6')).toBeInTheDocument();
+    expect(screen.getByText('Sandbox Date - 1')).toBeInTheDocument();
+    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getByText('Sandbox Date + 1')).toBeInTheDocument();
+    expect(screen.getByText('11')).toBeInTheDocument();
+    expect(screen.getByText('Sandbox Date + 2')).toBeInTheDocument();
+    expect(screen.getByText('13')).toBeInTheDocument();
   });
 });

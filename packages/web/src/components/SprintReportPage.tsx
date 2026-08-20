@@ -163,7 +163,6 @@ export function SprintReportPage() {
         <>
           <SprintDeliverySummarySection
             rows={report.rows}
-            onRowsChange={updateReportRows}
             deliveryComment={report.deliveryComment}
             onDeliveryCommentChange={(deliveryComment) => setReport({ ...report, deliveryComment })}
           />

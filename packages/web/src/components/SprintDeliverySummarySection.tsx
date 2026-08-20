@@ -2,17 +2,8 @@ import type { SprintReportRowData } from '../sprintReports';
 
 export interface SprintDeliverySummarySectionProps {
   rows: SprintReportRowData[];
-  onRowsChange: (rows: SprintReportRowData[]) => void;
   deliveryComment: string;
   onDeliveryCommentChange: (comment: string) => void;
-}
-
-function updateRow(
-  rows: SprintReportRowData[],
-  rowKey: SprintReportRowData['rowKey'],
-  patch: Partial<SprintReportRowData>
-): SprintReportRowData[] {
-  return rows.map((row) => (row.rowKey === rowKey ? { ...row, ...patch } : row));
 }
 
 function formatPredictability(value: number | null): string {
@@ -21,7 +12,6 @@ function formatPredictability(value: number | null): string {
 
 export function SprintDeliverySummarySection({
   rows,
-  onRowsChange,
   deliveryComment,
   onDeliveryCommentChange,
 }: SprintDeliverySummarySectionProps) {
@@ -75,66 +65,32 @@ export function SprintDeliverySummarySection({
       </label>
 
       <h3 className="heading-md">Root Cause Tickets Trễ</h3>
-      {rows.map(
-        (row) =>
-          row.rootCause.length > 0 && (
-            <div key={row.rowKey}>
-              <p className="body-strong">{row.rowKey}</p>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Ticket</th>
-                    <th>Sandbox Date</th>
-                    <th>Reason</th>
-                    <th>Owner</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {row.rootCause.map((rc, index) => (
-                    <tr key={rc.ticket}>
-                      <td>{rc.ticket}</td>
-                      <td>{rc.sandboxDate ?? '—'}</td>
-                      <td>
-                        <input
-                          className="text-input"
-                          aria-label={`${rc.ticket} reason`}
-                          value={rc.reason}
-                          onChange={(e) => {
-                            const rootCause = row.rootCause.map((r, i) => (i === index ? { ...r, reason: e.target.value } : r));
-                            onRowsChange(updateRow(rows, row.rowKey, { rootCause }));
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="text-input"
-                          aria-label={`${rc.ticket} owner`}
-                          value={rc.owner}
-                          onChange={(e) => {
-                            const rootCause = row.rootCause.map((r, i) => (i === index ? { ...r, owner: e.target.value } : r));
-                            onRowsChange(updateRow(rows, row.rowKey, { rootCause }));
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="text-input"
-                          aria-label={`${rc.ticket} action`}
-                          value={rc.action}
-                          onChange={(e) => {
-                            const rootCause = row.rootCause.map((r, i) => (i === index ? { ...r, action: e.target.value } : r));
-                            onRowsChange(updateRow(rows, row.rowKey, { rootCause }));
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-      )}
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Squad</th>
+            <th>Ready for Testing or In Test Tickets</th>
+            <th>Sandbox Date</th>
+            <th>Sandbox Date = Close Sprint</th>
+            <th>Sandbox Date - 1</th>
+            <th>Sandbox Date + 1</th>
+            <th>Sandbox Date + 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.rowKey}>
+              <td>{row.rowKey}</td>
+              <td>{row.sandboxDateBreakdown.readyOrInTestTickets}</td>
+              <td>{row.sandboxDateBreakdown.missingSandboxDate}</td>
+              <td>{row.sandboxDateBreakdown.sandboxDateEqualsSprintEnd}</td>
+              <td>{row.sandboxDateBreakdown.sandboxDateMinus1}</td>
+              <td>{row.sandboxDateBreakdown.sandboxDatePlus1}</td>
+              <td>{row.sandboxDateBreakdown.sandboxDatePlus2}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }
