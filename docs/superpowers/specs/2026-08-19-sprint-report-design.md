@@ -74,12 +74,13 @@ AND project IN (PC, PCPOP, PCFUM)
 - Story Points: the `Story Points` field, summed per row for Committed/Delivered/Ready-for-Test.
 - Bug severity: the `Priority` field — `Highest` → Critical, `High`/`Medium` → Major, `Low`/`Lowest` → Minor.
 - Prod Bug: the `Bug in Environments:` field contains `Production`.
+- **[Added 2026-08-20]** Sandbox Date: the `Sandbox Date` field, a plain date string, used only in the Root Cause table.
 
 ## Section-by-Section: Auto-Computed vs. Manual
 
 **1. Sprint Delivery Summary**
 - Auto: Committed Tickets/SP, Delivered Tickets/SP, Ready-for-Test Tickets/SP (all per row), Predictability % = `Delivered SP / Committed SP`. **[Added 2026-08-20]** Predictability RFT % = `Ready for Test SP / Committed SP`; New Tickets/SP (from the New query above); Predictability New % = `New SP / Committed SP`.
-- Manual: "Nhận xét" free text (per row or one shared block — see Open Question below, resolved as one shared free-text block per section, not per row, matching the mockup's single "Nhận xét" area under the whole table). Root Cause table (`Ticket | Reason | Owner | Action`) — **prefilled**: one row per ticket that is Committed but not (yet) Delivered, with `Ticket` filled in and `Reason`/`Owner`/`Action` left blank for manual entry.
+- Manual: "Nhận xét" free text (per row or one shared block — see Open Question below, resolved as one shared free-text block per section, not per row, matching the mockup's single "Nhận xét" area under the whole table). Root Cause table (`Ticket | Sandbox Date | Reason | Owner | Action`) — **prefilled**: one row per ticket that is Committed but not (yet) Delivered, with `Ticket` filled in and `Reason`/`Owner`/`Action` left blank for manual entry. **[Updated 2026-08-20]** Narrowed to only tickets whose current status is `Ready for Testing` or `In Test` (a committed-but-undelivered ticket still in an earlier status, e.g. To Do/In Progress, is excluded — it isn't "late" in the sense this table tracks yet). Added `Sandbox Date`, auto-populated from Jira's real `Sandbox Date` custom field (filled in by DEV during planning to tell QE when a ticket lands in Sandbox for testing) — always re-read fresh on every refresh, never frozen at whatever value it had on first save, unlike `Reason`/`Owner`/`Action` which are preserved from the previous save.
 
 **2. Quality Report**
 - Auto: Total Bugs, Critical, Major, Minor, Prod Bug counts, per row.
