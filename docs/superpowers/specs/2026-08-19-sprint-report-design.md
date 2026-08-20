@@ -107,6 +107,8 @@ AND project IN (PC, PCPOP, PCFUM)
 
 New Sidebar entry "Sprint Report" (own route, `/sprint-report`). The page has an input card (Sprint Code, Start Date, End Date, Labels — a comma-separated text field) with a "Generate" button, followed by the 4 sections stacked vertically, each rendering its auto-computed table first and its manual inputs directly below. A page-level "Save" button persists everything via `PUT /sprint-reports/:sprintCode`. Loading a sprint code that was previously saved (e.g. navigating back to the page, or an explicit "Load" action) calls `GET /sprint-reports/:sprintCode` to restore state without hitting Jira.
 
+**[Added 2026-08-20] Jira deep links.** Every count/SP cell in Sprint Delivery Summary (Committed/Delivered/Ready-for-Test/New Tickets & SP) and Quality Report (Total Bugs/Critical/Major/Minor/Prod Bug) is a link that opens the exact matching Jira issue search in a new tab, so the underlying tickets are one click away. Percentage cells (Predictability/RFT/New) stay plain text — there's no JQL search that produces a percentage. Links are computed server-side (`sprint-report-jira-links.ts`, only the server knows the Jira base URL) by reusing the same JQL builder that produced that metric's data, narrowed to the row's own project (and `Product Domain` for PCPOP rows) via `jqlProjectScope`; severity/Prod-Bug links add a `priority`/`"Bug in Environments:"` filter on top of the base Bugs query.
+
 ## Testing
 
 `jira-client.ts` is the sole seam that talks to Jira and is mocked in every test, the same way `kafkajs` is mocked for the existing Kafka work — no test ever calls the real Jira API. Real unit-test coverage targets:
