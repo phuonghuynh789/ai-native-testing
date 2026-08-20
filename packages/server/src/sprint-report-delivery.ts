@@ -8,6 +8,10 @@ export interface DeliveryRow {
   readyForTestTickets: number;
   readyForTestSP: number;
   predictability: number | null;
+  predictabilityRFT: number | null;
+  newTickets: number;
+  newSP: number;
+  predictabilityNew: number | null;
 }
 
 export interface RootCauseRow {
@@ -24,18 +28,25 @@ function sumStoryPoints(issues: JiraIssue[]): number {
 export function computeDeliveryRow(
   committed: JiraIssue[],
   delivered: JiraIssue[],
-  readyForTest: JiraIssue[]
+  readyForTest: JiraIssue[],
+  newIssues: JiraIssue[]
 ): DeliveryRow {
   const committedSP = sumStoryPoints(committed);
   const deliveredSP = sumStoryPoints(delivered);
+  const readyForTestSP = sumStoryPoints(readyForTest);
+  const newSP = sumStoryPoints(newIssues);
   return {
     committedTickets: committed.length,
     committedSP,
     deliveredTickets: delivered.length,
     deliveredSP,
     readyForTestTickets: readyForTest.length,
-    readyForTestSP: sumStoryPoints(readyForTest),
+    readyForTestSP,
     predictability: committedSP > 0 ? deliveredSP / committedSP : null,
+    predictabilityRFT: committedSP > 0 ? readyForTestSP / committedSP : null,
+    newTickets: newIssues.length,
+    newSP,
+    predictabilityNew: committedSP > 0 ? newSP / committedSP : null,
   };
 }
 

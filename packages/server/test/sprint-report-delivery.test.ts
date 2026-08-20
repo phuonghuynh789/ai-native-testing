@@ -21,7 +21,8 @@ describe('computeDeliveryRow', () => {
     const row = computeDeliveryRow(
       [issue('A', 5), issue('B', 3)],
       [issue('A', 5)],
-      [issue('A', 5), issue('C', 2)]
+      [issue('A', 5), issue('C', 2)],
+      [issue('B', 3)]
     );
     expect(row).toEqual({
       committedTickets: 2,
@@ -31,17 +32,23 @@ describe('computeDeliveryRow', () => {
       readyForTestTickets: 2,
       readyForTestSP: 7,
       predictability: 5 / 8,
+      predictabilityRFT: 7 / 8,
+      newTickets: 1,
+      newSP: 3,
+      predictabilityNew: 3 / 8,
     });
   });
 
   it('treats a missing Story Points value as 0', () => {
-    const row = computeDeliveryRow([issue('A', null)], [], []);
+    const row = computeDeliveryRow([issue('A', null)], [], [], []);
     expect(row.committedSP).toBe(0);
   });
 
-  it('returns null predictability when committed SP is 0', () => {
-    const row = computeDeliveryRow([], [], []);
+  it('returns null for every predictability variant when committed SP is 0', () => {
+    const row = computeDeliveryRow([], [], [], []);
     expect(row.predictability).toBeNull();
+    expect(row.predictabilityRFT).toBeNull();
+    expect(row.predictabilityNew).toBeNull();
   });
 });
 

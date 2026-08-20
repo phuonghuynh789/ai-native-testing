@@ -36,6 +36,17 @@ export function buildCommittedJql(params: CommittedJqlParams): string {
   );
 }
 
+export function buildNewJql(params: CommittedJqlParams): string {
+  const sprintNamesClause = committedSprintNames(params.sprintCode)
+    .map((name) => `"${name}"`)
+    .join(',');
+  return (
+    `reporter != jira-webhook-bot AND type in (Task, Story) AND status != Cancelled ` +
+    `and status not in ("ready for testing", "In test", Done) ` +
+    `AND Sprint in (${sprintNamesClause})`
+  );
+}
+
 export function buildDeliveredJql(params: JqlDateParams): string {
   const endPlusOne = nextDay(params.end);
   return (

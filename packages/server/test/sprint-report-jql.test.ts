@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   nextDay,
   buildCommittedJql,
+  buildNewJql,
   buildDeliveredJql,
   buildReadyForTestJql,
   buildBugsJql,
@@ -33,6 +34,17 @@ describe('buildCommittedJql', () => {
   it('builds the three per-project sprint names generically for a different sprint code', () => {
     const jql = buildCommittedJql({ sprintCode: '26.09.A' });
     expect(jql).toContain('Sprint in ("PCDPC - Sprint 26.09.A","PCF-UM 26.09.A","OPF - 26.09.A")');
+  });
+});
+
+describe('buildNewJql', () => {
+  it('builds the exact new-tickets JQL: Committed scope minus tickets that have progressed past New', () => {
+    const jql = buildNewJql({ sprintCode: '26.08.B' });
+    expect(jql).toBe(
+      'reporter != jira-webhook-bot AND type in (Task, Story) AND status != Cancelled ' +
+        'and status not in ("ready for testing", "In test", Done) ' +
+        'AND Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")'
+    );
   });
 });
 

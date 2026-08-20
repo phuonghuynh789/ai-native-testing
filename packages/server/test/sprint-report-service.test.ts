@@ -50,7 +50,7 @@ afterEach(async () => {
 describe('refreshSprintReport', () => {
   it('groups issues into all 5 rows and computes delivery/quality/impact-analysis per row', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
-      if (jql.startsWith('reporter != jira-webhook-bot')) {
+      if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
         return Promise.resolve([issue('PC-1', 'PC'), issue('OP-1', 'PCPOP', { productDomain: 'Merchant Platform' })]);
       }
       if (jql.startsWith('status changed to Done')) {
@@ -102,7 +102,7 @@ describe('refreshSprintReport', () => {
 
   it('keeps a previously-entered root-cause reason for a ticket still awaiting delivery', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
-      if (jql.startsWith('reporter != jira-webhook-bot')) {
+      if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
         return Promise.resolve([issue('PC-1', 'PC')]);
       }
       return Promise.resolve([]);
@@ -147,5 +147,30 @@ describe('refreshSprintReport', () => {
     const pcRow = report.rows.find((r) => r.rowKey === 'PC')!;
     expect(pcRow.impactAnalysis).toEqual({ totalTickets: 2, iaGood: 1, iaMissingInfo: 1 });
     expect(pcRow.missingImpact).toEqual([{ ticket: 'PC-2', missingInfo: '' }]);
+  });
+
+  it('queries New Tickets/SP separately from Committed and computes predictabilityNew', async () => {
+    mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
+      if (jql.includes('status not in')) {
+        return Promise.resolve([issue('PC-1', 'PC', { storyPoints: 2 })]);
+      }
+      if (jql.startsWith('reporter != jira-webhook-bot')) {
+        return Promise.resolve([issue('PC-1', 'PC', { storyPoints: 2 }), issue('PC-2', 'PC', { storyPoints: 6 })]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const report = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
+      startDate: '2026/08/06',
+      endDate: '2026/08/19',
+      labels: [],
+    });
+
+    const pcRow = report.rows.find((r) => r.rowKey === 'PC')!;
+    expect(pcRow.delivery.committedTickets).toBe(2);
+    expect(pcRow.delivery.committedSP).toBe(8);
+    expect(pcRow.delivery.newTickets).toBe(1);
+    expect(pcRow.delivery.newSP).toBe(2);
+    expect(pcRow.delivery.predictabilityNew).toBe(2 / 8);
   });
 });
