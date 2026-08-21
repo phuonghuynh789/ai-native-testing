@@ -33,6 +33,7 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
     sandboxDateBreakdown: {
       ticketsInSprint: 20,
       missingSandboxDate: 5,
+      ticketsCreatedMidSprint: 4,
       sandboxDateEqualsSprintEnd: 6,
       sandboxDateMinus1: 7,
       sandboxDatePlus1: 11,
@@ -41,6 +42,7 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
     sandboxDateJiraLinks: {
       ticketsInSprint: 'https://jira.example.com/issues/?jql=ticketsInSprint',
       missingSandboxDate: 'https://jira.example.com/issues/?jql=missingSandboxDate',
+      createdMidSprint: 'https://jira.example.com/issues/?jql=createdMidSprint',
       equalsSprintEnd: 'https://jira.example.com/issues/?jql=equalsSprintEnd',
       minus1: 'https://jira.example.com/issues/?jql=minus1',
       plus1: 'https://jira.example.com/issues/?jql=plus1',
@@ -167,6 +169,8 @@ describe('SprintDeliverySummarySection', () => {
     expect(screen.getByText('Root Cause Tickets Trễ')).toBeInTheDocument();
     expect(screen.getByText('Tickets in Sprint')).toBeInTheDocument();
     expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('Ticket created mid-sprint')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('Sandbox Date = Close Sprint')).toBeInTheDocument();
     expect(screen.getByText('6')).toBeInTheDocument();
     expect(screen.getByText('Close Sprint Date - 1')).toBeInTheDocument();
@@ -192,6 +196,10 @@ describe('SprintDeliverySummarySection', () => {
     expect(screen.getByText('5').closest('a')).toHaveAttribute(
       'href',
       'https://jira.example.com/issues/?jql=missingSandboxDate'
+    );
+    expect(screen.getByText('4').closest('a')).toHaveAttribute(
+      'href',
+      'https://jira.example.com/issues/?jql=createdMidSprint'
     );
     expect(screen.getByText('6').closest('a')).toHaveAttribute(
       'href',

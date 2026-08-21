@@ -114,6 +114,7 @@ export function SprintDeliverySummarySection({
             <th>Squad</th>
             <th>Tickets in Sprint</th>
             <th>Sandbox Date is EMPTY</th>
+            <th>Ticket created mid-sprint</th>
             <th>Sandbox Date = Close Sprint</th>
             <th>Close Sprint Date - 1</th>
             <th>Close Sprint Date + 1</th>
@@ -134,6 +135,12 @@ export function SprintDeliverySummarySection({
                 <JiraLinkCell
                   href={row.sandboxDateJiraLinks.missingSandboxDate}
                   value={row.sandboxDateBreakdown.missingSandboxDate}
+                />
+              </td>
+              <td>
+                <JiraLinkCell
+                  href={row.sandboxDateJiraLinks.createdMidSprint}
+                  value={row.sandboxDateBreakdown.ticketsCreatedMidSprint}
                 />
               </td>
               <td>

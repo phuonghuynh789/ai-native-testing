@@ -10,6 +10,7 @@ function issue(key: string, storyPoints: number | null, overrides: Partial<JiraI
     status: 'Open',
     priority: null,
     labels: [],
+    created: null,
     storyPoints,
     productDomain: null,
     bugEnvironments: [],
@@ -62,6 +63,7 @@ describe('computeSandboxDateBreakdown', () => {
         issue('B', 3, { status: 'in test' }),
         issue('C', 2, { status: 'To Do' }),
       ],
+      '2026/08/06',
       '2026/08/19'
     );
     expect(breakdown.ticketsInSprint).toBe(3);
@@ -70,6 +72,7 @@ describe('computeSandboxDateBreakdown', () => {
   it('counts tickets with no Sandbox Date set', () => {
     const breakdown = computeSandboxDateBreakdown(
       [issue('A', 5, { status: 'Ready for Testing', sandboxDate: null })],
+      '2026/08/06',
       '2026/08/19'
     );
     expect(breakdown.missingSandboxDate).toBe(1);
@@ -85,11 +88,13 @@ describe('computeSandboxDateBreakdown', () => {
         issue('E', 4, { status: 'Ready for Testing', sandboxDate: '2026-08-10' }), // outside all buckets
         issue('F', 2, { status: 'To Do', sandboxDate: '2026-08-19' }), // = end, but not Ready for Testing/In Test
       ],
+      '2026/08/06',
       '2026/08/19'
     );
     expect(breakdown).toEqual({
       ticketsInSprint: 6,
       missingSandboxDate: 0,
+      ticketsCreatedMidSprint: 0,
       sandboxDateEqualsSprintEnd: 2,
       sandboxDateMinus1: 1,
       sandboxDatePlus1: 1,
@@ -100,8 +105,25 @@ describe('computeSandboxDateBreakdown', () => {
   it('handles a Sandbox Date given in slash-separated format the same as dash-separated', () => {
     const breakdown = computeSandboxDateBreakdown(
       [issue('A', 5, { status: 'Ready for Testing', sandboxDate: '2026/08/19' })],
+      '2026/08/06',
       '2026/08/19'
     );
     expect(breakdown.sandboxDateEqualsSprintEnd).toBe(1);
+  });
+
+  it('counts tickets created strictly mid-sprint (after start+1, before end-1)', () => {
+    const breakdown = computeSandboxDateBreakdown(
+      [
+        issue('A', 5, { created: '2026-08-06T09:00:00.000+0700' }), // = start, not mid-sprint
+        issue('B', 3, { created: '2026-08-07T09:00:00.000+0700' }), // = start + 1, mid-sprint
+        issue('C', 2, { created: '2026-08-12T09:00:00.000+0700' }), // well within window
+        issue('D', 1, { created: '2026-08-18T09:00:00.000+0700' }), // = end - 1, mid-sprint
+        issue('E', 4, { created: '2026-08-19T09:00:00.000+0700' }), // = end, not mid-sprint
+        issue('F', 2, { created: null }), // no created date
+      ],
+      '2026/08/06',
+      '2026/08/19'
+    );
+    expect(breakdown.ticketsCreatedMidSprint).toBe(3);
   });
 });

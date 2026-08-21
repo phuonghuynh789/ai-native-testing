@@ -43,12 +43,21 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
     sandboxDateBreakdown: {
       ticketsInSprint: 0,
       missingSandboxDate: 0,
+      ticketsCreatedMidSprint: 0,
       sandboxDateEqualsSprintEnd: 0,
       sandboxDateMinus1: 0,
       sandboxDatePlus1: 0,
       sandboxDatePlus2: 0,
     },
-    sandboxDateJiraLinks: { ticketsInSprint: '', missingSandboxDate: '', equalsSprintEnd: '', minus1: '', plus1: '', plus2: '' },
+    sandboxDateJiraLinks: {
+      ticketsInSprint: '',
+      missingSandboxDate: '',
+      createdMidSprint: '',
+      equalsSprintEnd: '',
+      minus1: '',
+      plus1: '',
+      plus2: '',
+    },
     executiveSummary: {
       delivery: 'unset',
       quality: 'unset',
@@ -115,8 +124,8 @@ export async function refreshSprintReport(
       qualityJiraLinks: buildQualityJiraLinks(jiraConfig, rowKey, jqlParams),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
       impactAnalysisJiraLinks: buildImpactAnalysisJiraLinks(jiraConfig, rowKey, sprintCode),
-      sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
-      sandboxDateJiraLinks: buildSandboxDateJiraLinks(jiraConfig, rowKey, sprintCode, params.endDate),
+      sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.startDate, params.endDate),
+      sandboxDateJiraLinks: buildSandboxDateJiraLinks(jiraConfig, rowKey, sprintCode, params.startDate, params.endDate),
       executiveSummary: base.executiveSummary,
     });
   }

@@ -1,4 +1,5 @@
 import type { JiraIssue } from './jira-client.js';
+import { addDays } from './sprint-report-jql.js';
 
 export interface DeliveryRow {
   committedTickets: number;
@@ -17,6 +18,7 @@ export interface DeliveryRow {
 export interface SandboxDateBreakdown {
   ticketsInSprint: number;
   missingSandboxDate: number;
+  ticketsCreatedMidSprint: number;
   sandboxDateEqualsSprintEnd: number;
   sandboxDateMinus1: number;
   sandboxDatePlus1: number;
@@ -59,12 +61,19 @@ export function computeDeliveryRow(
   };
 }
 
-export function computeSandboxDateBreakdown(committed: JiraIssue[], sprintEndDate: string): SandboxDateBreakdown {
+export function computeSandboxDateBreakdown(
+  committed: JiraIssue[],
+  sprintStartDate: string,
+  sprintEndDate: string
+): SandboxDateBreakdown {
   const endDate = parseDate(sprintEndDate);
+  const midSprintStart = parseDate(addDays(sprintStartDate, 1));
+  const midSprintEnd = parseDate(addDays(sprintEndDate, -1));
 
   const breakdown: SandboxDateBreakdown = {
     ticketsInSprint: committed.length,
     missingSandboxDate: 0,
+    ticketsCreatedMidSprint: 0,
     sandboxDateEqualsSprintEnd: 0,
     sandboxDateMinus1: 0,
     sandboxDatePlus1: 0,
@@ -72,6 +81,13 @@ export function computeSandboxDateBreakdown(committed: JiraIssue[], sprintEndDat
   };
 
   for (const issue of committed) {
+    if (issue.created) {
+      const createdDate = parseDate(issue.created.slice(0, 10));
+      if (createdDate && midSprintStart && midSprintEnd && createdDate >= midSprintStart && createdDate <= midSprintEnd) {
+        breakdown.ticketsCreatedMidSprint += 1;
+      }
+    }
+
     if (!issue.sandboxDate) {
       breakdown.missingSandboxDate += 1;
       continue;

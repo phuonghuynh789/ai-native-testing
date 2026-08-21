@@ -10,6 +10,7 @@ function bug(priority: string | null, bugEnvironments: string[] = []): JiraIssue
     status: 'Open',
     priority,
     labels: [],
+    created: null,
     storyPoints: null,
     productDomain: null,
     bugEnvironments,

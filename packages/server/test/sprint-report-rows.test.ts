@@ -10,6 +10,7 @@ function issue(overrides: Partial<JiraIssue>): JiraIssue {
     status: 'Open',
     priority: null,
     labels: [],
+    created: null,
     storyPoints: null,
     productDomain: null,
     bugEnvironments: [],

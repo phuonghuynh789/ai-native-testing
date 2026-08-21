@@ -41,6 +41,7 @@ const RC_KEYWORD_CLAUSE = '(description ~ "RC" OR comment ~ "RC" OR description 
 export interface SandboxDateJiraLinks {
   ticketsInSprint: string;
   missingSandboxDate: string;
+  createdMidSprint: string;
   equalsSprintEnd: string;
   minus1: string;
   plus1: string;
@@ -74,6 +75,7 @@ export function buildSandboxDateJiraLinks(
   jiraConfig: JiraConfig,
   rowKey: RowKey,
   sprintCode: string,
+  sprintStartDate: string,
   sprintEndDate: string
 ): SandboxDateJiraLinks {
   const scope = jqlProjectScope(rowKey);
@@ -81,6 +83,10 @@ export function buildSandboxDateJiraLinks(
   return {
     ticketsInSprint: jiraSearchUrl(jiraConfig.baseUrl, ticketsInSprintJql),
     missingSandboxDate: jiraSearchUrl(jiraConfig.baseUrl, `${ticketsInSprintJql} AND "Sandbox Date" is EMPTY`),
+    createdMidSprint: jiraSearchUrl(
+      jiraConfig.baseUrl,
+      `${ticketsInSprintJql} AND created >= "${addDays(sprintStartDate, 1)}" AND created <= "${addDays(sprintEndDate, -1)}"`
+    ),
     equalsSprintEnd: jiraSearchUrl(jiraConfig.baseUrl, `${ticketsInSprintJql} AND "Sandbox Date" = "${sprintEndDate}"`),
     minus1: jiraSearchUrl(
       jiraConfig.baseUrl,

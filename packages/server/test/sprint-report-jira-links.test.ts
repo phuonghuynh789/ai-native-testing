@@ -82,7 +82,7 @@ describe('buildQualityJiraLinks', () => {
 
 describe('buildSandboxDateJiraLinks', () => {
   it('builds a Jira issue-search URL per Sandbox Date bucket, scoped to the row project', () => {
-    const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PC', '26.08.B', '2026/08/19');
+    const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PC', '26.08.B', '2026/08/06', '2026/08/19');
 
     for (const url of Object.values(links)) {
       expect(url.startsWith('https://jira.example.com/issues/?jql=')).toBe(true);
@@ -95,6 +95,12 @@ describe('buildSandboxDateJiraLinks', () => {
 
     const missingJql = decodeURIComponent(links.missingSandboxDate.split('?jql=')[1]);
     expect(missingJql).toContain('"Sandbox Date" is EMPTY');
+
+    const createdMidSprintJql = decodeURIComponent(links.createdMidSprint.split('?jql=')[1]);
+    expect(createdMidSprintJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
+    expect(createdMidSprintJql).toContain('created >= "2026/08/07"');
+    expect(createdMidSprintJql).toContain('created <= "2026/08/18"');
+    expect(createdMidSprintJql).toContain('project = PC');
 
     const equalsJql = decodeURIComponent(links.equalsSprintEnd.split('?jql=')[1]);
     expect(equalsJql).toContain('"Sandbox Date" = "2026/08/19"');
@@ -110,7 +116,7 @@ describe('buildSandboxDateJiraLinks', () => {
   });
 
   it('scopes a PCPOP row by its Product Domain', () => {
-    const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PCPOP_RC', '26.08.B', '2026/08/19');
+    const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PCPOP_RC', '26.08.B', '2026/08/06', '2026/08/19');
     const ticketsInSprintJql = decodeURIComponent(links.ticketsInSprint.split('?jql=')[1]);
     expect(ticketsInSprintJql).toContain('project = PCPOP AND "Product Domain" = "Reconciliation Core"');
   });

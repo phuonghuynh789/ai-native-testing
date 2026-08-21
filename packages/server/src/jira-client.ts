@@ -7,13 +7,14 @@ export interface JiraIssue {
   status: string;
   priority: string | null;
   labels: string[];
+  created: string | null;
   storyPoints: number | null;
   productDomain: string | null;
   bugEnvironments: string[];
   sandboxDate: string | null;
 }
 
-const STANDARD_FIELDS = ['project', 'summary', 'status', 'priority', 'labels'];
+const STANDARD_FIELDS = ['project', 'summary', 'status', 'priority', 'labels', 'created'];
 const CUSTOM_FIELD_NAMES = ['Story Points', 'Product Domain', 'Bug in Environments:', 'Sandbox Date'];
 
 interface RawJiraField {
@@ -104,6 +105,7 @@ function toJiraIssue(raw: RawJiraIssue, customFieldIds: Record<string, string>):
     status: status?.name ?? '',
     priority: priority?.name ?? null,
     labels: Array.isArray(fields.labels) ? (fields.labels as string[]) : [],
+    created: typeof fields.created === 'string' ? fields.created : null,
     storyPoints: typeof storyPointsValue === 'number' ? storyPointsValue : null,
     productDomain: productDomainId ? extractSingleSelectValue(fields[productDomainId]) : null,
     bugEnvironments: bugEnvId ? extractMultiSelectValues(fields[bugEnvId]) : [],

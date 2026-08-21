@@ -29,6 +29,7 @@ function issue(key: string, project: string, overrides: Partial<JiraIssue> = {})
     status: 'Open',
     priority: null,
     labels: [],
+    created: null,
     storyPoints: 3,
     productDomain: null,
     bugEnvironments: [],
@@ -136,6 +137,29 @@ describe('refreshSprintReport', () => {
     const secondPcRow = second.rows.find((r) => r.rowKey === 'PC')!;
     expect(secondPcRow.sandboxDateBreakdown.sandboxDateEqualsSprintEnd).toBe(0);
     expect(secondPcRow.sandboxDateBreakdown.sandboxDatePlus1).toBe(1);
+  });
+
+  it('counts tickets created mid-sprint using the report start date', async () => {
+    mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
+      if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
+        return Promise.resolve([
+          issue('PC-1', 'PC', { created: '2026-08-06T09:00:00.000Z' }), // = start, not mid-sprint
+          issue('PC-2', 'PC', { created: '2026-08-12T09:00:00.000Z' }), // mid-sprint
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const report = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
+      startDate: '2026/08/06',
+      endDate: '2026/08/19',
+      labels: [],
+    });
+    const pcRow = report.rows.find((r) => r.rowKey === 'PC')!;
+    expect(pcRow.sandboxDateBreakdown.ticketsCreatedMidSprint).toBe(1);
+    const createdMidSprintJql = decodeURIComponent(pcRow.sandboxDateJiraLinks.createdMidSprint.split('?jql=')[1]);
+    expect(createdMidSprintJql).toContain('created >= "2026/08/07"');
+    expect(createdMidSprintJql).toContain('created <= "2026/08/18"');
   });
 
   it('checks each Ready-for-Test issue for the IA keyword and tallies IA Good/Missing', async () => {
