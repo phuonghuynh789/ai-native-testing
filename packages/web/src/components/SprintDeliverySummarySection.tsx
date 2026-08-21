@@ -112,12 +112,12 @@ export function SprintDeliverySummarySection({
         <thead>
           <tr>
             <th>Squad</th>
-            <th>Ready for Testing or In Test Tickets</th>
-            <th>Sandbox Date</th>
+            <th>Tickets in Sprint</th>
+            <th>Sandbox Date is EMPTY</th>
             <th>Sandbox Date = Close Sprint</th>
-            <th>Sandbox Date - 1</th>
-            <th>Sandbox Date + 1</th>
-            <th>Sandbox Date + 2</th>
+            <th>Close Sprint Date - 1</th>
+            <th>Close Sprint Date + 1</th>
+            <th>Close Sprint Date + 2</th>
           </tr>
         </thead>
         <tbody>
@@ -126,8 +126,8 @@ export function SprintDeliverySummarySection({
               <td>{row.rowKey}</td>
               <td>
                 <JiraLinkCell
-                  href={row.sandboxDateJiraLinks.readyOrInTest}
-                  value={row.sandboxDateBreakdown.readyOrInTestTickets}
+                  href={row.sandboxDateJiraLinks.ticketsInSprint}
+                  value={row.sandboxDateBreakdown.ticketsInSprint}
                 />
               </td>
               <td>
@@ -162,8 +162,8 @@ export function SprintDeliverySummarySection({
           hoạch kiểm thử.
         </li>
         <li>
-          Cảnh báo các ticket có Sandbox Date rơi vào Sandbox Date + 1/+2 — nhóm này có nguy cơ không kịp lên Sandbox
-          trước khi đóng sprint.
+          Cảnh báo các ticket có Sandbox Date rơi vào Close Sprint Date + 1/+2 — nhóm này có nguy cơ không kịp lên
+          Sandbox trước khi đóng sprint.
         </li>
         <li>
           Với nhóm Sandbox Date = Close Sprint, đây là nhóm rủi ro cao nhất vì không còn thời gian dự phòng — đề xuất

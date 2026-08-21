@@ -39,7 +39,7 @@ const IA_KEYWORD_CLAUSE =
 const RC_KEYWORD_CLAUSE = '(description ~ "RC" OR comment ~ "RC" OR description ~ "root cause" OR comment ~ "root cause")';
 
 export interface SandboxDateJiraLinks {
-  readyOrInTest: string;
+  ticketsInSprint: string;
   missingSandboxDate: string;
   equalsSprintEnd: string;
   minus1: string;
@@ -51,8 +51,8 @@ function jiraSearchUrl(baseUrl: string, jql: string): string {
   return `${baseUrl}/issues/?jql=${encodeURIComponent(jql)}`;
 }
 
-function buildReadyOrInTestJql(sprintCode: string, scope: string): string {
-  return `${buildCommittedJql({ sprintCode })} AND status in ("Ready for Testing", "In Test") AND ${scope}`;
+function buildTicketsInSprintJql(sprintCode: string, scope: string): string {
+  return `${buildCommittedJql({ sprintCode })} AND ${scope}`;
 }
 
 export function buildDeliveryJiraLinks(
@@ -65,7 +65,7 @@ export function buildDeliveryJiraLinks(
   return {
     committed: jiraSearchUrl(jiraConfig.baseUrl, `${buildCommittedJql({ sprintCode })} AND ${scope}`),
     delivered: jiraSearchUrl(jiraConfig.baseUrl, `${buildDeliveredJql(dateParams)} AND ${scope}`),
-    readyForTest: jiraSearchUrl(jiraConfig.baseUrl, buildReadyOrInTestJql(sprintCode, scope)),
+    readyForTest: jiraSearchUrl(jiraConfig.baseUrl, buildTicketsInSprintJql(sprintCode, scope)),
     new: jiraSearchUrl(jiraConfig.baseUrl, `${buildNewJql({ sprintCode })} AND ${scope}`),
   };
 }
@@ -77,22 +77,22 @@ export function buildSandboxDateJiraLinks(
   sprintEndDate: string
 ): SandboxDateJiraLinks {
   const scope = jqlProjectScope(rowKey);
-  const readyOrInTestJql = buildReadyOrInTestJql(sprintCode, scope);
+  const ticketsInSprintJql = buildTicketsInSprintJql(sprintCode, scope);
   return {
-    readyOrInTest: jiraSearchUrl(jiraConfig.baseUrl, readyOrInTestJql),
-    missingSandboxDate: jiraSearchUrl(jiraConfig.baseUrl, `${readyOrInTestJql} AND "Sandbox Date" is EMPTY`),
-    equalsSprintEnd: jiraSearchUrl(jiraConfig.baseUrl, `${readyOrInTestJql} AND "Sandbox Date" = "${sprintEndDate}"`),
+    ticketsInSprint: jiraSearchUrl(jiraConfig.baseUrl, ticketsInSprintJql),
+    missingSandboxDate: jiraSearchUrl(jiraConfig.baseUrl, `${ticketsInSprintJql} AND "Sandbox Date" is EMPTY`),
+    equalsSprintEnd: jiraSearchUrl(jiraConfig.baseUrl, `${ticketsInSprintJql} AND "Sandbox Date" = "${sprintEndDate}"`),
     minus1: jiraSearchUrl(
       jiraConfig.baseUrl,
-      `${readyOrInTestJql} AND "Sandbox Date" = "${addDays(sprintEndDate, -1)}"`
+      `${ticketsInSprintJql} AND "Sandbox Date" = "${addDays(sprintEndDate, -1)}"`
     ),
     plus1: jiraSearchUrl(
       jiraConfig.baseUrl,
-      `${readyOrInTestJql} AND "Sandbox Date" = "${addDays(sprintEndDate, 1)}"`
+      `${ticketsInSprintJql} AND "Sandbox Date" = "${addDays(sprintEndDate, 1)}"`
     ),
     plus2: jiraSearchUrl(
       jiraConfig.baseUrl,
-      `${readyOrInTestJql} AND "Sandbox Date" = "${addDays(sprintEndDate, 2)}"`
+      `${ticketsInSprintJql} AND "Sandbox Date" = "${addDays(sprintEndDate, 2)}"`
     ),
   };
 }
@@ -120,7 +120,7 @@ export function buildImpactAnalysisJiraLinks(
   sprintCode: string
 ): ImpactAnalysisJiraLinks {
   const scope = jqlProjectScope(rowKey);
-  const readyForTestJql = buildReadyOrInTestJql(sprintCode, scope);
+  const readyForTestJql = buildTicketsInSprintJql(sprintCode, scope);
   return {
     iaGood: jiraSearchUrl(jiraConfig.baseUrl, `${readyForTestJql} AND ${IA_KEYWORD_CLAUSE}`),
     iaMissingInfo: jiraSearchUrl(jiraConfig.baseUrl, `${readyForTestJql} AND NOT ${IA_KEYWORD_CLAUSE}`),

@@ -2,7 +2,7 @@ import type { JiraConfig } from './jira-config.js';
 import { searchJiraIssues, fetchIssueTextForKeywordCheck } from './jira-client.js';
 import { buildCommittedJql, buildNewJql, buildDeliveredJql, buildBugsJql } from './sprint-report-jql.js';
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
-import { computeDeliveryRow, computeSandboxDateBreakdown, filterReadyOrInTest } from './sprint-report-delivery.js';
+import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
 import { computeQualityRow, hasRootCauseKeyword } from './sprint-report-quality.js';
 import {
   buildDeliveryJiraLinks,
@@ -41,14 +41,14 @@ function defaultRowData(rowKey: RowKey): SprintReportRowData {
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
     impactAnalysisJiraLinks: { iaGood: '', iaMissingInfo: '' },
     sandboxDateBreakdown: {
-      readyOrInTestTickets: 0,
+      ticketsInSprint: 0,
       missingSandboxDate: 0,
       sandboxDateEqualsSprintEnd: 0,
       sandboxDateMinus1: 0,
       sandboxDatePlus1: 0,
       sandboxDatePlus2: 0,
     },
-    sandboxDateJiraLinks: { readyOrInTest: '', missingSandboxDate: '', equalsSprintEnd: '', minus1: '', plus1: '', plus2: '' },
+    sandboxDateJiraLinks: { ticketsInSprint: '', missingSandboxDate: '', equalsSprintEnd: '', minus1: '', plus1: '', plus2: '' },
     executiveSummary: {
       delivery: 'unset',
       quality: 'unset',
@@ -87,7 +87,7 @@ export async function refreshSprintReport(
     const rowCommitted = committedByRow[rowKey];
     const rowNew = newByRow[rowKey];
     const rowDelivered = deliveredByRow[rowKey];
-    const rowReadyForTest = filterReadyOrInTest(rowCommitted);
+    const rowReadyForTest = rowCommitted;
     const rowBugs = bugsByRow[rowKey];
 
     const keywordResults = await Promise.all(

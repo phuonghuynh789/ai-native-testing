@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDeliveryRow, computeSandboxDateBreakdown, filterReadyOrInTest } from '../src/sprint-report-delivery.js';
+import { computeDeliveryRow, computeSandboxDateBreakdown } from '../src/sprint-report-delivery.js';
 import type { JiraIssue } from '../src/jira-client.js';
 
 function issue(key: string, storyPoints: number | null, overrides: Partial<JiraIssue> = {}): JiraIssue {
@@ -54,19 +54,8 @@ describe('computeDeliveryRow', () => {
   });
 });
 
-describe('filterReadyOrInTest', () => {
-  it('keeps only tickets currently Ready for Testing or In Test, matching case-insensitively', () => {
-    const filtered = filterReadyOrInTest([
-      issue('A', 5, { status: 'Ready for Testing' }),
-      issue('B', 3, { status: 'in test' }),
-      issue('C', 2, { status: 'Done' }),
-    ]);
-    expect(filtered.map((i) => i.key)).toEqual(['A', 'B']);
-  });
-});
-
 describe('computeSandboxDateBreakdown', () => {
-  it('counts committed tickets currently Ready for Testing or In Test, matching case-insensitively', () => {
+  it('counts every committed ticket as Tickets in Sprint, regardless of current status', () => {
     const breakdown = computeSandboxDateBreakdown(
       [
         issue('A', 5, { status: 'Ready for Testing' }),
@@ -75,7 +64,7 @@ describe('computeSandboxDateBreakdown', () => {
       ],
       '2026/08/19'
     );
-    expect(breakdown.readyOrInTestTickets).toBe(2);
+    expect(breakdown.ticketsInSprint).toBe(3);
   });
 
   it('counts tickets with no Sandbox Date set', () => {
@@ -86,7 +75,7 @@ describe('computeSandboxDateBreakdown', () => {
     expect(breakdown.missingSandboxDate).toBe(1);
   });
 
-  it('buckets Sandbox Date by its offset from the sprint end date', () => {
+  it('buckets Sandbox Date by its offset from the sprint end date, for tickets of any status', () => {
     const breakdown = computeSandboxDateBreakdown(
       [
         issue('A', 5, { status: 'Ready for Testing', sandboxDate: '2026-08-19' }), // = end
@@ -94,13 +83,14 @@ describe('computeSandboxDateBreakdown', () => {
         issue('C', 2, { status: 'Ready for Testing', sandboxDate: '2026-08-20' }), // end + 1
         issue('D', 1, { status: 'In Test', sandboxDate: '2026-08-21' }), // end + 2
         issue('E', 4, { status: 'Ready for Testing', sandboxDate: '2026-08-10' }), // outside all buckets
+        issue('F', 2, { status: 'To Do', sandboxDate: '2026-08-19' }), // = end, but not Ready for Testing/In Test
       ],
       '2026/08/19'
     );
     expect(breakdown).toEqual({
-      readyOrInTestTickets: 5,
+      ticketsInSprint: 6,
       missingSandboxDate: 0,
-      sandboxDateEqualsSprintEnd: 1,
+      sandboxDateEqualsSprintEnd: 2,
       sandboxDateMinus1: 1,
       sandboxDatePlus1: 1,
       sandboxDatePlus2: 1,

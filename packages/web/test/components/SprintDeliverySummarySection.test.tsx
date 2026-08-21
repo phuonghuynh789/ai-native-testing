@@ -31,7 +31,7 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
     impactAnalysis: { totalTickets: 0, iaGood: 0, iaMissingInfo: 0 },
     impactAnalysisJiraLinks: { iaGood: '', iaMissingInfo: '' },
     sandboxDateBreakdown: {
-      readyOrInTestTickets: 20,
+      ticketsInSprint: 20,
       missingSandboxDate: 5,
       sandboxDateEqualsSprintEnd: 6,
       sandboxDateMinus1: 7,
@@ -39,7 +39,7 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
       sandboxDatePlus2: 13,
     },
     sandboxDateJiraLinks: {
-      readyOrInTest: 'https://jira.example.com/issues/?jql=readyOrInTest',
+      ticketsInSprint: 'https://jira.example.com/issues/?jql=ticketsInSprint',
       missingSandboxDate: 'https://jira.example.com/issues/?jql=missingSandboxDate',
       equalsSprintEnd: 'https://jira.example.com/issues/?jql=equalsSprintEnd',
       minus1: 'https://jira.example.com/issues/?jql=minus1',
@@ -165,15 +165,15 @@ describe('SprintDeliverySummarySection', () => {
       />
     );
     expect(screen.getByText('Root Cause Tickets Trễ')).toBeInTheDocument();
-    expect(screen.getByText('Ready for Testing or In Test Tickets')).toBeInTheDocument();
+    expect(screen.getByText('Tickets in Sprint')).toBeInTheDocument();
     expect(screen.getByText('20')).toBeInTheDocument();
     expect(screen.getByText('Sandbox Date = Close Sprint')).toBeInTheDocument();
     expect(screen.getByText('6')).toBeInTheDocument();
-    expect(screen.getByText('Sandbox Date - 1')).toBeInTheDocument();
+    expect(screen.getByText('Close Sprint Date - 1')).toBeInTheDocument();
     expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('Sandbox Date + 1')).toBeInTheDocument();
+    expect(screen.getByText('Close Sprint Date + 1')).toBeInTheDocument();
     expect(screen.getByText('11')).toBeInTheDocument();
-    expect(screen.getByText('Sandbox Date + 2')).toBeInTheDocument();
+    expect(screen.getByText('Close Sprint Date + 2')).toBeInTheDocument();
     expect(screen.getByText('13')).toBeInTheDocument();
   });
 
@@ -187,7 +187,7 @@ describe('SprintDeliverySummarySection', () => {
     );
     expect(screen.getByText('20').closest('a')).toHaveAttribute(
       'href',
-      'https://jira.example.com/issues/?jql=readyOrInTest'
+      'https://jira.example.com/issues/?jql=ticketsInSprint'
     );
     expect(screen.getByText('5').closest('a')).toHaveAttribute(
       'href',

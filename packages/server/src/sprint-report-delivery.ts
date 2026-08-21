@@ -15,7 +15,7 @@ export interface DeliveryRow {
 }
 
 export interface SandboxDateBreakdown {
-  readyOrInTestTickets: number;
+  ticketsInSprint: number;
   missingSandboxDate: number;
   sandboxDateEqualsSprintEnd: number;
   sandboxDateMinus1: number;
@@ -23,12 +23,7 @@ export interface SandboxDateBreakdown {
   sandboxDatePlus2: number;
 }
 
-const READY_OR_IN_TEST_STATUSES = new Set(['ready for testing', 'in test']);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-export function filterReadyOrInTest(issues: JiraIssue[]): JiraIssue[] {
-  return issues.filter((issue) => READY_OR_IN_TEST_STATUSES.has(issue.status.toLowerCase()));
-}
 
 function parseDate(dateStr: string): Date | null {
   const date = new Date(`${dateStr.replaceAll('/', '-')}T00:00:00Z`);
@@ -65,11 +60,10 @@ export function computeDeliveryRow(
 }
 
 export function computeSandboxDateBreakdown(committed: JiraIssue[], sprintEndDate: string): SandboxDateBreakdown {
-  const readyOrInTest = filterReadyOrInTest(committed);
   const endDate = parseDate(sprintEndDate);
 
   const breakdown: SandboxDateBreakdown = {
-    readyOrInTestTickets: readyOrInTest.length,
+    ticketsInSprint: committed.length,
     missingSandboxDate: 0,
     sandboxDateEqualsSprintEnd: 0,
     sandboxDateMinus1: 0,
@@ -77,7 +71,7 @@ export function computeSandboxDateBreakdown(committed: JiraIssue[], sprintEndDat
     sandboxDatePlus2: 0,
   };
 
-  for (const issue of readyOrInTest) {
+  for (const issue of committed) {
     if (!issue.sandboxDate) {
       breakdown.missingSandboxDate += 1;
       continue;

@@ -31,7 +31,6 @@ describe('buildDeliveryJiraLinks', () => {
 
     const readyForTestJql = decodeURIComponent(links.readyForTest.split('?jql=')[1]);
     expect(readyForTestJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
-    expect(readyForTestJql).toContain('status in ("Ready for Testing", "In Test")');
     expect(readyForTestJql).toContain('project = PC');
 
     const newJql = decodeURIComponent(links.new.split('?jql=')[1]);
@@ -89,11 +88,10 @@ describe('buildSandboxDateJiraLinks', () => {
       expect(url.startsWith('https://jira.example.com/issues/?jql=')).toBe(true);
     }
 
-    const readyOrInTestJql = decodeURIComponent(links.readyOrInTest.split('?jql=')[1]);
-    expect(readyOrInTestJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
-    expect(readyOrInTestJql).toContain('status in ("Ready for Testing", "In Test")');
-    expect(readyOrInTestJql).toContain('project = PC');
-    expect(readyOrInTestJql).not.toContain('Sandbox Date');
+    const ticketsInSprintJql = decodeURIComponent(links.ticketsInSprint.split('?jql=')[1]);
+    expect(ticketsInSprintJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
+    expect(ticketsInSprintJql).toContain('project = PC');
+    expect(ticketsInSprintJql).not.toContain('Sandbox Date');
 
     const missingJql = decodeURIComponent(links.missingSandboxDate.split('?jql=')[1]);
     expect(missingJql).toContain('"Sandbox Date" is EMPTY');
@@ -113,8 +111,8 @@ describe('buildSandboxDateJiraLinks', () => {
 
   it('scopes a PCPOP row by its Product Domain', () => {
     const links = buildSandboxDateJiraLinks(JIRA_CONFIG, 'PCPOP_RC', '26.08.B', '2026/08/19');
-    const readyOrInTestJql = decodeURIComponent(links.readyOrInTest.split('?jql=')[1]);
-    expect(readyOrInTestJql).toContain('project = PCPOP AND "Product Domain" = "Reconciliation Core"');
+    const ticketsInSprintJql = decodeURIComponent(links.ticketsInSprint.split('?jql=')[1]);
+    expect(ticketsInSprintJql).toContain('project = PCPOP AND "Product Domain" = "Reconciliation Core"');
   });
 });
 
@@ -131,7 +129,6 @@ describe('buildImpactAnalysisJiraLinks', () => {
 
     const iaGoodJql = decodeURIComponent(links.iaGood.split('?jql=')[1]);
     expect(iaGoodJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
-    expect(iaGoodJql).toContain('status in ("Ready for Testing", "In Test")');
     expect(iaGoodJql).toContain('project = PC');
     expect(iaGoodJql).toContain(`AND ${IA_KEYWORD_CLAUSE}`);
 

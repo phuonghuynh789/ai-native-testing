@@ -117,7 +117,7 @@ describe('refreshSprintReport', () => {
       labels: [],
     });
     const pcRow = first.rows.find((r) => r.rowKey === 'PC')!;
-    expect(pcRow.sandboxDateBreakdown.readyOrInTestTickets).toBe(1);
+    expect(pcRow.sandboxDateBreakdown.ticketsInSprint).toBe(1);
     expect(pcRow.sandboxDateBreakdown.sandboxDateEqualsSprintEnd).toBe(1);
     await store.save(first);
 
