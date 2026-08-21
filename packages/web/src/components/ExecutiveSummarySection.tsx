@@ -124,11 +124,21 @@ export function ExecutiveSummarySection({ rows, onRowsChange }: ExecutiveSummary
         </tbody>
       </table>
 
-      <p className="field-hint">
-        Gợi ý: đưa ra kết luận tổng thể dựa trên 3 chỉ số Delivery/Quality/Impact Analysis thay vì lặp lại số liệu,
-        nêu rủi ro cần theo dõi ở sprint tiếp theo, và nếu Overall là Yellow/Red thì chỉ rõ hành động khắc phục cụ
-        thể.
-      </p>
+      <p className="field-hint">Gợi ý:</p>
+      <ul className="field-hint">
+        <li>
+          Đưa ra kết luận tổng thể (Overall) dựa trên cả 3 chỉ số Delivery/Quality/Impact Analysis, không lặp lại số
+          liệu đã có trong các bảng phía trên.
+        </li>
+        <li>
+          Nêu rõ rủi ro cần theo dõi ở sprint tiếp theo (phụ thuộc chưa xử lý, nợ kỹ thuật, nguồn lực) thay vì chỉ mô
+          tả những gì đã xảy ra.
+        </li>
+        <li>Nếu Overall là Yellow hoặc Red, chỉ rõ hành động khắc phục cụ thể và người phụ trách theo dõi.</li>
+        <li>
+          Nếu Overall là Green, vẫn nên ghi nhận thực hành tốt cần duy trì, thay vì chỉ ghi "không có vấn đề".
+        </li>
+      </ul>
 
       {rows.map((row) => (
         <label className="label" key={row.rowKey}>

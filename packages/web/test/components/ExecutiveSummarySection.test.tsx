@@ -56,8 +56,11 @@ describe('ExecutiveSummarySection', () => {
     expect(updatedRows[0].executiveSummary.commentary).toBe('x');
   });
 
-  it('shows a Vietnamese commentary hint', () => {
+  it('shows detailed Vietnamese commentary suggestions', () => {
     render(<ExecutiveSummarySection rows={[row()]} onRowsChange={() => {}} />);
-    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
+    const list = screen.getByRole('list');
+    expect(list).toHaveTextContent('Yellow hoặc Red');
+    expect(list).toHaveTextContent('Green');
+    expect(list.querySelectorAll('li')).toHaveLength(4);
   });
 });

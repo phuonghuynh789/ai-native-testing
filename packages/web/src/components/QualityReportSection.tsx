@@ -69,10 +69,22 @@ export function QualityReportSection({ rows, qualityComment, onQualityCommentCha
           onChange={(e) => onQualityCommentChange(e.target.value)}
         />
       </label>
-      <p className="field-hint">
-        Gợi ý: nhận xét tỷ lệ bug theo mức độ nghiêm trọng so với số ticket đã Deliver, nêu nguyên nhân và hướng khắc
-        phục các Prod Bug (nếu có), và nhắc các bug còn thiếu Root Cause (No RC) cần bổ sung trước khi đóng sprint.
-      </p>
+      <p className="field-hint">Gợi ý:</p>
+      <ul className="field-hint">
+        <li>
+          So sánh tỷ lệ bug trên số ticket đã Deliver với mức trung bình của các sprint trước để đánh giá chất lượng
+          có đang đi lên hay đi xuống.
+        </li>
+        <li>
+          Nhận xét cơ cấu mức độ nghiêm trọng (Critical/Major/Minor) — nếu không có bug Critical/Major, đây là tín
+          hiệu tích cực đáng ghi nhận.
+        </li>
+        <li>Nêu nguyên nhân gốc rễ và hướng khắc phục cụ thể cho từng Prod Bug (nếu có), kèm mã ticket liên quan.</li>
+        <li>
+          Nhắc các bug còn thiếu Root Cause (No RC) cần bổ sung trước khi đóng sprint; nếu tỷ lệ No RC còn cao qua
+          nhiều sprint, đề xuất đưa việc ghi Root Cause thành điều kiện bắt buộc khi đóng bug.
+        </li>
+      </ul>
     </section>
   );
 }

@@ -84,8 +84,11 @@ describe('ImpactAnalysisSection', () => {
     expect(onImpactAnalysisCommentChange).toHaveBeenCalledWith('x');
   });
 
-  it('shows a Vietnamese commentary hint below the Nhận xét field', () => {
+  it('shows detailed Vietnamese commentary suggestions below the Nhận xét field', () => {
     render(<ImpactAnalysisSection rows={[row()]} impactAnalysisComment="" onImpactAnalysisCommentChange={() => {}} />);
-    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
+    const list = screen.getByRole('list');
+    expect(list).toHaveTextContent('Definition of Ready');
+    expect(list).toHaveTextContent('tính gần đúng qua từ khóa');
+    expect(list.querySelectorAll('li')).toHaveLength(5);
   });
 });

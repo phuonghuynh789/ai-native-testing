@@ -75,8 +75,11 @@ describe('QualityReportSection', () => {
     expect(onQualityCommentChange).toHaveBeenCalledWith('x');
   });
 
-  it('shows a Vietnamese commentary hint below the Nhận xét field', () => {
+  it('shows detailed Vietnamese commentary suggestions below the Nhận xét field', () => {
     render(<QualityReportSection rows={[row()]} qualityComment="" onQualityCommentChange={() => {}} />);
-    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
+    const list = screen.getByRole('list');
+    expect(list).toHaveTextContent('Root Cause (No RC)');
+    expect(list).toHaveTextContent('Prod Bug');
+    expect(list.querySelectorAll('li')).toHaveLength(4);
   });
 });

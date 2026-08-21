@@ -136,11 +136,24 @@ describe('SprintDeliverySummarySection', () => {
     expect(onDeliveryCommentChange).toHaveBeenCalledWith('x');
   });
 
-  it('shows a Vietnamese commentary hint below the Nhận xét field', () => {
+  it('shows detailed Vietnamese commentary suggestions below the Nhận xét field', () => {
     render(
       <SprintDeliverySummarySection rows={[row()]} deliveryComment="" onDeliveryCommentChange={() => {}} />
     );
-    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
+    const lists = screen.getAllByRole('list');
+    expect(lists[0]).toHaveTextContent('chênh lệch giữa Committed và Delivered');
+    expect(lists[0]).toHaveTextContent('Predictability RFT');
+    expect(lists[0].querySelectorAll('li')).toHaveLength(4);
+  });
+
+  it('shows detailed Vietnamese commentary suggestions for the Root Cause Tickets Trễ breakdown', () => {
+    render(
+      <SprintDeliverySummarySection rows={[row()]} deliveryComment="" onDeliveryCommentChange={() => {}} />
+    );
+    const lists = screen.getAllByRole('list');
+    expect(lists[1]).toHaveTextContent('Sandbox Date');
+    expect(lists[1]).toHaveTextContent('Close Sprint');
+    expect(lists[1].querySelectorAll('li')).toHaveLength(4);
   });
 
   it('renders the Root Cause Tickets Trễ Sandbox Date breakdown per squad', () => {

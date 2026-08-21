@@ -55,10 +55,29 @@ export function ImpactAnalysisSection({
           onChange={(e) => onImpactAnalysisCommentChange(e.target.value)}
         />
       </label>
-      <p className="field-hint">
-        Gợi ý: nêu rõ những ticket còn thiếu Impact Analysis và lý do, so sánh tỷ lệ IA Good với sprint trước để đánh
-        giá xu hướng cải thiện, và đề xuất hành động nếu tỷ lệ IA Missing Info còn cao.
-      </p>
+      <p className="field-hint">Gợi ý:</p>
+      <ul className="field-hint">
+        <li>
+          Liệt kê cụ thể những ticket còn thiếu Impact Analysis và lý do (thay đổi nhỏ, rủi ro thấp, thiếu thời gian,
+          v.v.), không chỉ nêu số lượng.
+        </li>
+        <li>
+          So sánh tỷ lệ IA Good với sprint trước để đánh giá xu hướng cải thiện hay đi xuống trong việc tuân thủ quy
+          trình.
+        </li>
+        <li>
+          Nếu QE phải tự suy luận phạm vi ảnh hưởng từ code thay vì từ mô tả ticket, nên nêu rõ chi phí thời gian phát
+          sinh để làm căn cứ cải tiến quy trình.
+        </li>
+        <li>
+          Nếu tỷ lệ IA Missing Info còn cao, đề xuất hành động cụ thể — ví dụ bắt buộc Impact Analysis trong
+          Definition of Ready trước khi chuyển sang Ready for Test.
+        </li>
+        <li>
+          Lưu ý: IA Good/IA Missing Info được tính gần đúng qua từ khóa trong mô tả/comment, nên kiểm tra thủ công
+          các ticket ở ranh giới trước khi đưa số liệu vào báo cáo cho cấp quản lý.
+        </li>
+      </ul>
     </section>
   );
 }
