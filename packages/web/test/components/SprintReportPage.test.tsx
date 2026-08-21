@@ -147,7 +147,9 @@ describe('SprintReportPage', () => {
     await screen.findByText('1. Sprint Delivery Summary');
 
     const nhanXetFields = screen.getAllByLabelText('Nhận xét');
+    await userEvent.clear(nhanXetFields[1]);
     await userEvent.type(nhanXetFields[1], 'quality notes');
+    await userEvent.clear(nhanXetFields[2]);
     await userEvent.type(nhanXetFields[2], 'IA notes');
 
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -156,5 +158,49 @@ describe('SprintReportPage', () => {
     const savedBody = JSON.parse(putCall![1].body as string);
     expect(savedBody.qualityComment).toBe('quality notes');
     expect(savedBody.impactAnalysisComment).toBe('IA notes');
+  });
+
+  it('pre-fills empty Nhận xét fields with a suggested Vietnamese template when generating a report', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(sampleReportResponse()) }));
+    render(<SprintReportPage />);
+
+    await userEvent.type(screen.getByLabelText('Sprint Code'), '26.08.B');
+    await userEvent.type(screen.getByLabelText('Start Date'), '2026/08/06');
+    await userEvent.type(screen.getByLabelText('End Date'), '2026/08/19');
+    await userEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    await screen.findByText('1. Sprint Delivery Summary');
+
+    const nhanXetFields = screen.getAllByLabelText('Nhận xét') as HTMLTextAreaElement[];
+    expect(nhanXetFields[0].value).not.toBe('');
+    expect(nhanXetFields[1].value).not.toBe('');
+    expect(nhanXetFields[2].value).not.toBe('');
+  });
+
+  it('does not overwrite a Nhận xét value the refreshed report already has (e.g. from a prior save)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            ...sampleReportResponse(),
+            deliveryComment: 'already written notes',
+            qualityComment: 'already written quality notes',
+            impactAnalysisComment: 'already written IA notes',
+          }),
+      })
+    );
+    render(<SprintReportPage />);
+
+    await userEvent.type(screen.getByLabelText('Sprint Code'), '26.08.B');
+    await userEvent.type(screen.getByLabelText('Start Date'), '2026/08/06');
+    await userEvent.type(screen.getByLabelText('End Date'), '2026/08/19');
+    await userEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    await screen.findByText('1. Sprint Delivery Summary');
+
+    const nhanXetFields = screen.getAllByLabelText('Nhận xét') as HTMLTextAreaElement[];
+    expect(nhanXetFields[0].value).toBe('already written notes');
+    expect(nhanXetFields[1].value).toBe('already written quality notes');
+    expect(nhanXetFields[2].value).toBe('already written IA notes');
   });
 });

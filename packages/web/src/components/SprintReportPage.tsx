@@ -11,6 +11,32 @@ import { QualityReportSection } from './QualityReportSection';
 import { ImpactAnalysisSection } from './ImpactAnalysisSection';
 import { ExecutiveSummarySection } from './ExecutiveSummarySection';
 
+const DELIVERY_COMMENT_TEMPLATE =
+  '- Nguyên nhân chênh lệch Committed/Delivered: [điền nguyên nhân — thiếu nguồn lực, phụ thuộc bị block, thay đổi phạm vi; nêu rõ mã ticket nếu có]\n' +
+  '- So với sprint trước: [điền xu hướng Predictability / Predictability RFT / Predictability New]\n' +
+  '- Ticket New phát sinh giữa sprint: [điền lý do phát sinh và tác động đến năng lực đội]';
+
+const QUALITY_COMMENT_TEMPLATE =
+  '- Tỷ lệ bug trên số ticket Deliver so với sprint trước: [điền nhận xét]\n' +
+  '- Cơ cấu mức độ nghiêm trọng (Critical/Major/Minor): [điền nhận xét]\n' +
+  '- Nguyên nhân & hướng khắc phục Prod Bug (nếu có): [điền chi tiết, kèm mã ticket]\n' +
+  '- Các bug còn thiếu Root Cause (No RC) cần bổ sung: [điền danh sách hoặc kế hoạch]';
+
+const IMPACT_ANALYSIS_COMMENT_TEMPLATE =
+  '- Ticket còn thiếu Impact Analysis và lý do: [điền chi tiết]\n' +
+  '- So với sprint trước, tỷ lệ IA Good: [điền xu hướng cải thiện hoặc đi xuống]\n' +
+  '- Chi phí phát sinh khi thiếu IA (nếu có): [điền ước tính]\n' +
+  '- Hành động đề xuất nếu IA Missing Info còn cao: [điền hành động cụ thể]';
+
+function fillEmptyComments(report: SprintReport): SprintReport {
+  return {
+    ...report,
+    deliveryComment: report.deliveryComment || DELIVERY_COMMENT_TEMPLATE,
+    qualityComment: report.qualityComment || QUALITY_COMMENT_TEMPLATE,
+    impactAnalysisComment: report.impactAnalysisComment || IMPACT_ANALYSIS_COMMENT_TEMPLATE,
+  };
+}
+
 const SPRINT_CODE_OPTIONS = [
   '26.01.A',
   '26.01.B',
@@ -70,7 +96,7 @@ export function SprintReportPage() {
     setError(null);
     try {
       const refreshed = await refreshSprintReport(sprintCode, { startDate, endDate, labels });
-      setReport(refreshed);
+      setReport(fillEmptyComments(refreshed));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
