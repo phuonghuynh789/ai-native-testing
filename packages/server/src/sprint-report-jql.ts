@@ -61,16 +61,6 @@ export function buildDeliveredJql(params: JqlDateParams): string {
   );
 }
 
-export function buildReadyForTestJql(params: JqlDateParams): string {
-  const endPlusOne = nextDay(params.end);
-  return (
-    `status changed to "Ready for Testing" during ("${params.start}", "${params.end}") ` +
-    `AND NOT status changed to "Ready for Testing" during ("${endPlusOne}", "2027/12/31") ` +
-    `AND status not in (Done, Live) ` +
-    `AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)${labelsClause(params.labels)}`
-  );
-}
-
 export function buildBugsJql(params: Pick<JqlDateParams, 'start' | 'end'>): string {
   return (
     `type = Bug AND created >= "${params.start}" AND created <= "${params.end}" ` +

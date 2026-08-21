@@ -4,7 +4,6 @@ import {
   buildCommittedJql,
   buildNewJql,
   buildDeliveredJql,
-  buildReadyForTestJql,
   buildBugsJql,
   addDays,
   type JqlDateParams,
@@ -52,6 +51,10 @@ function jiraSearchUrl(baseUrl: string, jql: string): string {
   return `${baseUrl}/issues/?jql=${encodeURIComponent(jql)}`;
 }
 
+function buildReadyOrInTestJql(sprintCode: string, scope: string): string {
+  return `${buildCommittedJql({ sprintCode })} AND status in ("Ready for Testing", "In Test") AND ${scope}`;
+}
+
 export function buildDeliveryJiraLinks(
   jiraConfig: JiraConfig,
   rowKey: RowKey,
@@ -62,7 +65,7 @@ export function buildDeliveryJiraLinks(
   return {
     committed: jiraSearchUrl(jiraConfig.baseUrl, `${buildCommittedJql({ sprintCode })} AND ${scope}`),
     delivered: jiraSearchUrl(jiraConfig.baseUrl, `${buildDeliveredJql(dateParams)} AND ${scope}`),
-    readyForTest: jiraSearchUrl(jiraConfig.baseUrl, `${buildReadyForTestJql(dateParams)} AND ${scope}`),
+    readyForTest: jiraSearchUrl(jiraConfig.baseUrl, buildReadyOrInTestJql(sprintCode, scope)),
     new: jiraSearchUrl(jiraConfig.baseUrl, `${buildNewJql({ sprintCode })} AND ${scope}`),
   };
 }
@@ -74,7 +77,7 @@ export function buildSandboxDateJiraLinks(
   sprintEndDate: string
 ): SandboxDateJiraLinks {
   const scope = jqlProjectScope(rowKey);
-  const readyOrInTestJql = `${buildCommittedJql({ sprintCode })} AND status in ("Ready for Testing", "In Test") AND ${scope}`;
+  const readyOrInTestJql = buildReadyOrInTestJql(sprintCode, scope);
   return {
     readyOrInTest: jiraSearchUrl(jiraConfig.baseUrl, readyOrInTestJql),
     missingSandboxDate: jiraSearchUrl(jiraConfig.baseUrl, `${readyOrInTestJql} AND "Sandbox Date" is EMPTY`),
@@ -114,10 +117,10 @@ export function buildQualityJiraLinks(
 export function buildImpactAnalysisJiraLinks(
   jiraConfig: JiraConfig,
   rowKey: RowKey,
-  dateParams: JqlDateParams
+  sprintCode: string
 ): ImpactAnalysisJiraLinks {
   const scope = jqlProjectScope(rowKey);
-  const readyForTestJql = `${buildReadyForTestJql(dateParams)} AND ${scope}`;
+  const readyForTestJql = buildReadyOrInTestJql(sprintCode, scope);
   return {
     iaGood: jiraSearchUrl(jiraConfig.baseUrl, `${readyForTestJql} AND ${IA_KEYWORD_CLAUSE}`),
     iaMissingInfo: jiraSearchUrl(jiraConfig.baseUrl, `${readyForTestJql} AND NOT ${IA_KEYWORD_CLAUSE}`),

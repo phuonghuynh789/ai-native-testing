@@ -52,13 +52,13 @@ describe('refreshSprintReport', () => {
   it('groups issues into all 5 rows and computes delivery/quality/impact-analysis per row', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
       if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
-        return Promise.resolve([issue('PC-1', 'PC'), issue('OP-1', 'PCPOP', { productDomain: 'Merchant Platform' })]);
+        return Promise.resolve([
+          issue('PC-1', 'PC', { status: 'Ready for Testing' }),
+          issue('OP-1', 'PCPOP', { productDomain: 'Merchant Platform' }),
+        ]);
       }
       if (jql.startsWith('status changed to Done')) {
         return Promise.resolve([issue('PC-1', 'PC')]);
-      }
-      if (jql.startsWith('status changed to "Ready for Testing"')) {
-        return Promise.resolve([issue('PC-2', 'PC')]);
       }
       return Promise.resolve([]);
     });
@@ -140,8 +140,11 @@ describe('refreshSprintReport', () => {
 
   it('checks each Ready-for-Test issue for the IA keyword and tallies IA Good/Missing', async () => {
     mocks.searchJiraIssues.mockImplementation((_config: JiraConfig, jql: string) => {
-      if (jql.startsWith('status changed to "Ready for Testing"')) {
-        return Promise.resolve([issue('PC-1', 'PC'), issue('PC-2', 'PC')]);
+      if (jql.startsWith('reporter != jira-webhook-bot') && !jql.includes('status not in')) {
+        return Promise.resolve([
+          issue('PC-1', 'PC', { status: 'Ready for Testing' }),
+          issue('PC-2', 'PC', { status: 'In Test' }),
+        ]);
       }
       return Promise.resolve([]);
     });

@@ -30,7 +30,8 @@ describe('buildDeliveryJiraLinks', () => {
     expect(deliveredJql).toContain('project = PC');
 
     const readyForTestJql = decodeURIComponent(links.readyForTest.split('?jql=')[1]);
-    expect(readyForTestJql).toContain('status changed to "Ready for Testing" during');
+    expect(readyForTestJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
+    expect(readyForTestJql).toContain('status in ("Ready for Testing", "In Test")');
     expect(readyForTestJql).toContain('project = PC');
 
     const newJql = decodeURIComponent(links.new.split('?jql=')[1]);
@@ -122,18 +123,15 @@ describe('buildImpactAnalysisJiraLinks', () => {
     '(description ~ "IA" OR comment ~ "IA" OR description ~ "Technical Impact" OR comment ~ "Technical Impact" OR description ~ "Impact Analysis" OR comment ~ "Impact Analysis")';
 
   it('builds an approximate Jira text-search URL for IA Good/Missing Info, scoped to the row project', () => {
-    const links = buildImpactAnalysisJiraLinks(JIRA_CONFIG, 'PC', {
-      start: '2026/08/06',
-      end: '2026/08/19',
-      labels: [],
-    });
+    const links = buildImpactAnalysisJiraLinks(JIRA_CONFIG, 'PC', '26.08.B');
 
     for (const url of Object.values(links)) {
       expect(url.startsWith('https://jira.example.com/issues/?jql=')).toBe(true);
     }
 
     const iaGoodJql = decodeURIComponent(links.iaGood.split('?jql=')[1]);
-    expect(iaGoodJql).toContain('status changed to "Ready for Testing" during');
+    expect(iaGoodJql).toContain('Sprint in ("PCDPC - Sprint 26.08.B","PCF-UM 26.08.B","OPF - 26.08.B")');
+    expect(iaGoodJql).toContain('status in ("Ready for Testing", "In Test")');
     expect(iaGoodJql).toContain('project = PC');
     expect(iaGoodJql).toContain(`AND ${IA_KEYWORD_CLAUSE}`);
 
@@ -142,11 +140,7 @@ describe('buildImpactAnalysisJiraLinks', () => {
   });
 
   it('scopes a PCPOP row by its Product Domain', () => {
-    const links = buildImpactAnalysisJiraLinks(JIRA_CONFIG, 'PCPOP_MP', {
-      start: '2026/08/06',
-      end: '2026/08/19',
-      labels: [],
-    });
+    const links = buildImpactAnalysisJiraLinks(JIRA_CONFIG, 'PCPOP_MP', '26.08.B');
     const iaGoodJql = decodeURIComponent(links.iaGood.split('?jql=')[1]);
     expect(iaGoodJql).toContain('project = PCPOP AND "Product Domain" = "Merchant Platform"');
   });

@@ -26,6 +26,10 @@ export interface SandboxDateBreakdown {
 const READY_OR_IN_TEST_STATUSES = new Set(['ready for testing', 'in test']);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+export function filterReadyOrInTest(issues: JiraIssue[]): JiraIssue[] {
+  return issues.filter((issue) => READY_OR_IN_TEST_STATUSES.has(issue.status.toLowerCase()));
+}
+
 function parseDate(dateStr: string): Date | null {
   const date = new Date(`${dateStr.replaceAll('/', '-')}T00:00:00Z`);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -61,7 +65,7 @@ export function computeDeliveryRow(
 }
 
 export function computeSandboxDateBreakdown(committed: JiraIssue[], sprintEndDate: string): SandboxDateBreakdown {
-  const readyOrInTest = committed.filter((issue) => READY_OR_IN_TEST_STATUSES.has(issue.status.toLowerCase()));
+  const readyOrInTest = filterReadyOrInTest(committed);
   const endDate = parseDate(sprintEndDate);
 
   const breakdown: SandboxDateBreakdown = {

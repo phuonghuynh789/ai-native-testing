@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeDeliveryRow, computeSandboxDateBreakdown } from '../src/sprint-report-delivery.js';
+import { computeDeliveryRow, computeSandboxDateBreakdown, filterReadyOrInTest } from '../src/sprint-report-delivery.js';
 import type { JiraIssue } from '../src/jira-client.js';
 
 function issue(key: string, storyPoints: number | null, overrides: Partial<JiraIssue> = {}): JiraIssue {
@@ -51,6 +51,17 @@ describe('computeDeliveryRow', () => {
     expect(row.predictability).toBeNull();
     expect(row.predictabilityRFT).toBeNull();
     expect(row.predictabilityNew).toBeNull();
+  });
+});
+
+describe('filterReadyOrInTest', () => {
+  it('keeps only tickets currently Ready for Testing or In Test, matching case-insensitively', () => {
+    const filtered = filterReadyOrInTest([
+      issue('A', 5, { status: 'Ready for Testing' }),
+      issue('B', 3, { status: 'in test' }),
+      issue('C', 2, { status: 'Done' }),
+    ]);
+    expect(filtered.map((i) => i.key)).toEqual(['A', 'B']);
   });
 });
 

@@ -5,7 +5,6 @@ import {
   buildCommittedJql,
   buildNewJql,
   buildDeliveredJql,
-  buildReadyForTestJql,
   buildBugsJql,
 } from '../src/sprint-report-jql.js';
 
@@ -82,29 +81,6 @@ describe('buildDeliveredJql', () => {
       'status changed to Done during ("2026/08/06", "2026/08/19") ' +
         'AND NOT status changed to Done during ("2026/08/20", "2027/12/31") ' +
         'AND statusCategory = Done AND status in (Done, Live) ' +
-        'AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)'
-    );
-    expect(jql).not.toContain('labels');
-  });
-});
-
-describe('buildReadyForTestJql', () => {
-  it('builds the exact ready-for-test JQL', () => {
-    const jql = buildReadyForTestJql({ start: '2026/08/06', end: '2026/08/19', labels: ['nhuvth'] });
-    expect(jql).toBe(
-      'status changed to "Ready for Testing" during ("2026/08/06", "2026/08/19") ' +
-        'AND NOT status changed to "Ready for Testing" during ("2026/08/20", "2027/12/31") ' +
-        'AND status not in (Done, Live) ' +
-        'AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story) AND labels in (nhuvth)'
-    );
-  });
-
-  it('omits the labels clause entirely when no labels are given', () => {
-    const jql = buildReadyForTestJql({ start: '2026/08/06', end: '2026/08/19', labels: [] });
-    expect(jql).toBe(
-      'status changed to "Ready for Testing" during ("2026/08/06", "2026/08/19") ' +
-        'AND NOT status changed to "Ready for Testing" during ("2026/08/20", "2027/12/31") ' +
-        'AND status not in (Done, Live) ' +
         'AND project in (PC, PCFUM, PCPOP) AND type in (Task, Story)'
     );
     expect(jql).not.toContain('labels');

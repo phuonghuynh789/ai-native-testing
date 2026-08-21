@@ -1,14 +1,8 @@
 import type { JiraConfig } from './jira-config.js';
 import { searchJiraIssues, fetchIssueTextForKeywordCheck } from './jira-client.js';
-import {
-  buildCommittedJql,
-  buildNewJql,
-  buildDeliveredJql,
-  buildReadyForTestJql,
-  buildBugsJql,
-} from './sprint-report-jql.js';
+import { buildCommittedJql, buildNewJql, buildDeliveredJql, buildBugsJql } from './sprint-report-jql.js';
 import { ROW_KEYS, groupIssuesByRow, type RowKey } from './sprint-report-rows.js';
-import { computeDeliveryRow, computeSandboxDateBreakdown } from './sprint-report-delivery.js';
+import { computeDeliveryRow, computeSandboxDateBreakdown, filterReadyOrInTest } from './sprint-report-delivery.js';
 import { computeQualityRow, hasRootCauseKeyword } from './sprint-report-quality.js';
 import {
   buildDeliveryJiraLinks,
@@ -73,18 +67,16 @@ export async function refreshSprintReport(
 ): Promise<SprintReport> {
   const jqlParams = { start: params.startDate, end: params.endDate, labels: params.labels };
 
-  const [committed, newIssues, delivered, readyForTest, bugs] = await Promise.all([
+  const [committed, newIssues, delivered, bugs] = await Promise.all([
     searchJiraIssues(jiraConfig, buildCommittedJql({ sprintCode })),
     searchJiraIssues(jiraConfig, buildNewJql({ sprintCode })),
     searchJiraIssues(jiraConfig, buildDeliveredJql(jqlParams)),
-    searchJiraIssues(jiraConfig, buildReadyForTestJql(jqlParams)),
     searchJiraIssues(jiraConfig, buildBugsJql(jqlParams)),
   ]);
 
   const committedByRow = groupIssuesByRow(committed);
   const newByRow = groupIssuesByRow(newIssues);
   const deliveredByRow = groupIssuesByRow(delivered);
-  const readyForTestByRow = groupIssuesByRow(readyForTest);
   const bugsByRow = groupIssuesByRow(bugs);
 
   const previous = await store.get(sprintCode);
@@ -95,7 +87,7 @@ export async function refreshSprintReport(
     const rowCommitted = committedByRow[rowKey];
     const rowNew = newByRow[rowKey];
     const rowDelivered = deliveredByRow[rowKey];
-    const rowReadyForTest = readyForTestByRow[rowKey];
+    const rowReadyForTest = filterReadyOrInTest(rowCommitted);
     const rowBugs = bugsByRow[rowKey];
 
     const keywordResults = await Promise.all(
@@ -122,7 +114,7 @@ export async function refreshSprintReport(
       quality: computeQualityRow(rowBugs, rootCauseResults),
       qualityJiraLinks: buildQualityJiraLinks(jiraConfig, rowKey, jqlParams),
       impactAnalysis: computeImpactAnalysisRow(keywordResults),
-      impactAnalysisJiraLinks: buildImpactAnalysisJiraLinks(jiraConfig, rowKey, jqlParams),
+      impactAnalysisJiraLinks: buildImpactAnalysisJiraLinks(jiraConfig, rowKey, sprintCode),
       sandboxDateBreakdown: computeSandboxDateBreakdown(rowCommitted, params.endDate),
       sandboxDateJiraLinks: buildSandboxDateJiraLinks(jiraConfig, rowKey, sprintCode, params.endDate),
       executiveSummary: base.executiveSummary,
