@@ -16,7 +16,7 @@ function updateRow(
 const DELIVERY_OPTIONS = ['unset', 'good', 'bad'] as const;
 const QUALITY_OPTIONS = ['unset', 'good', 'bad'] as const;
 const IMPACT_ANALYSIS_OPTIONS = ['unset', 'good', 'partial', 'bad'] as const;
-const OVERALL_OPTIONS = ['unset', 'good', 'medium', 'bad'] as const;
+const OVERALL_OPTIONS = ['unset', 'good', 'partial', 'bad'] as const;
 
 export function ExecutiveSummarySection({ rows, onRowsChange }: ExecutiveSummarySectionProps) {
   return (

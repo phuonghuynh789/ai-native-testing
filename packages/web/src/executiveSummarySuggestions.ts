@@ -50,7 +50,7 @@ export function assessOverall(
   if (values.every((value) => value === 'good')) {
     return 'good';
   }
-  return 'medium';
+  return 'partial';
 }
 
 export function suggestExecutiveSummary(row: SprintReportRowData): SprintReportRowData {

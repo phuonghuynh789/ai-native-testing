@@ -119,8 +119,8 @@ describe('assessOverall', () => {
     expect(assessOverall('good', 'good', null)).toBe('good');
   });
 
-  it('is medium when indicators are mixed but none are bad', () => {
-    expect(assessOverall('good', 'good', 'partial')).toBe('medium');
+  it('is partial when indicators are mixed but none are bad', () => {
+    expect(assessOverall('good', 'good', 'partial')).toBe('partial');
   });
 
   it('is null when no indicator has data', () => {

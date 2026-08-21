@@ -15,7 +15,7 @@ export interface ExecutiveSummaryRow {
   delivery: 'unset' | 'good' | 'bad';
   quality: 'unset' | 'good' | 'bad';
   impactAnalysis: 'unset' | 'good' | 'partial' | 'bad';
-  overall: 'unset' | 'good' | 'medium' | 'bad';
+  overall: 'unset' | 'good' | 'partial' | 'bad';
   commentary: string;
 }
 
