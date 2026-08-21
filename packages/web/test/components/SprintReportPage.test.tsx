@@ -203,4 +203,44 @@ describe('SprintReportPage', () => {
     expect(nhanXetFields[1].value).toBe('already written quality notes');
     expect(nhanXetFields[2].value).toBe('already written IA notes');
   });
+
+  it('pre-selects Executive Summary indicators from the computed self-assessment when generating a report', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(sampleReportResponse()) }));
+    render(<SprintReportPage />);
+
+    await userEvent.type(screen.getByLabelText('Sprint Code'), '26.08.B');
+    await userEvent.type(screen.getByLabelText('Start Date'), '2026/08/06');
+    await userEvent.type(screen.getByLabelText('End Date'), '2026/08/19');
+    await userEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    await screen.findByText('1. Sprint Delivery Summary');
+
+    // Fixture: predictability 0.875 -> good; major 3 -> bad; IA missing 2/10 = 20% -> partial; any bad -> overall bad.
+    expect(screen.getByLabelText('PC executive delivery')).toHaveValue('good');
+    expect(screen.getByLabelText('PC executive quality')).toHaveValue('bad');
+    expect(screen.getByLabelText('PC executive impact analysis')).toHaveValue('partial');
+    expect(screen.getByLabelText('PC executive overall')).toHaveValue('bad');
+  });
+
+  it('does not overwrite an Executive Summary indicator already set on the refreshed report', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => {
+          const response = sampleReportResponse();
+          response.rows[0].executiveSummary.delivery = 'bad';
+          return Promise.resolve(response);
+        },
+      })
+    );
+    render(<SprintReportPage />);
+
+    await userEvent.type(screen.getByLabelText('Sprint Code'), '26.08.B');
+    await userEvent.type(screen.getByLabelText('Start Date'), '2026/08/06');
+    await userEvent.type(screen.getByLabelText('End Date'), '2026/08/19');
+    await userEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    await screen.findByText('1. Sprint Delivery Summary');
+
+    expect(screen.getByLabelText('PC executive delivery')).toHaveValue('bad');
+  });
 });

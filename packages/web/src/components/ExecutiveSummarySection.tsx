@@ -22,6 +22,11 @@ export function ExecutiveSummarySection({ rows, onRowsChange }: ExecutiveSummary
   return (
     <section className="card">
       <h2 className="heading-md">4. Executive Summary (Quan trọng nhất)</h2>
+      <p className="field-hint">
+        Delivery/Quality/Impact Analysis/Overall được hệ thống tự đánh giá dựa trên kết quả tính toán của từng squad
+        (Predictability, số bug Critical/Major/Prod Bug, tỷ lệ IA Missing Info) và có thể điều chỉnh lại thủ công nếu
+        cần.
+      </p>
       <table className="data-table">
         <thead>
           <tr>

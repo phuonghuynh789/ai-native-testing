@@ -10,6 +10,7 @@ import { SprintDeliverySummarySection } from './SprintDeliverySummarySection';
 import { QualityReportSection } from './QualityReportSection';
 import { ImpactAnalysisSection } from './ImpactAnalysisSection';
 import { ExecutiveSummarySection } from './ExecutiveSummarySection';
+import { suggestExecutiveSummary } from '../executiveSummarySuggestions';
 
 const DELIVERY_COMMENT_TEMPLATE =
   '- Nguyên nhân chênh lệch Committed/Delivered: [điền nguyên nhân — thiếu nguồn lực, phụ thuộc bị block, thay đổi phạm vi; nêu rõ mã ticket nếu có]\n' +
@@ -35,6 +36,10 @@ function fillEmptyComments(report: SprintReport): SprintReport {
     qualityComment: report.qualityComment || QUALITY_COMMENT_TEMPLATE,
     impactAnalysisComment: report.impactAnalysisComment || IMPACT_ANALYSIS_COMMENT_TEMPLATE,
   };
+}
+
+function fillExecutiveSummarySuggestions(report: SprintReport): SprintReport {
+  return { ...report, rows: report.rows.map(suggestExecutiveSummary) };
 }
 
 const SPRINT_CODE_OPTIONS = [
@@ -96,7 +101,7 @@ export function SprintReportPage() {
     setError(null);
     try {
       const refreshed = await refreshSprintReport(sprintCode, { startDate, endDate, labels });
-      setReport(fillEmptyComments(refreshed));
+      setReport(fillExecutiveSummarySuggestions(fillEmptyComments(refreshed)));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
