@@ -87,6 +87,8 @@ describe('refreshSprintReport', () => {
     });
     first.rows[0].executiveSummary.commentary = 'looking good';
     first.deliveryComment = 'manual notes';
+    first.qualityComment = 'quality notes';
+    first.impactAnalysisComment = 'IA notes';
     await store.save(first);
 
     const second = await refreshSprintReport(JIRA_CONFIG, store, '26.08.B', {
@@ -97,6 +99,8 @@ describe('refreshSprintReport', () => {
 
     expect(second.rows[0].executiveSummary.commentary).toBe('looking good');
     expect(second.deliveryComment).toBe('manual notes');
+    expect(second.qualityComment).toBe('quality notes');
+    expect(second.impactAnalysisComment).toBe('IA notes');
   });
 
   it('computes sandboxDateBreakdown fresh from the committed set on every refresh, using the report end date', async () => {

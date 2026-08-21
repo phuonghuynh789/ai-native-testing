@@ -136,6 +136,13 @@ describe('SprintDeliverySummarySection', () => {
     expect(onDeliveryCommentChange).toHaveBeenCalledWith('x');
   });
 
+  it('shows a Vietnamese commentary hint below the Nhận xét field', () => {
+    render(
+      <SprintDeliverySummarySection rows={[row()]} deliveryComment="" onDeliveryCommentChange={() => {}} />
+    );
+    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
+  });
+
   it('renders the Root Cause Tickets Trễ Sandbox Date breakdown per squad', () => {
     render(
       <SprintDeliverySummarySection

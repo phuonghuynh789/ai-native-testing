@@ -123,4 +123,38 @@ describe('SprintReportPage', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('/sprint-reports/26.08.B', expect.objectContaining({ method: 'PUT' }));
   });
+
+  it('does not crash loading an old saved report missing qualityComment/impactAnalysisComment', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(sampleReportResponse()) }));
+    render(<SprintReportPage />);
+
+    await userEvent.type(screen.getByLabelText('Sprint Code'), '26.08.B');
+    await userEvent.click(screen.getByRole('button', { name: 'Load Saved' }));
+
+    expect(await screen.findByText('2. Quality Report')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Nhận xét')).toHaveLength(3);
+  });
+
+  it('saves Quality Report and Impact Analysis commentary entered by the user', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(sampleReportResponse()) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<SprintReportPage />);
+
+    await userEvent.type(screen.getByLabelText('Sprint Code'), '26.08.B');
+    await userEvent.type(screen.getByLabelText('Start Date'), '2026/08/06');
+    await userEvent.type(screen.getByLabelText('End Date'), '2026/08/19');
+    await userEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    await screen.findByText('1. Sprint Delivery Summary');
+
+    const nhanXetFields = screen.getAllByLabelText('Nhận xét');
+    await userEvent.type(nhanXetFields[1], 'quality notes');
+    await userEvent.type(nhanXetFields[2], 'IA notes');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    const putCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
+    const savedBody = JSON.parse(putCall![1].body as string);
+    expect(savedBody.qualityComment).toBe('quality notes');
+    expect(savedBody.impactAnalysisComment).toBe('IA notes');
+  });
 });

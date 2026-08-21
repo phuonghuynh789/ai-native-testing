@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QualityReportSection } from '../../src/components/QualityReportSection';
 import type { SprintReportRowData } from '../../src/sprintReports';
 
@@ -47,7 +48,7 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
 
 describe('QualityReportSection', () => {
   it('renders the auto-computed bug counts, including No RC', () => {
-    render(<QualityReportSection rows={[row()]} />);
+    render(<QualityReportSection rows={[row()]} qualityComment="" onQualityCommentChange={() => {}} />);
     expect(screen.getByText('25')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('22')).toBeInTheDocument();
@@ -56,14 +57,26 @@ describe('QualityReportSection', () => {
   });
 
   it('links each bug count to its Jira issue search', () => {
-    render(<QualityReportSection rows={[row()]} />);
+    render(<QualityReportSection rows={[row()]} qualityComment="" onQualityCommentChange={() => {}} />);
     expect(screen.getByText('25').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=totalBugs');
     expect(screen.getByText('3').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=major');
     expect(screen.getByText('22').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=minor');
   });
 
   it('links No RC to its approximate Jira text-search result', () => {
-    render(<QualityReportSection rows={[row()]} />);
+    render(<QualityReportSection rows={[row()]} qualityComment="" onQualityCommentChange={() => {}} />);
     expect(screen.getByText('7').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=noRC');
+  });
+
+  it('calls onQualityCommentChange when the Nhận xét textarea changes', async () => {
+    const onQualityCommentChange = vi.fn();
+    render(<QualityReportSection rows={[row()]} qualityComment="" onQualityCommentChange={onQualityCommentChange} />);
+    await userEvent.type(screen.getByLabelText('Nhận xét'), 'x');
+    expect(onQualityCommentChange).toHaveBeenCalledWith('x');
+  });
+
+  it('shows a Vietnamese commentary hint below the Nhận xét field', () => {
+    render(<QualityReportSection rows={[row()]} qualityComment="" onQualityCommentChange={() => {}} />);
+    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
   });
 });

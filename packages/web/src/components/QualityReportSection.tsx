@@ -2,9 +2,11 @@ import type { SprintReportRowData } from '../sprintReports';
 
 export interface QualityReportSectionProps {
   rows: SprintReportRowData[];
+  qualityComment: string;
+  onQualityCommentChange: (comment: string) => void;
 }
 
-export function QualityReportSection({ rows }: QualityReportSectionProps) {
+export function QualityReportSection({ rows, qualityComment, onQualityCommentChange }: QualityReportSectionProps) {
   return (
     <section className="card">
       <h2 className="heading-md">2. Quality Report</h2>
@@ -58,6 +60,19 @@ export function QualityReportSection({ rows }: QualityReportSectionProps) {
           ))}
         </tbody>
       </table>
+
+      <label className="label">
+        Nhận xét
+        <textarea
+          className="text-input"
+          value={qualityComment}
+          onChange={(e) => onQualityCommentChange(e.target.value)}
+        />
+      </label>
+      <p className="field-hint">
+        Gợi ý: nhận xét tỷ lệ bug theo mức độ nghiêm trọng so với số ticket đã Deliver, nêu nguyên nhân và hướng khắc
+        phục các Prod Bug (nếu có), và nhắc các bug còn thiếu Root Cause (No RC) cần bổ sung trước khi đóng sprint.
+      </p>
     </section>
   );
 }

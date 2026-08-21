@@ -136,6 +136,8 @@ export async function refreshSprintReport(
     labels: params.labels,
     rows,
     deliveryComment: previous?.deliveryComment ?? '',
+    qualityComment: previous?.qualityComment ?? '',
+    impactAnalysisComment: previous?.impactAnalysisComment ?? '',
     createdAt: previous?.createdAt ?? '',
     updatedAt: previous?.updatedAt ?? '',
   };

@@ -124,6 +124,12 @@ export function ExecutiveSummarySection({ rows, onRowsChange }: ExecutiveSummary
         </tbody>
       </table>
 
+      <p className="field-hint">
+        Gợi ý: đưa ra kết luận tổng thể dựa trên 3 chỉ số Delivery/Quality/Impact Analysis thay vì lặp lại số liệu,
+        nêu rủi ro cần theo dõi ở sprint tiếp theo, và nếu Overall là Yellow/Red thì chỉ rõ hành động khắc phục cụ
+        thể.
+      </p>
+
       {rows.map((row) => (
         <label className="label" key={row.rowKey}>
           {row.rowKey} commentary

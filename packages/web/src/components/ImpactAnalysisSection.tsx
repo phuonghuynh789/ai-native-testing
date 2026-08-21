@@ -2,9 +2,15 @@ import type { SprintReportRowData } from '../sprintReports';
 
 export interface ImpactAnalysisSectionProps {
   rows: SprintReportRowData[];
+  impactAnalysisComment: string;
+  onImpactAnalysisCommentChange: (comment: string) => void;
 }
 
-export function ImpactAnalysisSection({ rows }: ImpactAnalysisSectionProps) {
+export function ImpactAnalysisSection({
+  rows,
+  impactAnalysisComment,
+  onImpactAnalysisCommentChange,
+}: ImpactAnalysisSectionProps) {
   return (
     <section className="card">
       <h2 className="heading-md">3. Impact Analysis Review</h2>
@@ -40,6 +46,19 @@ export function ImpactAnalysisSection({ rows }: ImpactAnalysisSectionProps) {
           ))}
         </tbody>
       </table>
+
+      <label className="label">
+        Nhận xét
+        <textarea
+          className="text-input"
+          value={impactAnalysisComment}
+          onChange={(e) => onImpactAnalysisCommentChange(e.target.value)}
+        />
+      </label>
+      <p className="field-hint">
+        Gợi ý: nêu rõ những ticket còn thiếu Impact Analysis và lý do, so sánh tỷ lệ IA Good với sprint trước để đánh
+        giá xu hướng cải thiện, và đề xuất hành động nếu tỷ lệ IA Missing Info còn cao.
+      </p>
     </section>
   );
 }

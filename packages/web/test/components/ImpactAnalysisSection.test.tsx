@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ImpactAnalysisSection } from '../../src/components/ImpactAnalysisSection';
 import type { SprintReportRowData } from '../../src/sprintReports';
 
@@ -48,13 +49,13 @@ function row(overrides: Partial<SprintReportRowData> = {}): SprintReportRowData 
 
 describe('ImpactAnalysisSection', () => {
   it('renders the auto-computed IA counts', () => {
-    render(<ImpactAnalysisSection rows={[row()]} />);
+    render(<ImpactAnalysisSection rows={[row()]} impactAnalysisComment="" onImpactAnalysisCommentChange={() => {}} />);
     expect(screen.getByText('8')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('links Total Tickets to the same Jira search as Ready for Test Tickets', () => {
-    render(<ImpactAnalysisSection rows={[row()]} />);
+    render(<ImpactAnalysisSection rows={[row()]} impactAnalysisComment="" onImpactAnalysisCommentChange={() => {}} />);
     expect(screen.getByText('10').closest('a')).toHaveAttribute(
       'href',
       'https://jira.example.com/issues/?jql=readyForTest'
@@ -62,11 +63,29 @@ describe('ImpactAnalysisSection', () => {
   });
 
   it('links IA Good and IA Missing Info to their approximate Jira text-search results', () => {
-    render(<ImpactAnalysisSection rows={[row()]} />);
+    render(<ImpactAnalysisSection rows={[row()]} impactAnalysisComment="" onImpactAnalysisCommentChange={() => {}} />);
     expect(screen.getByText('8').closest('a')).toHaveAttribute('href', 'https://jira.example.com/issues/?jql=iaGood');
     expect(screen.getByText('2').closest('a')).toHaveAttribute(
       'href',
       'https://jira.example.com/issues/?jql=iaMissingInfo'
     );
+  });
+
+  it('calls onImpactAnalysisCommentChange when the Nhận xét textarea changes', async () => {
+    const onImpactAnalysisCommentChange = vi.fn();
+    render(
+      <ImpactAnalysisSection
+        rows={[row()]}
+        impactAnalysisComment=""
+        onImpactAnalysisCommentChange={onImpactAnalysisCommentChange}
+      />
+    );
+    await userEvent.type(screen.getByLabelText('Nhận xét'), 'x');
+    expect(onImpactAnalysisCommentChange).toHaveBeenCalledWith('x');
+  });
+
+  it('shows a Vietnamese commentary hint below the Nhận xét field', () => {
+    render(<ImpactAnalysisSection rows={[row()]} impactAnalysisComment="" onImpactAnalysisCommentChange={() => {}} />);
+    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
   });
 });

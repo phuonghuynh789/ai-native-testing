@@ -87,6 +87,11 @@ export function SprintDeliverySummarySection({
           onChange={(e) => onDeliveryCommentChange(e.target.value)}
         />
       </label>
+      <p className="field-hint">
+        Gợi ý: nêu nguyên nhân chênh lệch giữa Committed và Delivered (thiếu nguồn lực, phụ thuộc bị block, thay đổi
+        phạm vi), so sánh Predictability với sprint trước để chỉ ra xu hướng, và giải thích nguồn gốc của các ticket
+        New phát sinh giữa sprint.
+      </p>
 
       <h3 className="heading-md">Root Cause Tickets Trễ</h3>
       <table className="data-table">

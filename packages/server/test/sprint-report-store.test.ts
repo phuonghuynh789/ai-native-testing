@@ -56,6 +56,8 @@ function sampleReport(overrides: Partial<SprintReport> = {}): SprintReport {
     labels: ['nhuvth'],
     rows: [sampleRow('PC')],
     deliveryComment: '',
+    qualityComment: '',
+    impactAnalysisComment: '',
     createdAt: '2026-08-20T00:00:00.000Z',
     updatedAt: '2026-08-20T00:00:00.000Z',
     ...overrides,

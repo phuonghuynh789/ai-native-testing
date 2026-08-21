@@ -55,4 +55,9 @@ describe('ExecutiveSummarySection', () => {
     const updatedRows = onRowsChange.mock.calls[0][0] as SprintReportRowData[];
     expect(updatedRows[0].executiveSummary.commentary).toBe('x');
   });
+
+  it('shows a Vietnamese commentary hint', () => {
+    render(<ExecutiveSummarySection rows={[row()]} onRowsChange={() => {}} />);
+    expect(screen.getByText(/Gợi ý/)).toBeInTheDocument();
+  });
 });

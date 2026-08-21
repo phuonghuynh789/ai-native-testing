@@ -39,6 +39,8 @@ export interface SprintReport {
   labels: string[];
   rows: SprintReportRowData[];
   deliveryComment: string;
+  qualityComment: string;
+  impactAnalysisComment: string;
   createdAt: string;
   updatedAt: string;
 }
